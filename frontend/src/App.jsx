@@ -1109,7 +1109,7 @@ function EvidenceModal({ requirement, onClose }) {
             <div>
               <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>DETECTED TEXT</div>
               <div style={{ ...FONT.mono, fontSize: 13, color: C.charcoal, marginTop: 3, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, padding: "8px 10px", borderRadius: 2 }}>
-                {EXTRACTED_DECLARATION[Object.keys(EXTRACTED_DECLARATION).find((k) => k.toLowerCase().includes(requirement.label.split(" ")[0].toLowerCase())) || "Product Name"] || "MRP ₹20.00"}
+                {requirement.detected || EXTRACTED_DECLARATION[Object.keys(EXTRACTED_DECLARATION).find((k) => k.toLowerCase().includes(requirement.label.split(" ")[0].toLowerCase())) || "Product Name"] || "MRP ?20.00"}
               </div>
             </div>
             <div>
@@ -1136,36 +1136,67 @@ function EvidenceModal({ requirement, onClose }) {
   );
 }
 
-/* ============================== INSPECTION DETAIL ============================== */
-
 function InspectionDetail({ inspection }) {
   const [evidenceReq, setEvidenceReq] = useState(null);
   const insp = inspection || INSPECTIONS[0];
-  const passCount = REQUIREMENTS.filter((r) => r.status === "PASS").length;
-  const failCount = REQUIREMENTS.filter((r) => r.status === "FAIL").length;
-  const reviewCount = REQUIREMENTS.filter((r) => r.status === "REVIEW").length;
-  const avgConf = Math.round(REQUIREMENTS.reduce((s, r) => s + r.confidence, 0) / REQUIREMENTS.length);
+
+  const productName = typeof insp.product === "object" ? (insp.product?.name || "Packaged Commodity") : (insp.product || "Packaged Commodity");
+  const caseId = insp.case_number || (typeof insp.id === "number" ? `LM/2026/${String(insp.id).padStart(6, "0")}` : (insp.id || "LM/2026/000001"));
+  const inspectionStatus = insp.status || (insp.verdict ? (insp.verdict === "COMPLIANT" ? "COMPLIANT" : insp.verdict === "REVIEW" ? "REQUIRES VERIFICATION" : "NON-COMPLIANT") : "COMPLIANT");
+  
+  // Transform backend declarations or fallback to REQUIREMENTS
+  let reqs = REQUIREMENTS;
+  let extractedMap = EXTRACTED_DECLARATION;
+
+  if (insp.declarations && insp.declarations.length > 0) {
+    reqs = insp.declarations.map((d) => ({
+      key: d.field_name,
+      label: d.field_name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+      rule: d.rule_citation || "Rule 6(1) PCR 2011",
+      status: d.is_compliant ? "PASS" : (d.status === "REVIEW" ? "REVIEW" : "FAIL"),
+      confidence: Math.round((d.confidence_score || 0.95) * 100),
+      detected: d.detected_value || (d.is_present ? "Detected" : "NOT DETECTED"),
+      reason: d.remarks || (d.is_compliant ? "Verified compliant under PCR 2011" : "Mandatory statutory requirement missing or invalid"),
+      bbox: d.bounding_box
+    }));
+
+    extractedMap = {};
+    insp.declarations.forEach(d => {
+      const k = d.field_name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      extractedMap[k] = d.detected_value || (d.is_present ? "Present" : "Missing");
+    });
+  }
+
+  const passCount = reqs.filter((r) => r.status === "PASS").length;
+  const failCount = reqs.filter((r) => r.status === "FAIL").length;
+  const reviewCount = reqs.filter((r) => r.status === "REVIEW").length;
+  const avgConf = Math.round(reqs.reduce((s, r) => s + (r.confidence || 90), 0) / (reqs.length || 1));
+
+  const manufacturerVal = insp.manufacturer || (typeof insp.product === "object" && insp.product?.category) || "Nutrimax Foods Pvt. Ltd., New Delhi";
+  const locationVal = insp.location || "Noida Central Hub";
+  const dateVal = insp.created_at ? new Date(insp.created_at).toLocaleDateString("en-IN") : (insp.date || new Date().toLocaleDateString("en-IN"));
+  const inspectorVal = insp.inspector || "R. Bhaskaran";
 
   return (
     <div className="space-y-6">
       <Card>
         <div className="flex items-start justify-between flex-wrap gap-6">
           <div>
-            <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.08em" }}>{insp.id}</div>
-            <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 2 }}>{insp.product}</h2>
+            <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.08em" }}>{caseId}</div>
+            <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 2 }}>{productName}</h2>
             <div className="flex items-center gap-4 mt-3 flex-wrap" style={{ fontSize: 12.5, color: C.slate }}>
-              <span className="flex items-center gap-1.5"><Building2 size={13} /> {insp.manufacturer}</span>
-              <span className="flex items-center gap-1.5"><MapPin size={13} /> {insp.location}</span>
-              <span className="flex items-center gap-1.5"><Calendar size={13} /> {insp.date}</span>
-              <span className="flex items-center gap-1.5"><User size={13} /> {insp.inspector}</span>
+              <span className="flex items-center gap-1.5"><Building2 size={13} /> {manufacturerVal}</span>
+              <span className="flex items-center gap-1.5"><MapPin size={13} /> {locationVal}</span>
+              <span className="flex items-center gap-1.5"><Calendar size={13} /> {dateVal}</span>
+              <span className="flex items-center gap-1.5"><User size={13} /> {inspectorVal}</span>
             </div>
           </div>
-          <VerdictStamp status={insp.status} caseNo={insp.id} />
+          <VerdictStamp status={inspectionStatus} caseNo={caseId} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t" style={{ borderColor: C.line }}>
           {[
-            ["Mandatory Declarations", `${passCount} / ${REQUIREMENTS.length}`, "detected & verified"],
+            ["Mandatory Declarations", `${passCount} / ${reqs.length}`, "detected & verified"],
             ["Violations", failCount, "require correction"],
             ["Manual Verification", reviewCount, "needs officer review"],
             ["Overall Confidence", `${avgConf}%`, "AI extraction average"],
@@ -1191,14 +1222,14 @@ function InspectionDetail({ inspection }) {
               </tr>
             </thead>
             <tbody>
-              {REQUIREMENTS.map((r) => (
+              {reqs.map((r) => (
                 <tr key={r.key} className="ll-tr">
                   <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.label}</td>
                   <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.gold }}>{r.rule}</td>
                   <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><ReqStatusChip status={r.status} /></td>
                   <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.charcoal }}>{r.confidence}%</td>
                   <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                    <button onClick={() => setEvidenceReq(r)} className="ll-focus inline-flex items-center gap-1" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}>
+                    <button onClick={() => setEvidenceReq(r)} className="ll-focus inline-flex items-center gap-1 cursor-pointer" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}>
                       <Eye size={13} /> View
                     </button>
                   </td>
@@ -1212,10 +1243,10 @@ function InspectionDetail({ inspection }) {
           <Card>
             <SectionLabel eyebrow="EXTRACTED" title="Structured Declaration" />
             <dl className="space-y-2.5">
-              {Object.entries(EXTRACTED_DECLARATION).map(([k, v]) => (
+              {Object.entries(extractedMap).map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-3 pb-2 border-b" style={{ borderColor: C.line }}>
                   <dt style={{ fontSize: 11.5, color: C.slate, flexShrink: 0 }}>{k}</dt>
-                  <dd style={{ fontSize: 12, color: C.ink, fontWeight: 600, textAlign: "right" }}>{v}</dd>
+                  <dd style={{ fontSize: 12, color: C.ink, fontWeight: 600, textAlign: "right" }}>{String(v)}</dd>
                 </div>
               ))}
             </dl>
@@ -1228,11 +1259,11 @@ function InspectionDetail({ inspection }) {
             </p>
             <select style={{ ...inputStyle, marginBottom: 10 }} defaultValue="">
               <option value="" disabled>Select determination</option>
-              <option>Confirm AI finding — Non-Compliant</option>
-              <option>Override — mark Compliant</option>
+              <option>Confirm AI finding ? Non-Compliant</option>
+              <option>Override ? mark Compliant</option>
               <option>Escalate for senior review</option>
             </select>
-            <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks…" />
+            <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks?" />
             <div className="flex gap-2">
               <Button size="sm" onClick={() => window.open(ApiService.getPdfUrl(insp?.id && typeof insp.id === "number" ? insp.id : 1), "_blank")}><FileText size={13} /> Generate Official PDF</Button>
               <Button size="sm" variant="ghost">Save Draft</Button>
