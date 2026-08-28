@@ -617,7 +617,7 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
           })}
         </nav>
         <div className="px-3 pb-4">
-          <button className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-left" style={{ color: "#B7B2A2" }} onClick={() => setPage("login")}>
+          <button className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-left" style={{ color: "#B7B2A2" }} onClick={() => { localStorage.removeItem("legallens_active_page"); localStorage.removeItem("legallens_current_user"); setPage("login"); }}>
             <LogOut size={16} />
             <span style={{ fontSize: 13, fontWeight: 500 }}>Sign out</span>
           </button>
@@ -2184,10 +2184,26 @@ function EditUserModal({ user, onClose, onSave }) {
 /* ============================== ROOT APP ============================== */
 
 export default function App() {
-  const [page, setPage] = useState("login");
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("legallens_current_user");
+      return saved ? JSON.parse(saved) : INITIAL_USERS[0];
+    } catch {
+      return INITIAL_USERS[0];
+    }
+  });
+
+  const [page, setPage] = useState(() => {
+    return localStorage.getItem("legallens_active_page") || "dashboard";
+  });
+
+  const navigateTo = (nextPage) => {
+    setPage(nextPage);
+    localStorage.setItem("legallens_active_page", nextPage);
+  };
+
   const [selectedInspection, setSelectedInspection] = useState(INSPECTIONS[0]);
   const [users, setUsers] = useState(INITIAL_USERS);
-  const [currentUser, setCurrentUser] = useState(INITIAL_USERS[0]); // Default to Admin Poonam Desai
   const [loadingDb, setLoadingDb] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
 
@@ -2352,7 +2368,8 @@ export default function App() {
           toggleTheme={toggleTheme}
           onLogin={(user) => {
             setCurrentUser(user);
-            setPage("dashboard");
+            localStorage.setItem("legallens_current_user", JSON.stringify(user));
+            navigateTo("dashboard");
           }}
         />
       </div>
@@ -2362,7 +2379,7 @@ export default function App() {
   return (
     <Shell
       page={page}
-      setPage={setPage}
+      setPage={navigateTo}
       currentUser={currentUser}
       isDark={isDark}
       toggleTheme={toggleTheme}
@@ -2371,17 +2388,17 @@ export default function App() {
       {page === "dashboard" && (
         <Dashboard
           isDark={isDark}
-          onOpenInspection={(i) => { setSelectedInspection(i); setPage("inspection-detail"); }}
+          onOpenInspection={(i) => { setSelectedInspection(i); navigateTo("inspection-detail"); }}
         />
       )}
       {page === "inspections" && (
         <InspectionsList
-          onOpen={(i) => { setSelectedInspection(i); setPage("inspection-detail"); }}
-          onNew={() => setPage("new-inspection")}
+          onOpen={(i) => { setSelectedInspection(i); navigateTo("inspection-detail"); }}
+          onNew={() => navigateTo("new-inspection")}
         />
       )}
       {page === "new-inspection" && (
-        <NewInspection onFinish={(i) => { setSelectedInspection(i); setPage("inspection-detail"); }} />
+        <NewInspection onFinish={(i) => { setSelectedInspection(i); navigateTo("inspection-detail"); }} />
       )}
       {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
       {page === "products" && <Products onOpen={() => { }} />}
