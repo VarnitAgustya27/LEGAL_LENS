@@ -1,13 +1,26 @@
 import os
 import base64
 import logging
-import httpx
-from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Dict, Any, Optional
-from app.config import settings
-from app.ocr.ocr_web_service import OCRWebServiceClient, OCRProcessResult
+import httpx
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(*args, **kwargs): pass
 
-logger = logging.getLogger("app.services.ocr_service")
+# Ensure environment variables are loaded
+current_dir = Path(__file__).resolve().parent
+load_dotenv(current_dir / ".env", override=False)
+load_dotenv(current_dir.parent / ".env", override=False)
+load_dotenv(current_dir.parent / "backend" / ".env", override=False)
+
+try:
+    from ocr_web_service import OCRWebServiceClient, OCRProcessResult
+except ImportError:
+    from .ocr_web_service import OCRWebServiceClient, OCRProcessResult
+
+logger = logging.getLogger("ocr_test.service")
 
 class OCRService:
     """
@@ -24,11 +37,11 @@ class OCRService:
 
     @property
     def supabase_url(self) -> str:
-        return (os.getenv("SUPABASE_URL") or settings.SUPABASE_URL or "https://snxwxahlotngsllqmvyj.supabase.co").rstrip("/")
+        return (os.getenv("SUPABASE_URL") or "https://snxwxahlotngsllqmvyj.supabase.co").rstrip("/")
 
     @property
     def supabase_key(self) -> str:
-        return (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY") or settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY or "").strip()
+        return (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY") or "sb_publishable_YUcFQBnkkTH1_HNSvRZ9ug_yOIkCl_3").strip()
 
     def _get_headers(self) -> Dict[str, str]:
         key = self.supabase_key
@@ -46,7 +59,6 @@ class OCRService:
         """
         logger.info(f"Starting OCR processing for inspection: {inspection_id}")
 
-        # 1. Query Supabase for all uploads associated with this inspection
         uploads = self._fetch_inspection_uploads(inspection_id)
         if not uploads:
             logger.warning(f"No uploads found for inspection_id: {inspection_id}")
@@ -266,26 +278,19 @@ class OCRService:
         try:
             url = f"{self.supabase_url}/rest/v1/inspections"
             params = {"id": f"eq.{inspection_id}"}
-            payload = {
-                "status": status,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }
+            payload = {"status": status}
             with httpx.Client(timeout=10.0) as client:
                 client.patch(url, headers=self._get_headers(), params=params, json=payload)
         except Exception as e:
             logger.error(f"Exception updating inspection status: {e}")
 
     def get_inspection_ocr_status(self, inspection_id: str) -> Dict[str, Any]:
-        """
-        Retrieves live OCR processing status and results for an inspection.
-        Used by frontend polling or status queries.
-        """
+        """Retrieves live OCR processing status and results for an inspection."""
         try:
             url = f"{self.supabase_url}/rest/v1/extracted_text"
             params = {
                 "select": "*",
-                "inspection_id": f"eq.{inspection_id}",
-                "order": "created_at.asc"
+                "inspection_id": f"eq.{inspection_id}"
             }
             with httpx.Client(timeout=10.0) as client:
                 res = client.get(url, headers=self._get_headers(), params=params)

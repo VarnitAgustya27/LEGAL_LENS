@@ -1,7 +1,10 @@
 import os
 from pathlib import Path
 from typing import List, Union
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(*args, **kwargs): pass
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

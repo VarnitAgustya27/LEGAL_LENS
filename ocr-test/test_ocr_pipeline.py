@@ -1,5 +1,5 @@
 import pytest
-from app.ocr.ocr_web_service import OCRWebServiceClient, OCRProcessResult
+from ocr_web_service import OCRWebServiceClient, OCRProcessResult
 
 def test_ocr_web_service_response_parsing_nested_list():
     client = OCRWebServiceClient(user="dummy", license_code="dummy")

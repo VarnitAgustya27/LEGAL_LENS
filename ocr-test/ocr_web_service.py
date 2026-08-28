@@ -1,9 +1,19 @@
 import os
 import time
-import httpx
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
-from app.config import settings
+import httpx
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(*args, **kwargs): pass
+
+# Automatically load .env from current directory, parent directory, or backend directory
+current_dir = Path(__file__).resolve().parent
+load_dotenv(current_dir / ".env", override=False)
+load_dotenv(current_dir.parent / ".env", override=False)
+load_dotenv(current_dir.parent / "backend" / ".env", override=False)
 
 @dataclass
 class OCRProcessResult:
@@ -32,13 +42,13 @@ class OCRWebServiceClient:
     ):
         self.user = user
         self.license_code = license_code
-        self.endpoint_url = (endpoint_url or settings.OCR_WEB_SERVICE_URL or "https://www.ocrwebservice.com/restservices/processDocument").strip()
+        self.endpoint_url = (endpoint_url or os.getenv("OCR_WEB_SERVICE_URL") or "https://www.ocrwebservice.com/restservices/processDocument").strip()
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
 
     def _get_credentials(self) -> tuple[str, str]:
-        user = (self.user or os.getenv("OCR_WEB_SERVICE_USER") or settings.OCR_WEB_SERVICE_USER or "").strip()
-        license_code = (self.license_code or os.getenv("OCR_WEB_SERVICE_LICENSE_CODE") or settings.OCR_WEB_SERVICE_LICENSE_CODE or "").strip()
+        user = (self.user or os.getenv("OCR_WEB_SERVICE_USER") or "").strip()
+        license_code = (self.license_code or os.getenv("OCR_WEB_SERVICE_LICENSE_CODE") or "").strip()
         return user, license_code
 
     def process_image_bytes(self, image_bytes: bytes, filename: str = "image.jpg") -> OCRProcessResult:
@@ -120,7 +130,6 @@ class OCRWebServiceClient:
                 else:
                     err_msg = raw_response_data.get("ErrorMessage") or f"HTTP {response.status_code}: {response.text[:300]}"
                     last_error_message = err_msg
-                    # Client errors (400, etc.) are generally not retryable
                     break
 
             except (httpx.TimeoutException, httpx.NetworkError) as net_err:
@@ -147,12 +156,7 @@ class OCRWebServiceClient:
         )
 
     def _parse_ocr_response(self, response_data: Dict[str, Any], elapsed_ms: int, attempt_count: int) -> OCRProcessResult:
-        """
-        Extracts OCR text, confidence, and bounding boxes safely from OCRWebService schema.
-        Handles variations in OCRText format (nested list of lists, list of strings, or raw string).
-        Does not assume WordData or Confidence exist; stores None if unavailable.
-        """
-        # Check if API returned an application-level error
+        """Extracts OCR text, confidence, and bounding boxes safely from OCRWebService schema."""
         error_msg = response_data.get("ErrorMessage")
         if error_msg:
             return OCRProcessResult(
@@ -181,14 +185,12 @@ class OCRWebServiceClient:
             elif isinstance(ocr_text_field, str):
                 extracted_text = ocr_text_field.strip()
 
-        # Word-level bounding boxes and data if available
         word_data: Optional[Any] = None
         for key in ["OCRWSWords", "Words", "WordData", "ocr_words"]:
             if key in response_data and response_data[key]:
                 word_data = response_data[key]
                 break
 
-        # Confidence calculation if available
         confidence_score: Optional[float] = None
         if "Confidence" in response_data and response_data["Confidence"] is not None:
             try:

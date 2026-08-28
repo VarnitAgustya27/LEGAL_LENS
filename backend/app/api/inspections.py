@@ -17,11 +17,23 @@ from app.schemas.declaration import DeclarationUpdate, DeclarationOut
 from app.auth.security import get_current_user
 from app.services.inspection_service import InspectionService
 from app.services.audit_service import AuditService
-from app.services.ocr_service import OCRService
+
+# Import OCRService from /ocr-test folder
+import sys
+from pathlib import Path
+root_dir = Path(__file__).resolve().parent.parent.parent.parent
+ocr_test_dir = root_dir / "ocr-test"
+if str(ocr_test_dir) not in sys.path:
+    sys.path.insert(0, str(ocr_test_dir))
+
+try:
+    from ocr_service import OCRService
+except ImportError:
+    OCRService = None
 
 router = APIRouter(prefix="/inspections", tags=["Inspections"])
 service = InspectionService()
-ocr_service = OCRService()
+ocr_service = OCRService() if OCRService else None
 
 @router.get("", response_model=List[InspectionOut])
 def list_inspections(
@@ -218,6 +230,9 @@ def process_inspection_ocr(
     Enqueues OCR processing for all uploaded images of an inspection in the background.
     Non-blocking, idempotent, and updates public.extracted_text in Supabase.
     """
+    if not ocr_service:
+        raise HTTPException(status_code=500, detail="OCRService from /ocr-test not initialized.")
+
     background_tasks.add_task(ocr_service.process_inspection_uploads, str(inspection_id))
     return {
         "status": "processing",
@@ -232,4 +247,6 @@ def get_inspection_ocr_status(
     """
     Queries live OCR extraction status and full extracted text per packaging angle.
     """
+    if not ocr_service:
+        return {"status": "unavailable", "message": "OCRService not loaded"}
     return ocr_service.get_inspection_ocr_status(str(inspection_id))

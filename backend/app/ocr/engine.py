@@ -1,12 +1,24 @@
 import os
+import sys
+from pathlib import Path
 from typing import List, Dict, Any, Optional
-from app.ocr.ocr_web_service import OCRWebServiceClient, OCRProcessResult
+
+root_dir = Path(__file__).resolve().parent.parent.parent.parent
+ocr_test_dir = root_dir / "ocr-test"
+if str(ocr_test_dir) not in sys.path:
+    sys.path.insert(0, str(ocr_test_dir))
+
+try:
+    from ocr_web_service import OCRWebServiceClient, OCRProcessResult
+except ImportError:
+    OCRWebServiceClient = None
+    OCRProcessResult = None
 
 class OCREngine:
     def __init__(self, use_web_service: bool = True):
         self.engine_type = "HYBRID_OCR"
         self.use_web_service = use_web_service
-        self.web_client = OCRWebServiceClient()
+        self.web_client = OCRWebServiceClient() if OCRWebServiceClient else None
 
     def extract_text(self, image_path: str, image_id: str = "img_01") -> List[Dict[str, Any]]:
         results = []
