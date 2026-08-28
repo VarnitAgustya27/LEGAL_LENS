@@ -89,32 +89,32 @@ const GlobalStyle = () => (
     @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
     
     :root {
-      --ll-bg-paper: #EDE8DD;
-      --ll-bg-paper-deep: #E2DBD0;
-      --ll-bg-card: #FAF8F2;
-      --ll-bg-header: #E5DFC0;
+      --ll-bg-paper: #F4F2EC;
+      --ll-bg-paper-deep: #EAE6DA;
+      --ll-bg-card: #FFFFFF;
+      --ll-bg-header: #FBFAF6;
       --ll-bg-sidebar: #132238;
-      --ll-color-ink: #16202E;
-      --ll-color-ink-soft: #233246;
-      --ll-color-charcoal: #2B3747;
-      --ll-color-slate: #5A6676;
-      --ll-color-gold: #8C6A24;
-      --ll-color-line: #D0C8B8;
-      --ll-tr-hover: #E6E0D4;
-      --ll-input-bg: #F7F5EE;
-      --ll-input-text: #16202E;
-      --ll-table-head-bg: #E4DEC2;
-      --ll-button-primary-bg: #16202E;
-      --ll-button-primary-color: #FAF8F2;
-      --ll-compliant: #2D6329;
-      --ll-compliant-bg: #E1ECE0;
-      --ll-compliant-bd: #AFC4A5;
-      --ll-violation: #8E2727;
-      --ll-violation-bg: #F4E2E0;
-      --ll-violation-bd: #D9AEAA;
-      --ll-review: #8C6212;
-      --ll-review-bg: #F5ECCF;
-      --ll-review-bd: #DEC48F;
+      --ll-color-ink: #132238;
+      --ll-color-ink-soft: #1E3453;
+      --ll-color-charcoal: #22252A;
+      --ll-color-slate: #5B6470;
+      --ll-color-gold: #96742E;
+      --ll-color-line: #DAD4C2;
+      --ll-tr-hover: #F7F5EF;
+      --ll-input-bg: #FFFFFF;
+      --ll-input-text: #22252A;
+      --ll-table-head-bg: #FAF8F2;
+      --ll-button-primary-bg: #132238;
+      --ll-button-primary-color: #FFFFFF;
+      --ll-compliant: #3A6B35;
+      --ll-compliant-bg: #E7EFE1;
+      --ll-compliant-bd: #B9CDAE;
+      --ll-violation: #9B2C2C;
+      --ll-violation-bg: #F6E7E5;
+      --ll-violation-bd: #E0B7B2;
+      --ll-review: #966A16;
+      --ll-review-bg: #FAF0DA;
+      --ll-review-bd: #E7CE9C;
       --ll-modal-overlay: rgba(19,34,56,0.6);
       --ll-hatch-line: rgba(19,34,56,0.05);
     }
@@ -482,17 +482,17 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
       style={{
         background: isDark
           ? "radial-gradient(ellipse at 20% 20%, #112038 0%, #080E1A 50%, #040810 100%)"
-          : "radial-gradient(ellipse at 15% 15%, #F2EEE5 0%, #EAE4D8 50%, #DED7C8 100%)",
+          : "radial-gradient(ellipse at 15% 15%, #FBF8EE 0%, #F3EFE4 45%, #E9E3D3 100%)",
         color: isDark ? "#F1F5F9" : "#1E293B",
       }}
     >
       {/* Ambient background glow & grid lines */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-20"
+        className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20"
         style={{
           backgroundImage: isDark
             ? "linear-gradient(rgba(229,184,66,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(229,184,66,0.06) 1px, transparent 1px)"
-            : "linear-gradient(rgba(140,106,36,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(140,106,36,0.06) 1px, transparent 1px)",
+            : "linear-gradient(rgba(19,34,56,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(19,34,56,0.04) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
         }}
       />
@@ -500,36 +500,36 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
       {/* ── TOP NAVIGATION BAR ── */}
       <header className="relative z-10 w-full px-5 sm:px-8 lg:px-12 py-4 border-b flex items-center justify-between backdrop-blur-md transition-colors duration-300"
         style={{
-          borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(140,106,36,0.15)",
-          background: isDark ? "rgba(7,11,18,0.75)" : "rgba(242,238,229,0.9)",
+          borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(19,34,56,0.08)",
+          background: isDark ? "rgba(7,11,18,0.75)" : "rgba(251,250,246,0.85)",
         }}
       >
         <div className="flex items-center gap-3.5">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg border shadow-sm"
             style={{
-              borderColor: isDark ? "rgba(229,184,66,0.4)" : "rgba(140,106,36,0.3)",
-              background: isDark ? "rgba(229,184,66,0.1)" : "rgba(140,106,36,0.08)",
-              color: isDark ? "#E5B842" : "#8C6A24",
+              borderColor: isDark ? "rgba(229,184,66,0.4)" : "rgba(150,116,46,0.3)",
+              background: isDark ? "rgba(229,184,66,0.1)" : "rgba(150,116,46,0.08)",
+              color: isDark ? "#E5B842" : "#96742E",
             }}
           >
             <Scale size={22} strokeWidth={2.2} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.18em", color: isDark ? "#E5B842" : "#8C6A24", fontWeight: 700 }}>
+              <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.18em", color: isDark ? "#E5B842" : "#96742E", fontWeight: 700 }}>
                 LEGAL METROLOGY DIVISION
               </span>
               <span className="hidden sm:inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border"
                 style={{
-                  background: isDark ? "rgba(229,184,66,0.12)" : "rgba(140,106,36,0.1)",
-                  borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(140,106,36,0.25)",
-                  color: isDark ? "#E5B842" : "#8C6A24",
+                  background: isDark ? "rgba(229,184,66,0.12)" : "rgba(150,116,46,0.1)",
+                  borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(150,116,46,0.25)",
+                  color: isDark ? "#E5B842" : "#96742E",
                 }}
               >
                 GOVT OF INDIA • SIH 2026
               </span>
             </div>
-            <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: isDark ? "#F8FAFC" : "#16202E" }}>
+            <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: isDark ? "#F8FAFC" : "#132238" }}>
               Legal-Lens Portal
             </div>
           </div>
@@ -538,9 +538,9 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono"
             style={{
-              background: isDark ? "rgba(16,185,129,0.1)" : "rgba(45,99,41,0.08)",
-              borderColor: isDark ? "rgba(16,185,129,0.3)" : "rgba(45,99,41,0.25)",
-              color: isDark ? "#34D399" : "#2D6329",
+              background: isDark ? "rgba(16,185,129,0.1)" : "rgba(58,107,53,0.08)",
+              borderColor: isDark ? "rgba(16,185,129,0.3)" : "rgba(58,107,53,0.25)",
+              color: isDark ? "#34D399" : "#2E6B2A",
             }}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -552,9 +552,9 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
             onClick={toggleTheme}
             className="ll-focus flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 hover:scale-105"
             style={{
-              borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(30,41,59,0.2)",
-              background: isDark ? "rgba(229,184,66,0.15)" : "rgba(250,248,242,0.9)",
-              color: isDark ? "#E5B842" : "#16202E",
+              borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(19,34,56,0.2)",
+              background: isDark ? "rgba(229,184,66,0.15)" : "rgba(255,255,255,0.8)",
+              color: isDark ? "#E5B842" : "#132238",
               boxShadow: isDark ? "0 0 14px rgba(229,184,66,0.25)" : "0 2px 6px rgba(0,0,0,0.05)",
             }}
             title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -566,17 +566,17 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
       </header>
 
       {/* ── MAIN HERO & AUTH GRID ── */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-10 py-8 lg:py-14 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         
         {/* ── LEFT SHOWCASE COLUMN (7 cols on lg) ── */}
         <div className="lg:col-span-7 flex flex-col space-y-6">
           
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-4 shadow-sm"
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-3 shadow-sm"
               style={{
-                background: isDark ? "rgba(229,184,66,0.12)" : "rgba(140,106,36,0.1)",
-                borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(140,106,36,0.25)",
-                color: isDark ? "#E5B842" : "#8C6A24",
+                background: isDark ? "rgba(229,184,66,0.12)" : "rgba(150,116,46,0.1)",
+                borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(150,116,46,0.25)",
+                color: isDark ? "#E5B842" : "#96742E",
               }}
             >
               <ShieldCheck size={14} />
@@ -589,24 +589,24 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
               className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight"
               style={{
                 ...FONT.display,
-                color: isDark ? "#F8FAFC" : "#16202E",
+                color: isDark ? "#F8FAFC" : "#132238",
               }}
             >
               Automated AI Inspection for{" "}
-              <span style={{ color: isDark ? "#E5B842" : "#8C6A24" }}>
+              <span style={{ color: isDark ? "#E5B842" : "#96742E" }}>
                 Packaged Commodities
               </span>
             </h1>
 
-            <p className="mt-4 text-sm sm:text-base leading-relaxed max-w-2xl"
-              style={{ color: isDark ? "#94A3B8" : "#4B5563", ...FONT.body }}
+            <p className="mt-3 text-sm sm:text-base leading-relaxed max-w-2xl"
+              style={{ color: isDark ? "#94A3B8" : "#475569", ...FONT.body }}
             >
               Real-time multi-angle OCR vision analysis, mandatory statutory declaration validation under the <strong>Legal Metrology Act, 2009</strong> & the <strong>Packaged Commodities Rules, 2011</strong>, and instant prosecution dossier generation.
             </p>
           </div>
 
           {/* ── 3 ENFORCEMENT PILLARS CARDS ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               {
                 icon: ScanLine,
@@ -629,85 +629,53 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
             ].map((p, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-xl border transition-all duration-200 hover:scale-[1.02] shadow-sm flex flex-col justify-between"
+                className="p-3.5 rounded-lg border transition-all duration-200 hover:border-amber-500/40 shadow-sm"
                 style={{
-                  background: isDark ? "rgba(19,34,56,0.45)" : "#FAF8F2",
-                  borderColor: isDark ? "rgba(229,184,66,0.18)" : "rgba(208,200,184,0.7)",
+                  background: isDark ? "rgba(19,34,56,0.4)" : "rgba(255,255,255,0.75)",
+                  borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(19,34,56,0.08)",
                 }}
               >
-                <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{
-                        background: isDark ? "rgba(229,184,66,0.12)" : "rgba(140,106,36,0.1)",
-                        color: isDark ? "#E5B842" : "#8C6A24",
-                      }}
-                    >
-                      <p.icon size={17} />
-                    </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-semibold"
-                      style={{
-                        background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                        borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
-                        color: isDark ? "#94A3B8" : "#5A6676",
-                      }}
-                    >
-                      {p.tag}
-                    </span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <p.icon size={16} style={{ color: isDark ? "#E5B842" : "#96742E" }} />
+                    <span className="text-xs font-bold" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>{p.title}</span>
                   </div>
-                  <h3 className="text-xs font-bold mb-1.5" style={{ color: isDark ? "#F8FAFC" : "#16202E" }}>
-                    {p.title}
-                  </h3>
-                  <p className="text-[11.5px] leading-relaxed" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>
-                    {p.desc}
-                  </p>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border"
+                    style={{
+                      background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+                      color: isDark ? "#94A3B8" : "#64748B",
+                    }}
+                  >
+                    {p.tag}
+                  </span>
                 </div>
+                <p className="text-[11px] leading-tight" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
+                  {p.desc}
+                </p>
               </div>
             ))}
           </div>
 
           {/* ── KEY METRICS BAR ── */}
-          <div className="pt-4 border-t flex flex-wrap items-center justify-between gap-4 text-xs font-mono"
-            style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(208,200,184,0.8)" }}
+          <div className="pt-2 border-t flex flex-wrap items-center justify-between gap-4 text-xs font-mono"
+            style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(19,34,56,0.1)" }}
           >
-            <div className="p-2.5 rounded-lg border flex-1 min-w-[130px] text-center"
-              style={{
-                background: isDark ? "rgba(19,34,56,0.3)" : "#FAF8F2",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(208,200,184,0.6)",
-              }}
-            >
-              <div className="font-bold text-base" style={{ color: isDark ? "#F8FAFC" : "#16202E" }}>1,284+</div>
-              <div className="text-[10.5px]" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>Inspections Logged</div>
+            <div>
+              <span className="font-bold text-sm" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>1,284+</span>{" "}
+              <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Inspections Logged</span>
             </div>
-            
-            <div className="p-2.5 rounded-lg border flex-1 min-w-[130px] text-center"
-              style={{
-                background: isDark ? "rgba(19,34,56,0.3)" : "#FAF8F2",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(208,200,184,0.6)",
-              }}
-            >
-              <div className="font-bold text-base text-emerald-600 dark:text-emerald-400">63%</div>
-              <div className="text-[10.5px]" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>First-Pass Compliance</div>
+            <div>
+              <span className="font-bold text-sm text-emerald-500">63%</span>{" "}
+              <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>First-Pass Compliance</span>
             </div>
-
-            <div className="p-2.5 rounded-lg border flex-1 min-w-[130px] text-center"
-              style={{
-                background: isDark ? "rgba(19,34,56,0.3)" : "#FAF8F2",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(208,200,184,0.6)",
-              }}
-            >
-              <div className="font-bold text-base" style={{ color: isDark ? "#E5B842" : "#8C6A24" }}>8</div>
-              <div className="text-[10.5px]" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>Active Rule Sets</div>
+            <div>
+              <span className="font-bold text-sm text-amber-500">8</span>{" "}
+              <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Active Rule Sets</span>
             </div>
-
-            <div className="p-2.5 rounded-lg border flex-1 min-w-[130px] text-center"
-              style={{
-                background: isDark ? "rgba(19,34,56,0.3)" : "#FAF8F2",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(208,200,184,0.6)",
-              }}
-            >
-              <div className="font-bold text-base text-cyan-600 dark:text-cyan-400">&lt; 1.2s</div>
-              <div className="text-[10.5px]" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>Pipeline Latency</div>
+            <div>
+              <span className="font-bold text-sm text-cyan-500">&lt; 1.2s</span>{" "}
+              <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Pipeline Latency</span>
             </div>
           </div>
 
@@ -870,7 +838,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">1-click select</span>
               </div>
-
+              
               <div className="flex flex-wrap gap-2">
                 {users.map((u) => {
                   const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
