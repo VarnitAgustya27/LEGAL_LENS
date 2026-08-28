@@ -1105,9 +1105,6 @@ function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
             <div className="absolute inset-[66%] rounded-full border border-white/15 pointer-events-none" />
           </div>
 
-          <span className="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5 font-mono">
-            <Move size={12} className="text-amber-400" /> Click & drag photo to center face
-          </span>
         </div>
 
         {/* Toolbar Controls */}
