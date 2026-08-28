@@ -1610,7 +1610,7 @@ function evaluateImageQuality(file, callback) {
 
       if (width < 800 || height < 600 || totalPixels < 500000) {
         quality = "LOW";
-        qualityLabel = "⚠️ Low Res / OCR Alert";
+        qualityLabel = "Low Res / OCR Alert";
         qualityBadge = "text-amber-400 bg-amber-500/15 border-amber-500/30";
       } else if (width < 1400 || height < 1000) {
         quality = "MODERATE";
