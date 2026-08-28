@@ -347,27 +347,27 @@ const PIPELINE_STAGES = [
 
 function Login({ onLogin, users, isDark, toggleTheme }) {
   const [selectedRole, setSelectedRole] = useState("Admin");
-  const [officerId, setOfficerId] = useState("LMD-HQ-001");
+  const [officerId, setOfficerId] = useState("LMD-DL-2705");
+
+  // Find user dynamically by badge or fallback to first matching role
+  const matchedUser = users.find((u) => u.badge === officerId) ||
+                      users.find((u) => u.role === selectedRole && u.active) ||
+                      users[0];
+
+  const handleBadgeClick = (badge) => {
+    setOfficerId(badge);
+    const u = users.find((x) => x.badge === badge);
+    if (u) setSelectedRole(u.role);
+  };
 
   const handleRoleChange = (role) => {
     setSelectedRole(role);
-    if (role === "Admin") setOfficerId("LMD-HQ-001");
-    else if (role === "Enforcement Officer") setOfficerId("LMD-DL-0412");
-    else if (role === "Reviewer") setOfficerId("LMD-REV-008");
+    const u = users.find((x) => x.role === role && x.active);
+    if (u) setOfficerId(u.badge);
   };
 
   const handleSignIn = () => {
-    const matched = users.find((u) => u.role === selectedRole && u.active) || {
-      id: "USR-TEMP",
-      name: selectedRole === "Admin" ? "Poonam Desai" : selectedRole === "Reviewer" ? "Sanjay Iyer" : "Rangan Bhaskaran",
-      role: selectedRole,
-      email: `${selectedRole.toLowerCase().replace(" ", ".")}@lm.gov.in`,
-      badge: officerId,
-      jurisdiction: "Delhi Division",
-      active: true,
-      initials: selectedRole === "Admin" ? "PD" : selectedRole === "Reviewer" ? "SI" : "RB"
-    };
-    onLogin(matched);
+    onLogin(matchedUser);
   };
 
   return (
@@ -410,7 +410,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
             ))}
           </div>
           <p style={{ ...FONT.mono, fontSize: 10.5, color: "#847E6E", marginTop: 24, letterSpacing: "0.04em" }}>
-            PROTOTYPE — SMART INDIA HACKATHON 2026 · ENFORCEMENT-ASSISTANCE SYSTEM · NOT AN AUTONOMOUS LEGAL AUTHORITY
+            PROTOTYPE ? SMART INDIA HACKATHON 2026 ? ENFORCEMENT-ASSISTANCE SYSTEM ? NOT AN AUTONOMOUS LEGAL AUTHORITY
           </p>
         </div>
       </div>
@@ -432,7 +432,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
             </button>
           </div>
           <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: C.gold, fontWeight: 600 }}>OFFICER SIGN-IN</div>
-          <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 600, color: C.ink, marginTop: 4, marginBottom: 24 }}>Access the inspection console</h2>
+          <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 600, color: C.ink, marginTop: 4, marginBottom: 20 }}>Access the inspection console</h2>
 
           <Field label="Role / Authority Level">
             <div className="relative">
@@ -457,7 +457,11 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                 className="ll-focus"
                 style={{ ...inputStyle, paddingLeft: 34 }}
                 value={officerId}
-                onChange={(e) => setOfficerId(e.target.value)}
+                onChange={(e) => {
+                  setOfficerId(e.target.value);
+                  const u = users.find((x) => x.badge === e.target.value);
+                  if (u) setSelectedRole(u.role);
+                }}
               />
             </div>
           </Field>
@@ -465,19 +469,53 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           <Field label="Security Key / Password">
             <div className="relative">
               <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input type="password" className="ll-focus" style={{ ...inputStyle, paddingLeft: 34 }} defaultValue="••••••••••" />
+              <input type="password" className="ll-focus" style={{ ...inputStyle, paddingLeft: 34 }} defaultValue="password123" />
             </div>
           </Field>
 
-          <Button className="w-full mt-2" onClick={handleSignIn}>
-            Sign in as {selectedRole} <ArrowRight size={15} />
+          {/* Matched User Card */}
+          {matchedUser && (
+            <div className="p-3 mb-4 rounded border flex items-center gap-3 transition-all" style={{ background: "rgba(58,107,53,0.08)", borderColor: "rgba(58,107,53,0.3)" }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4" }}>
+                {matchedUser.initials || (matchedUser.name ? matchedUser.name.slice(0, 2).toUpperCase() : "OF")}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold truncate" style={{ color: C.ink }}>{matchedUser.name}</div>
+                <div className="flex items-center gap-2 mt-0.5 text-[11px]" style={{ color: C.slate }}>
+                  <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 font-semibold">{matchedUser.role}</span>
+                  <span className="truncate">{matchedUser.jurisdiction || "Division HQ"}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Button className="w-full mt-1" onClick={handleSignIn}>
+            Sign in as {matchedUser?.name || selectedRole} <ArrowRight size={15} />
           </Button>
 
-          <div className="flex items-start gap-2 mt-6 p-3 rounded-sm border" style={{ borderColor: C.line, background: C.paperDeep }}>
-            <Info size={14} style={{ color: C.slate, marginTop: 2, flexShrink: 0 }} />
-            <p style={{ ...FONT.body, fontSize: 11.5, color: C.slate, lineHeight: 1.5 }}>
-              <strong>Tip for Testing:</strong> Select <em>Admin</em> to add and edit user accounts in the Users & Settings section.
-            </p>
+          {/* Quick Start Badge Selector */}
+          <div className="mt-5 p-3 rounded border" style={{ borderColor: C.line, background: "var(--ll-bg-paper-deep)" }}>
+            <div className="flex items-center gap-1.5 text-xs font-semibold mb-2" style={{ color: C.slate }}>
+              <Info size={13} style={{ color: C.gold }} />
+              <span>Quick Start:</span> Enter a badge ID from your database.
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {users.map((u) => (
+                <button
+                  key={u.id || u.badge}
+                  type="button"
+                  onClick={() => handleBadgeClick(u.badge)}
+                  className="ll-focus text-xs font-mono px-2 py-1 rounded border bg-white dark:bg-slate-800 transition-colors hover:border-amber-500 hover:text-amber-500"
+                  style={{
+                    borderColor: officerId === u.badge ? C.gold : C.line,
+                    color: officerId === u.badge ? C.gold : C.ink,
+                    fontWeight: officerId === u.badge ? 700 : 500
+                  }}
+                >
+                  {u.badge}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
