@@ -511,20 +511,20 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           <circle cx="250" cy="480" r="6" fill="currentColor" />
           <circle cx="20" cy="250" r="6" fill="currentColor" />
           <circle cx="480" cy="250" r="6" fill="currentColor" />
-          
+
           {/* Center Vertical Pillar */}
           <rect x="243" y="125" width="14" height="230" rx="3" fill="currentColor" />
           <rect x="165" y="345" width="170" height="20" rx="4" fill="currentColor" />
           <circle cx="250" cy="125" r="16" fill="currentColor" />
-          
+
           {/* Balance Beam (Curved arc) */}
           <path d="M 85 158 Q 250 140 415 158" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
-          
+
           {/* Left Pan Chains & Dish */}
           <line x1="85" y1="158" x2="45" y2="255" stroke="currentColor" strokeWidth="2.2" />
           <line x1="85" y1="158" x2="125" y2="255" stroke="currentColor" strokeWidth="2.2" />
           <path d="M 35 255 Q 85 295 135 255 Z" fill="currentColor" opacity="0.9" />
-          
+
           {/* Right Pan Chains & Dish */}
           <line x1="415" y1="158" x2="375" y2="255" stroke="currentColor" strokeWidth="2.2" />
           <line x1="415" y1="158" x2="455" y2="255" stroke="currentColor" strokeWidth="2.2" />
@@ -591,10 +591,10 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
 
       {/* ── MAIN HERO & AUTH GRID ── */}
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-        
+
         {/* ── LEFT SHOWCASE COLUMN (7 cols on lg) ── */}
         <div className="lg:col-span-7 flex flex-col space-y-6">
-          
+
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-3 shadow-sm"
               style={{
@@ -862,7 +862,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">1-click select</span>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {users.map((u) => {
                   const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
@@ -944,10 +944,23 @@ const PAGE_TITLES = {
   settings: ["ADMINISTRATION", "Users & Settings"],
 };
 
-function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected, children }) {
+function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, toggleTheme, isDbConnected, children }) {
   const [eyebrow, title] = PAGE_TITLES[page] || ["", ""];
   const [profileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef(null);
+  const avatarFileRef = useRef(null);
+
+  const handleAvatarPick = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      onUpdateAvatar?.(ev.target.result);
+      setProfileOpen(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const handleSignOut = () => {
     setProfileOpen(false);
@@ -983,7 +996,7 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
   return (
     <div className={`ll-root min-h-screen flex ${isDark ? "dark" : ""}`} style={{ background: "var(--ll-bg-paper)", ...FONT.body }}>
       <GlobalStyle />
-      <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
+      <aside className="w-64 flex-shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
 
         {/* Top Brand Header with Dark Mode Toggle placed directly to the right of Legal-Lens */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
@@ -1022,7 +1035,7 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
           </button>
         </div>
 
-        <nav className="flex-1 py-4 px-3">
+        <nav className="flex-1 py-4 px-3 overflow-y-auto ll-scroll">
           {NAV.map((n) => {
             const active = page === n.key || (page === "inspection-detail" && n.key === "inspections");
             return (
@@ -1076,8 +1089,10 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
                 aria-expanded={profileOpen}
                 title="Account menu"
               >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
-                  {currentUser?.initials || currentUser?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                    : (currentUser?.initials || currentUser?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?")}
                 </div>
                 <div className="hidden md:block text-left">
                   <div className="flex items-center gap-1.5">
@@ -1114,6 +1129,17 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
                   >
                     <LogOut size={14} />
                     Sign out
+                  </button>
+                  <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="ll-focus w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors"
+                    style={{ color: C.ink, background: "transparent", border: "none", fontSize: 13, fontWeight: 500 }}
+                    onClick={() => avatarFileRef.current?.click()}
+                  >
+                    <Camera size={14} style={{ color: C.gold }} />
+                    {avatarUrl ? "Update Profile Photo" : "Add Profile Photo"}
                   </button>
                 </div>
               )}
@@ -1383,13 +1409,12 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
             handleFile(e.dataTransfer.files[0]);
           }
         }}
-        className={`w-full ${heightClass} border-2 rounded-xl flex flex-col items-center justify-center p-3 transition-all relative overflow-hidden ${
-          isDragging
-            ? "border-amber-400 bg-amber-400/10 scale-[1.01]"
-            : imageData
+        className={`w-full ${heightClass} border-2 rounded-xl flex flex-col items-center justify-center p-3 transition-all relative overflow-hidden ${isDragging
+          ? "border-amber-400 bg-amber-400/10 scale-[1.01]"
+          : imageData
             ? "border-emerald-500/40 bg-slate-900/40"
             : "border-dashed border-slate-700/60 hover:border-slate-500 bg-slate-800/20"
-        }`}
+          }`}
         style={{
           background: imageData ? "var(--ll-bg-card)" : "var(--ll-bg-paper-deep)",
           borderColor: isDragging ? "var(--ll-color-gold)" : imageData ? "var(--ll-compliant)" : "var(--ll-color-line)",
@@ -3408,6 +3433,63 @@ export default function App() {
     }
   };
 
+  // ── Avatar stored separately (never touches officer_users query) ──
+  const getAvatarMap = () => {
+    try { return JSON.parse(localStorage.getItem("legallens_avatars") || "{}"); } catch { return {}; }
+  };
+  const currentBadge = currentUser?.badge || "";
+  const [avatarUrl, setAvatarUrl] = useState(() => getAvatarMap()[currentBadge] || "");
+
+  // Sync avatar when badge changes (fetches from cache, then checks Supabase)
+  useEffect(() => {
+    const badge = currentBadge?.trim();
+    const cached = getAvatarMap()[badge] || getAvatarMap()[currentBadge] || "";
+    setAvatarUrl(cached);
+
+    if (badge && isSupabaseConfigured() && supabase) {
+      supabase
+        .from("officer_avatars")
+        .select("avatar_url")
+        .ilike("badge", badge)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (!error && data?.avatar_url) {
+            const map = getAvatarMap();
+            map[badge] = data.avatar_url;
+            localStorage.setItem("legallens_avatars", JSON.stringify(map));
+            setAvatarUrl(data.avatar_url);
+          } else if (!error && !data) {
+            if (!cached) setAvatarUrl("");
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not fetch avatar from Supabase:", err);
+        });
+    }
+  }, [currentBadge]);
+
+  const handleUpdateAvatar = async (dataUrl) => {
+    if (!currentBadge) return;
+    const badge = currentBadge.trim();
+    const map = getAvatarMap();
+    map[badge] = dataUrl;
+    localStorage.setItem("legallens_avatars", JSON.stringify(map));
+    setAvatarUrl(dataUrl);
+
+    // Also persist to separate Supabase table (safe best-effort)
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase.from("officer_avatars").upsert(
+          { badge: badge, avatar_url: dataUrl, updated_at: new Date().toISOString() },
+          { onConflict: "badge" }
+        );
+        if (error) console.warn("Supabase avatar upsert error:", error);
+      } catch (e) {
+        console.warn("Could not sync avatar to Supabase:", e);
+      }
+    }
+  };
+
   const handleSwitchRole = (newRole) => {
     const found = users.find((u) => u.role === newRole) || {
       id: "DEMO",
@@ -3447,6 +3529,8 @@ export default function App() {
         page={page}
         setPage={navigateTo}
         currentUser={currentUser}
+        avatarUrl={avatarUrl}
+        onUpdateAvatar={handleUpdateAvatar}
         isDark={isDark}
         toggleTheme={toggleTheme}
         isDbConnected={isDbConnected}
