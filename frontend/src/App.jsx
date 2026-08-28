@@ -345,28 +345,44 @@ const PIPELINE_STAGES = [
 /* ============================== LOGIN ============================== */
 
 function Login({ onLogin, users, isDark, toggleTheme }) {
-  const [selectedRole, setSelectedRole] = useState("Admin");
-  const [officerId, setOfficerId] = useState("LMD-HQ-001");
+  const [officerId, setOfficerId] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [matchedUser, setMatchedUser] = useState(null);
 
-  const handleRoleChange = (role) => {
-    setSelectedRole(role);
-    if (role === "Admin") setOfficerId("LMD-HQ-001");
-    else if (role === "Enforcement Officer") setOfficerId("LMD-DL-0412");
-    else if (role === "Reviewer") setOfficerId("LMD-REV-008");
-  };
+  // Live-search: whenever badge input changes, try to match
+  useEffect(() => {
+    setLoginError("");
+    if (!officerId.trim()) {
+      setMatchedUser(null);
+      return;
+    }
+    const found = users.find(
+      (u) => (u.badge || u.custom_id || "").toLowerCase() === officerId.trim().toLowerCase()
+    );
+    setMatchedUser(found || null);
+  }, [officerId, users]);
 
   const handleSignIn = () => {
-    const matched = users.find((u) => u.role === selectedRole && u.active) || {
-      id: "USR-TEMP",
-      name: selectedRole === "Admin" ? "Poonam Desai" : selectedRole === "Reviewer" ? "Sanjay Iyer" : "Rangan Bhaskaran",
-      role: selectedRole,
-      email: `${selectedRole.toLowerCase().replace(" ", ".")}@lm.gov.in`,
-      badge: officerId,
-      jurisdiction: "Delhi Division",
-      active: true,
-      initials: selectedRole === "Admin" ? "PD" : selectedRole === "Reviewer" ? "SI" : "RB"
-    };
-    onLogin(matched);
+    if (!officerId.trim()) {
+      setLoginError("Please enter your Officer ID / Badge.");
+      return;
+    }
+    if (!matchedUser) {
+      setLoginError(`No officer found with badge "${officerId}". Check the ID or contact your administrator.`);
+      return;
+    }
+    if (!matchedUser.active) {
+      setLoginError(`Account for ${matchedUser.name} is currently deactivated.`);
+      return;
+    }
+    setLoginError("");
+    onLogin(matchedUser);
+  };
+
+  const roleBadgeLoginStyle = {
+    Admin: { bg: "rgba(155,44,44,0.12)", color: "#9B2C2C", bd: "#E0B7B2" },
+    "Enforcement Officer": { bg: "rgba(19,34,56,0.08)", color: "#132238", bd: "#DAD4C2" },
+    Reviewer: { bg: "rgba(150,106,22,0.12)", color: "#966A16", bd: "#E7CE9C" },
   };
 
   return (
@@ -433,50 +449,114 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: C.gold, fontWeight: 600 }}>OFFICER SIGN-IN</div>
           <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 600, color: C.ink, marginTop: 4, marginBottom: 24 }}>Access the inspection console</h2>
 
-          <Field label="Role / Authority Level">
-            <div className="relative">
-              <select
-                className="ll-focus appearance-none"
-                style={{ ...inputStyle, paddingRight: 30, fontWeight: 600 }}
-                value={selectedRole}
-                onChange={(e) => handleRoleChange(e.target.value)}
-              >
-                <option value="Admin">Admin (Full User & Rule Management)</option>
-                <option value="Enforcement Officer">Enforcement Officer (Inspections & Cases)</option>
-                <option value="Reviewer">Reviewer (Appeals & Determinations)</option>
-              </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: C.slate }} />
-            </div>
-          </Field>
-
-          <Field label="Officer ID / Badge">
+          <Field label="Officer ID / Badge" required>
             <div className="relative">
               <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input
                 className="ll-focus"
+                placeholder="e.g. LMD-HQ-001"
                 style={{ ...inputStyle, paddingLeft: 34 }}
                 value={officerId}
                 onChange={(e) => setOfficerId(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSignIn()}
               />
+              {matchedUser && (
+                <CheckCircle2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: C.compliant }} />
+              )}
             </div>
           </Field>
 
           <Field label="Security Key / Password">
             <div className="relative">
               <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input type="password" className="ll-focus" style={{ ...inputStyle, paddingLeft: 34 }} defaultValue="••••••••••" />
+              <input
+                type="password"
+                className="ll-focus"
+                style={{ ...inputStyle, paddingLeft: 34 }}
+                placeholder="Enter password"
+                defaultValue="••••••••••"
+                onKeyDown={(e) => e.key === "Enter" && handleSignIn()}
+              />
             </div>
           </Field>
 
-          <Button className="w-full mt-2" onClick={handleSignIn}>
-            Sign in as {selectedRole} <ArrowRight size={15} />
+          {/* ── Live officer preview card ── */}
+          {matchedUser && (
+            <div
+              className="flex items-center gap-3 p-3 mb-4 rounded-sm border transition-all"
+              style={{ borderColor: C.compliantBd, background: C.compliantBg }}
+            >
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 13 }}
+              >
+                {matchedUser.initials || matchedUser.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{matchedUser.name}</div>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <span
+                    className="inline-block px-1.5 py-0.5 rounded border"
+                    style={{
+                      fontSize: 10, fontWeight: 700,
+                      ...(roleBadgeLoginStyle[matchedUser.role] || { bg: "#eee", color: C.slate, bd: C.line }),
+                      background: (roleBadgeLoginStyle[matchedUser.role] || {}).bg,
+                      color: (roleBadgeLoginStyle[matchedUser.role] || {}).color,
+                      borderColor: (roleBadgeLoginStyle[matchedUser.role] || {}).bd,
+                    }}
+                  >
+                    {matchedUser.role}
+                  </span>
+                  <span style={{ ...FONT.mono, fontSize: 10, color: C.slate }}>{matchedUser.jurisdiction}</span>
+                </div>
+              </div>
+              {!matchedUser.active && (
+                <span className="inline-block px-1.5 py-0.5 rounded border" style={{ fontSize: 10, fontWeight: 700, background: C.violationBg, color: C.violation, borderColor: C.violationBd }}>INACTIVE</span>
+              )}
+            </div>
+          )}
+
+          {/* ── Error message ── */}
+          {loginError && (
+            <div
+              className="flex items-start gap-2 p-3 mb-4 rounded-sm border"
+              style={{ borderColor: C.violationBd, background: C.violationBg, color: C.violation }}
+            >
+              <XCircle size={14} style={{ marginTop: 2, flexShrink: 0 }} />
+              <p style={{ ...FONT.body, fontSize: 12, lineHeight: 1.5 }}>{loginError}</p>
+            </div>
+          )}
+
+          <Button className="w-full mt-2" onClick={handleSignIn} disabled={!matchedUser || !matchedUser.active}>
+            {matchedUser ? `Sign in as ${matchedUser.name}` : "Sign in"} <ArrowRight size={15} />
           </Button>
 
+          {/* ── Quick-access hint ── */}
           <div className="flex items-start gap-2 mt-6 p-3 rounded-sm border" style={{ borderColor: C.line, background: C.paperDeep }}>
             <Info size={14} style={{ color: C.slate, marginTop: 2, flexShrink: 0 }} />
-            <p style={{ ...FONT.body, fontSize: 11.5, color: C.slate, lineHeight: 1.5 }}>
-              <strong>Tip for Testing:</strong> Select <em>Admin</em> to add and edit user accounts in the Users & Settings section.
-            </p>
+            <div style={{ ...FONT.body, fontSize: 11.5, color: C.slate, lineHeight: 1.5 }}>
+              <strong>Quick Start:</strong> Enter a badge ID from your database.
+              {users.filter((u) => u.active).length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {users.filter((u) => u.active).slice(0, 4).map((u) => (
+                    <button
+                      key={u.badge || u.custom_id}
+                      type="button"
+                      onClick={() => setOfficerId(u.badge || u.custom_id || "")}
+                      className="ll-focus inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border transition-colors"
+                      style={{
+                        fontSize: 10.5, fontWeight: 600, ...FONT.mono,
+                        borderColor: C.line, color: C.gold,
+                        background: "transparent",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {u.badge || u.custom_id}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -2215,17 +2295,10 @@ export default function App() {
   };
 
   const handleSwitchRole = (newRole) => {
-    const found = users.find((u) => u.role === newRole) || {
-      id: "DEMO",
-      name: newRole === "Admin" ? "Poonam Desai" : newRole === "Reviewer" ? "Sanjay Iyer" : "Rangan Bhaskaran",
-      role: newRole,
-      email: `${newRole.toLowerCase().replace(" ", ".")}@lm.gov.in`,
-      badge: newRole === "Admin" ? "LMD-HQ-001" : "LMD-DL-0412",
-      jurisdiction: "Delhi Division",
-      active: true,
-      initials: newRole === "Admin" ? "PD" : "RB",
-    };
-    setCurrentUser(found);
+    const found = users.find((u) => u.role === newRole && u.active);
+    if (found) {
+      setCurrentUser(found);
+    }
   };
 
   if (page === "login") {
