@@ -1782,7 +1782,7 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
   );
 }
 
-function NewInspection({ onFinish }) {
+function NewInspection({ onFinish, currentUser }) {
   const [step, setStep] = useState(0);
   const [images, setImages] = useState({
     front: null,
@@ -1790,8 +1790,22 @@ function NewInspection({ onFinish }) {
     ecommerce: null,
   });
   const [ecomUrl, setEcomUrl] = useState("");
-  const [extraAngles, setExtraAngles] = useState([]); // [{ id: 'side', label: 'Side Panel' }]
+  const [extraAngles, setExtraAngles] = useState([]); // [{ id: 'side', label: 'Side Panel', data: null }]
   const [stepError, setStepError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [createdCase, setCreatedCase] = useState(null);
+
+  const [metadata, setMetadata] = useState({
+    category: "Packaged Food",
+    productName: "Nutrimax Glucose Biscuits 200g",
+    barcode: "8901234567890",
+    manufacturer: "Nutrimax Foods Pvt. Ltd.",
+    packageWidth: "150",
+    packageHeight: "220",
+    location: "Karol Bagh, Delhi",
+    inspectionDate: new Date().toISOString().slice(0, 10),
+    notes: "",
+  });
 
   // Global Clipboard Paste (Ctrl + V) Handler for images
   useEffect(() => {
@@ -1842,7 +1856,6 @@ function NewInspection({ onFinish }) {
   };
 
   const handleContinueFromImages = () => {
-    // Front and Back are mandatory or at least 1 image uploaded for test flexibility
     if (!images.front && !images.back) {
       setStepError("Please upload at least the Front (PDP) or Back panel image to proceed.");
       return;
@@ -1850,6 +1863,192 @@ function NewInspection({ onFinish }) {
     setStepError("");
     setStep(1);
   };
+
+  const uploadedImagesCount =
+    (images.front ? 1 : 0) +
+    (images.back ? 1 : 0) +
+    (images.ecommerce ? 1 : 0) +
+    extraAngles.filter((a) => a.data).length;
+
+function dataURItoBlob(dataURI) {
+  if (!dataURI || typeof dataURI !== "string" || !dataURI.startsWith("data:")) return null;
+  try {
+    const parts = dataURI.split(",");
+    const mime = parts[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+    const byteString = atob(parts[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mime });
+  } catch (e) {
+    console.warn("dataURItoBlob error:", e);
+    return null;
+  }
+}
+
+  const handleSubmitForProcessing = async () => {
+    setSubmitting(true);
+    let newCaseData = null;
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const badge = currentUser?.badge || "LMD-DL-0412";
+        const generatedCaseNo = `CASE-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
+        console.log("🚀 Starting Supabase inspection upload for officer:", badge, "Case:", generatedCaseNo);
+
+        // 1. Insert master case row into public.inspections with automatic schema compatibility
+        let insp = null;
+        let inspErr = null;
+
+        // Try insert with all metadata fields
+        const fullPayload = {
+          inspection_no: generatedCaseNo,
+          badge_id: badge,
+          status: "processing",
+          commodity_name: metadata.productName || "Packaged Commodity Sample",
+          retailer_name: metadata.location || "Retail Market",
+          ecommerce_listing_url: ecomUrl || null,
+        };
+
+        const res1 = await supabase.from("inspections").insert([fullPayload]).select().maybeSingle();
+        insp = res1.data;
+        inspErr = res1.error;
+        console.log("🔍 Inspections primary insert response:", JSON.stringify({ data: insp, error: inspErr }));
+
+        // If extra columns like commodity_name or retailer_name don't exist, fallback to minimal columns
+        if (inspErr && (inspErr.code === "42703" || inspErr.message?.includes("column"))) {
+          console.log("⚠️ Retrying inspections insert with minimal core columns...");
+          const minimalPayload = {
+            inspection_no: generatedCaseNo,
+            badge_id: badge,
+            status: "processing",
+            ecommerce_listing_url: ecomUrl || null,
+          };
+          const res2 = await supabase.from("inspections").insert([minimalPayload]).select().maybeSingle();
+          insp = res2.data;
+          inspErr = res2.error;
+          console.log("🔍 Inspections fallback insert response:", JSON.stringify({ data: insp, error: inspErr }));
+        }
+
+        if (inspErr) {
+          console.log("❌ Supabase inspections table insert error details:", JSON.stringify(inspErr));
+        } else {
+          console.log("✅ Successfully created inspection case in Supabase:", JSON.stringify(insp || generatedCaseNo));
+          newCaseData = insp || { inspection_no: generatedCaseNo };
+        }
+
+        const inspectionId = insp?.id || null;
+        const caseNumber = insp?.inspection_no || generatedCaseNo;
+
+        // 2. Prepare all image uploads
+        const itemsToUpload = [];
+        if (images.front) itemsToUpload.push({ angle: "front", data: images.front });
+        if (images.back) itemsToUpload.push({ angle: "back", data: images.back });
+        if (images.ecommerce) itemsToUpload.push({ angle: "ecommerce", data: images.ecommerce });
+        extraAngles.forEach((ea, idx) => {
+          if (ea.data) {
+            const angleName = ea.label.toLowerCase().replace(/[^a-z0-9]/g, "_");
+            itemsToUpload.push({ angle: `extra_${idx + 1}_${angleName}`, data: ea.data });
+          }
+        });
+
+        console.log(`📸 Found ${itemsToUpload.length} image angles to upload to Supabase.`);
+
+        // 3. Upload images to Supabase Storage & insert into inspection_uploads
+        for (const item of itemsToUpload) {
+          const { angle, data: imgData } = item;
+          const storagePath = `${caseNumber}/${angle}_${Date.now()}.jpg`;
+          let finalImageUrl = imgData.previewUrl;
+          let activeBucket = "inspection-images";
+
+          // Convert dataUrl to blob synchronously if file object is missing (e.g. clipboard paste)
+          let fileToUpload = imgData.file || dataURItoBlob(imgData.previewUrl);
+
+          if (fileToUpload) {
+            try {
+              console.log(`⏳ Uploading [${angle}] to storage (${fileToUpload.size || 0} bytes)...`);
+              let { error: storageErr } = await supabase.storage
+                .from("inspection-images")
+                .upload(storagePath, fileToUpload, {
+                  contentType: fileToUpload.type || "image/jpeg",
+                  upsert: true,
+                });
+
+              if (storageErr) {
+                // Fallback to inspection_images bucket name
+                activeBucket = "inspection_images";
+                const retry = await supabase.storage
+                  .from("inspection_images")
+                  .upload(storagePath, fileToUpload, {
+                    contentType: fileToUpload.type || "image/jpeg",
+                    upsert: true,
+                  });
+                storageErr = retry.error;
+              }
+
+              if (!storageErr) {
+                const { data: pubUrl } = supabase.storage
+                  .from(activeBucket)
+                  .getPublicUrl(storagePath);
+                if (pubUrl?.publicUrl) finalImageUrl = pubUrl.publicUrl;
+                console.log(`✅ Storage uploaded [${angle}] to ${activeBucket}/${storagePath}`);
+              } else {
+                console.log(`⚠️ Storage upload note for [${angle}]:`, JSON.stringify(storageErr));
+              }
+            } catch (err) {
+              console.log("⚠️ Storage upload exception, falling back to data URL:", String(err));
+            }
+          }
+
+          // Build relational payload matching public.inspection_uploads
+          const relationalPayload = {
+            angle_type: angle,
+            bucket_name: activeBucket,
+            storage_path: storagePath,
+            file_name: imgData.name || `${angle}.jpg`,
+            file_size_bytes: imgData.file?.size || null,
+            mime_type: imgData.file?.type || "image/jpeg",
+            width: imgData.width || null,
+            height: imgData.height || null,
+            quality_tag: imgData.qualityLabel || imgData.quality || "Sharpness: High",
+          };
+
+          if (inspectionId) {
+            relationalPayload.inspection_id = inspectionId;
+          }
+
+          // Attempt insert with image_url first
+          let { error: uploadErr } = await supabase
+            .from("inspection_uploads")
+            .insert([{ ...relationalPayload, image_url: finalImageUrl }]);
+
+          // If image_url column does not exist in schema, fallback to inserting core columns
+          if (uploadErr && (uploadErr.code === "PGRST204" || uploadErr.message?.includes("image_url"))) {
+            console.log(`⚠️ Retrying inspection_uploads for [${angle}] without image_url column...`);
+            const retryRes = await supabase.from("inspection_uploads").insert([relationalPayload]);
+            uploadErr = retryRes.error;
+          }
+
+          if (uploadErr) {
+            console.log(`❌ inspection_uploads insert error for [${angle}]:`, JSON.stringify(uploadErr));
+          } else {
+            console.log(`✅ Successfully inserted inspection_uploads row for [${angle}] in Supabase!`);
+          }
+        }
+      } catch (e) {
+        console.log("❌ Exception during Supabase inspection insert:", String(e));
+      }
+    } else {
+      console.log("⚠️ Supabase is not configured or credentials missing in .env");
+    }
+
+    setCreatedCase(newCaseData);
+    setSubmitting(false);
+    setStep(3);
+  };
+
   return (
     <div className="w-full max-w-5xl">
 
@@ -1944,22 +2143,27 @@ function NewInspection({ onFinish }) {
 
       {step === 0 && (
         <Card>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-5 border-b" style={{ borderColor: C.line }}>
-            <SectionLabel eyebrow="STEP 1" title="Upload Product Images" />
-            <div className="flex items-center text-xs font-mono px-3 py-1.5 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line, color: C.slate }}>
-              <span>Tip: Press <strong className="font-bold" style={{ color: "var(--ll-color-ink)" }}>Ctrl + V</strong> to paste screenshots directly</span>
-            </div>
-          </div>
+          <SectionLabel
+            eyebrow="STEP 1"
+            title="Upload Product Images"
+            right={
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-sm border" style={{ background: "var(--ll-bg-paper)", borderColor: C.line }}>
+                <span className="text-[11px]" style={{ color: C.slate }}>
+                  Tip: Press <kbd className="px-1.5 py-0.5 rounded font-mono font-bold text-[10px]" style={{ background: "var(--ll-bg-paper-deep)", border: `1px solid ${C.line}`, color: "var(--ll-color-ink)" }}>Ctrl + V</kbd> to paste screenshots directly
+                </span>
+              </div>
+            }
+          />
 
           {stepError && (
-            <div className="mb-5 p-3 rounded bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
-              <AlertTriangle size={14} className="flex-shrink-0" />
+            <div className="mb-4 p-3 rounded-md bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+              <AlertTriangle size={15} />
               <span>{stepError}</span>
             </div>
           )}
 
-          {/* ── PRIMARY 2 TILES: FRONT (PDP) & BACK (MANDATORY DECLARATIONS) ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          {/* Primary 2-Panel Upload (Front & Back) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
             <Dropzone
               label="Front Panel (Principal Display Panel)"
               sublabel="Rule 6(1): MRP, Net Quantity & Commodity Name"
@@ -1970,9 +2174,7 @@ function NewInspection({ onFinish }) {
                 setStepError("");
               }}
               onRemove={() => setImages((prev) => ({ ...prev, front: null }))}
-              heightClass="h-60 sm:h-64"
             />
-
             <Dropzone
               label="Back Panel (Mandatory Declarations)"
               sublabel="Rule 6(1): Manufacturer Address, Origin, Consumer Care"
@@ -1983,77 +2185,77 @@ function NewInspection({ onFinish }) {
                 setStepError("");
               }}
               onRemove={() => setImages((prev) => ({ ...prev, back: null }))}
-              heightClass="h-60 sm:h-64"
             />
           </div>
 
-          {/* ── EXPANDABLE EXTRA ANGLES (SIDE / FLAP / CAP / BARCODE) ── */}
+          {/* Dynamic Extra Angles (Collapsible / Expandable) */}
           {extraAngles.length > 0 && (
-            <div className="mb-5 p-4 rounded-xl border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold font-mono tracking-wide uppercase" style={{ color: C.gold }}>
-                  Supplementary Packaging Angles ({extraAngles.length})
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider font-mono" style={{ color: C.gold }}>
+                  Additional Angles ({extraAngles.length})
                 </span>
-                <button
-                  type="button"
-                  onClick={addExtraAngle}
-                  className="ll-focus text-xs font-semibold text-amber-500 hover:text-amber-400 flex items-center gap-1"
-                >
-                  <Plus size={13} /> Add Another Angle
-                </button>
+                <span className="text-[11px] text-slate-400">Side panels, batch code stamps, flaps</span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {extraAngles.map((angle) => (
-                  <Dropzone
-                    key={angle.id}
-                    label={angle.label}
-                    sublabel="Batch No, Mfg date, Expiry, or Barcode"
-                    required={false}
-                    imageData={angle.data}
-                    onImageChange={(data) => updateExtraAngle(angle.id, data)}
-                    onRemove={() => removeExtraAngle(angle.id)}
-                    heightClass="h-44"
-                  />
+                  <div key={angle.id} className="relative">
+                    <Dropzone
+                      label={angle.label}
+                      sublabel="Assists AI OCR for non-flat packaging & curvature"
+                      required={false}
+                      imageData={angle.data}
+                      onImageChange={(data) => updateExtraAngle(angle.id, data)}
+                      onRemove={() => updateExtraAngle(angle.id, null)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeExtraAngle(angle.id)}
+                      className="absolute top-2 right-2 z-10 p-1 rounded-full bg-slate-900/80 text-slate-400 hover:text-red-400 transition-colors"
+                      title="Remove angle"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* ── ADD EXTRA ANGLE BUTTON (IF NONE OR EXPANDABLE) ── */}
-          {extraAngles.length === 0 && (
-            <div className="mb-5">
-              <button
-                type="button"
-                onClick={addExtraAngle}
-                className="ll-focus w-full py-3 px-4 rounded-xl border border-solid shadow-sm flex items-center justify-center gap-2 text-xs font-semibold transition-all duration-200 hover:border-[#E5B842] hover:bg-amber-500/10 hover:shadow-[0_0_12px_rgba(229,184,66,0.15)] group cursor-pointer"
-                style={{
-                  background: "var(--ll-bg-paper-deep)",
-                  borderColor: "var(--ll-color-line)",
-                  color: "var(--ll-color-ink)",
-                }}
-              >
-                <Plus size={14} className="text-amber-500 group-hover:scale-125 transition-transform" />
-                <span>+ Add Extra Angle (Side Panel, Top Seal, Expiry / Batch Stamp)</span>
-              </button>
-            </div>
-          )}
+          {/* Add Extra Angle Button */}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={addExtraAngle}
+              className="ll-focus w-full py-2.5 rounded-lg border border-solid text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 hover:border-amber-400 hover:bg-amber-400/10 cursor-pointer"
+              style={{
+                borderColor: "rgba(229,184,66,0.35)",
+                background: "var(--ll-bg-card)",
+                color: "var(--ll-color-ink)",
+              }}
+            >
+              <Plus size={14} className="text-amber-500" />
+              <span>+ Add Extra Angle (Side Panel, Top Seal, Expiry / Batch Stamp)</span>
+            </button>
+          </div>
 
-          {/* ── E-COMMERCE DIGITAL COMPLIANCE (URL & SCREENSHOT) ── */}
-          <div className="pt-4 border-t" style={{ borderColor: C.line }}>
-            <div className="flex items-center justify-between mb-3">
+          {/* E-Commerce Screenshot & URL Section */}
+          <div className="mt-6 pt-5 border-t" style={{ borderColor: C.line }}>
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-6 h-6 rounded-md flex items-center justify-center bg-amber-500/15 border border-amber-500/30">
+                <Globe size={14} className="text-amber-500" />
+              </div>
               <div>
-                <span className="text-xs font-bold font-mono tracking-wide uppercase" style={{ color: C.gold }}>
-                  E-Commerce Digital Compliance (Optional)
+                <span className="text-xs font-bold uppercase tracking-wider font-mono" style={{ color: C.gold }}>
+                  E-Commerce Listing Verification (Optional)
                 </span>
-                <p className="text-[11.5px] text-slate-400 mt-0.5">
+                <p className="text-[11px] text-slate-400">
                   Rule 49 PCR 2011 • Verification for marketplace listings (Amazon, Blinkit, Flipkart, Zepto)
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-              {/* Product E-Listing URL input */}
               <div className="lg:col-span-6 flex flex-col justify-center p-5 rounded-xl border space-y-2 min-h-[176px]" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
                 <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: C.charcoal }}>
                   <Globe size={14} style={{ color: C.gold }} />
@@ -2073,12 +2275,10 @@ function NewInspection({ onFinish }) {
                 </span>
               </div>
 
-              {/* OR Divider */}
               <div className="lg:col-span-1 flex items-center justify-center font-mono text-xs font-bold text-slate-400">
                 <span className="px-2 py-1 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>OR</span>
               </div>
 
-              {/* Screenshot Dropzone */}
               <div className="lg:col-span-5 flex flex-col justify-center">
                 <Dropzone
                   label="Listing Screenshot"
@@ -2110,35 +2310,81 @@ function NewInspection({ onFinish }) {
           <SectionLabel eyebrow="STEP 2" title="Inspection Metadata" right={<span style={{ fontSize: 11.5, color: C.slate }}>All fields optional</span>} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
             <Field label="Product Category">
-              <select style={inputStyle} defaultValue="">
+              <select
+                style={inputStyle}
+                value={metadata.category}
+                onChange={(e) => setMetadata({ ...metadata, category: e.target.value })}
+              >
                 <option value="" disabled>Select category</option>
-                {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </Field>
             <Field label="Product Name">
-              <input style={inputStyle} placeholder="e.g. Nutrimax Glucose Biscuits 200g" />
+              <input
+                style={inputStyle}
+                placeholder="e.g. Nutrimax Glucose Biscuits 200g"
+                value={metadata.productName}
+                onChange={(e) => setMetadata({ ...metadata, productName: e.target.value })}
+              />
             </Field>
             <Field label="Barcode">
-              <input style={inputStyle} placeholder="EAN / UPC" />
+              <input
+                style={inputStyle}
+                placeholder="EAN / UPC"
+                value={metadata.barcode}
+                onChange={(e) => setMetadata({ ...metadata, barcode: e.target.value })}
+              />
             </Field>
             <Field label="Manufacturer">
-              <input style={inputStyle} placeholder="Registered manufacturer name" />
+              <input
+                style={inputStyle}
+                placeholder="Registered manufacturer name"
+                value={metadata.manufacturer}
+                onChange={(e) => setMetadata({ ...metadata, manufacturer: e.target.value })}
+              />
             </Field>
             <Field label="Package Width (mm)">
-              <input style={inputStyle} type="number" placeholder="For readability calibration" />
+              <input
+                style={inputStyle}
+                type="number"
+                placeholder="For readability calibration"
+                value={metadata.packageWidth}
+                onChange={(e) => setMetadata({ ...metadata, packageWidth: e.target.value })}
+              />
             </Field>
             <Field label="Package Height (mm)">
-              <input style={inputStyle} type="number" placeholder="For readability calibration" />
+              <input
+                style={inputStyle}
+                type="number"
+                placeholder="For readability calibration"
+                value={metadata.packageHeight}
+                onChange={(e) => setMetadata({ ...metadata, packageHeight: e.target.value })}
+              />
             </Field>
             <Field label="Inspection Location">
-              <input style={inputStyle} placeholder="Store / market, area, city" />
+              <input
+                style={inputStyle}
+                placeholder="Store / market, area, city"
+                value={metadata.location}
+                onChange={(e) => setMetadata({ ...metadata, location: e.target.value })}
+              />
             </Field>
             <Field label="Inspection Date">
-              <input style={inputStyle} type="date" defaultValue="2026-08-28" />
+              <input
+                style={inputStyle}
+                type="date"
+                value={metadata.inspectionDate}
+                onChange={(e) => setMetadata({ ...metadata, inspectionDate: e.target.value })}
+              />
             </Field>
           </div>
           <Field label="Inspector Notes">
-            <textarea style={{ ...inputStyle, minHeight: 70 }} placeholder="Observations at point of inspection…" />
+            <textarea
+              style={{ ...inputStyle, minHeight: 70 }}
+              placeholder="Observations at point of inspection…"
+              value={metadata.notes}
+              onChange={(e) => setMetadata({ ...metadata, notes: e.target.value })}
+            />
           </Field>
           <div className="flex justify-between mt-2">
             <Button variant="ghost" onClick={() => setStep(0)}><ArrowLeft size={15} /> Back</Button>
@@ -2151,7 +2397,12 @@ function NewInspection({ onFinish }) {
         <Card>
           <SectionLabel eyebrow="STEP 3" title="Review Before Submission" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-6">
-            {[["Images attached", "2 of 4 uploaded"], ["Category", "Packaged Food"], ["Location", "Karol Bagh, Delhi"], ["Inspection Date", "2026-08-28"]].map(([k, v]) => (
+            {[
+              ["Images attached", `${uploadedImagesCount} angle${uploadedImagesCount === 1 ? "" : "s"} attached`],
+              ["Category", metadata.category || "Packaged Commodity"],
+              ["Location", metadata.location || "Delhi Division"],
+              ["Inspection Date", metadata.inspectionDate || "2026-08-28"],
+            ].map(([k, v]) => (
               <div key={k} className="flex justify-between py-2 border-b" style={{ borderColor: C.line }}>
                 <span style={{ color: C.slate }}>{k}</span>
                 <span style={{ fontWeight: 600, color: C.ink }}>{v}</span>
@@ -2166,26 +2417,51 @@ function NewInspection({ onFinish }) {
           </div>
           <div className="flex justify-between">
             <Button variant="ghost" onClick={() => setStep(1)}><ArrowLeft size={15} /> Back</Button>
-            <Button onClick={() => setStep(3)}>Submit for Processing <ArrowRight size={15} /></Button>
+            <Button onClick={handleSubmitForProcessing} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" /> Uploading to Supabase…
+                </>
+              ) : (
+                <>
+                  Submit for Processing <ArrowRight size={15} />
+                </>
+              )}
+            </Button>
           </div>
         </Card>
       )}
 
-      {step === 3 && <ProcessingScreen onDone={onFinish} />}
+      {step === 3 && (
+        <ProcessingScreen
+          createdCase={createdCase}
+          metadata={metadata}
+          onDone={onFinish}
+        />
+      )}
     </div>
   );
 }
 
-function ProcessingScreen({ onDone }) {
+function ProcessingScreen({ onDone, createdCase, metadata }) {
   const [doneCount, setDoneCount] = useState(0);
   useEffect(() => {
     if (doneCount >= PIPELINE_STAGES.length) {
-      const t = setTimeout(() => onDone(INSPECTIONS[0]), 500);
+      const caseNumber = createdCase?.inspection_no || `CASE-2026-${Date.now().toString().slice(-4)}`;
+      const result = {
+        ...INSPECTIONS[0],
+        id: caseNumber,
+        product: metadata?.productName || "Nutrimax Glucose Biscuits 200g",
+        category: metadata?.category || "Packaged Food",
+        location: metadata?.location || "Karol Bagh, Delhi",
+        date: metadata?.inspectionDate || new Date().toISOString().slice(0, 10),
+      };
+      const t = setTimeout(() => onDone(result), 500);
       return () => clearTimeout(t);
     }
     const t = setTimeout(() => setDoneCount((c) => c + 1), 550);
     return () => clearTimeout(t);
-  }, [doneCount]);
+  }, [doneCount, createdCase, metadata]);
 
   return (
     <Card>
@@ -3855,7 +4131,14 @@ export default function App() {
           />
         )}
         {page === "new-inspection" && (
-          <NewInspection onFinish={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }} />
+          <NewInspection
+            currentUser={currentUser}
+            onFinish={(i) => {
+              setSelectedInspection(i);
+              localStorage.setItem("legallens_current_inspection", JSON.stringify(i));
+              navigateTo("inspection-detail");
+            }}
+          />
         )}
         {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
         {page === "products" && <Products onOpen={() => { }} />}
