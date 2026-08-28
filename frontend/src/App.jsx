@@ -570,17 +570,6 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono"
-            style={{
-              background: isDark ? "rgba(16,185,129,0.1)" : "rgba(58,107,53,0.08)",
-              borderColor: isDark ? "rgba(16,185,129,0.3)" : "rgba(58,107,53,0.25)",
-              color: isDark ? "#34D399" : "#2E6B2A",
-            }}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>AI Vision Core: Active • PCR 2011 Engine</span>
-          </div>
-
           <button
             type="button"
             onClick={toggleTheme}
