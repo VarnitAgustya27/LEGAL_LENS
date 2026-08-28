@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from "./supabaseClient.js";
+import ApiService from "./services/api.js";
 import React, { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard, ClipboardList, FilePlus2, Package, FileText, ScrollText,
@@ -7,10 +7,15 @@ import {
   MapPin, Phone, Mail, ShieldCheck, ShieldAlert, ShieldQuestion, ScanLine,
   ArrowLeft, ArrowRight, Download, Eye, Loader2, Building2, Hash, Lock, Unlock,
   User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
-  Sun, Moon, Sparkles, Check
+  Sun, Moon, Sparkles, Database
 } from "lucide-react";
-import ApiService from "./services/api.js";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line,
+} from "recharts";
+import { supabase, isSupabaseConfigured } from "./supabaseClient";
 
+/* ============================== DESIGN TOKENS ============================== */
 const C = {
   ink: "var(--ll-color-ink)",
   inkSoft: "var(--ll-color-ink-soft)",
@@ -41,32 +46,89 @@ const FONT = {
 const GlobalStyle = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    
     :root {
-      --ll-bg-paper: #F4F2EC; --ll-bg-paper-deep: #EAE6DA; --ll-bg-card: #FFFFFF; --ll-bg-header: #FBFAF6; --ll-bg-sidebar: #132238;
-      --ll-color-ink: #132238; --ll-color-ink-soft: #1E3453; --ll-color-charcoal: #22252A; --ll-color-slate: #5B6470;
-      --ll-color-gold: #96742E; --ll-color-line: #DAD4C2; --ll-tr-hover: #F7F5EF; --ll-input-bg: #FFFFFF; --ll-input-text: #22252A;
-      --ll-table-head-bg: #FAF8F2; --ll-button-primary-bg: #132238; --ll-button-primary-color: #FFFFFF; --ll-compliant: #3A6B35;
-      --ll-compliant-bg: #E7EFE1; --ll-compliant-bd: #B9CDAE; --ll-violation: #9B2C2C; --ll-violation-bg: #F6E7E5;
-      --ll-violation-bd: #E0B7B2; --ll-review: #966A16; --ll-review-bg: #FAF0DA; --ll-review-bd: #E7CE9C;
+      --ll-bg-paper: #F4F2EC;
+      --ll-bg-paper-deep: #EAE6DA;
+      --ll-bg-card: #FFFFFF;
+      --ll-bg-header: #FBFAF6;
+      --ll-bg-sidebar: #132238;
+      --ll-color-ink: #132238;
+      --ll-color-ink-soft: #1E3453;
+      --ll-color-charcoal: #22252A;
+      --ll-color-slate: #5B6470;
+      --ll-color-gold: #96742E;
+      --ll-color-line: #DAD4C2;
+      --ll-tr-hover: #F7F5EF;
+      --ll-input-bg: #FFFFFF;
+      --ll-input-text: #22252A;
+      --ll-table-head-bg: #FAF8F2;
+      --ll-button-primary-bg: #132238;
+      --ll-button-primary-color: #FFFFFF;
+      --ll-compliant: #3A6B35;
+      --ll-compliant-bg: #E7EFE1;
+      --ll-compliant-bd: #B9CDAE;
+      --ll-violation: #9B2C2C;
+      --ll-violation-bg: #F6E7E5;
+      --ll-violation-bd: #E0B7B2;
+      --ll-review: #966A16;
+      --ll-review-bg: #FAF0DA;
+      --ll-review-bd: #E7CE9C;
+      --ll-modal-overlay: rgba(19,34,56,0.6);
+      --ll-hatch-line: rgba(19,34,56,0.05);
     }
+
     .ll-root.dark, .dark {
-      --ll-bg-paper: #090E17; --ll-bg-paper-deep: #0F1726; --ll-bg-card: #131E30; --ll-bg-header: #0D1524; --ll-bg-sidebar: #070B12;
-      --ll-color-ink: #F0F4FA; --ll-color-ink-soft: #CBD5E1; --ll-color-charcoal: #E2E8F0; --ll-color-slate: #94A3B8;
-      --ll-color-gold: #E5B842; --ll-color-line: #22344D; --ll-tr-hover: #17243A; --ll-input-bg: #0D1624; --ll-input-text: #F8FAFC;
-      --ll-table-head-bg: #101B2B; --ll-button-primary-bg: #E5B842; --ll-button-primary-color: #090E17; --ll-compliant: #4ADE80;
-      --ll-compliant-bg: #102619; --ll-compliant-bd: #1E4F2B; --ll-violation: #F87171; --ll-violation-bg: #2C1216;
-      --ll-violation-bd: #581C24; --ll-review: #FBBF24; --ll-review-bg: #281D08; --ll-review-bd: #543D10;
+      --ll-bg-paper: #090E17;
+      --ll-bg-paper-deep: #0F1726;
+      --ll-bg-card: #131E30;
+      --ll-bg-header: #0D1524;
+      --ll-bg-sidebar: #070B12;
+      --ll-color-ink: #F0F4FA;
+      --ll-color-ink-soft: #CBD5E1;
+      --ll-color-charcoal: #E2E8F0;
+      --ll-color-slate: #94A3B8;
+      --ll-color-gold: #E5B842;
+      --ll-color-line: #22344D;
+      --ll-tr-hover: #17243A;
+      --ll-input-bg: #0D1624;
+      --ll-input-text: #F8FAFC;
+      --ll-table-head-bg: #101B2B;
+      --ll-button-primary-bg: #E5B842;
+      --ll-button-primary-color: #090E17;
+      --ll-compliant: #4ADE80;
+      --ll-compliant-bg: #102619;
+      --ll-compliant-bd: #1E4F2B;
+      --ll-violation: #F87171;
+      --ll-violation-bg: #2C1216;
+      --ll-violation-bd: #581C24;
+      --ll-review: #FBBF24;
+      --ll-review-bg: #281D08;
+      --ll-review-bd: #543D10;
+      --ll-modal-overlay: rgba(3,7,18,0.8);
+      --ll-hatch-line: rgba(240,244,250,0.04);
     }
+
     .ll-root * { box-sizing: border-box; }
     .ll-fade { animation: llFade .35s ease both; }
+    .ll-rise { animation: llRise .4s cubic-bezier(.2,.8,.2,1) both; }
     @keyframes llFade { from { opacity:0 } to { opacity:1 } }
+    @keyframes llRise { from { opacity:0; transform: translateY(8px);} to { opacity:1; transform: translateY(0);} }
+    @media (prefers-reduced-motion: reduce) {
+      .ll-fade, .ll-rise { animation: none !important; }
+    }
     .ll-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
     .ll-scroll::-webkit-scrollbar-thumb { background: #556987; border-radius: 4px; }
     .ll-focus:focus-visible { outline: 2px solid var(--ll-color-gold); outline-offset: 2px; }
     .ll-tr:hover { background: var(--ll-tr-hover); }
     .ll-stamp { position: relative; }
+    .ll-hatch {
+      background-image: repeating-linear-gradient(135deg, var(--ll-hatch-line) 0px, var(--ll-hatch-line) 1px, transparent 1px, transparent 8px);
+    }
   `}</style>
 );
+
+/* ============================== SMALL PRIMITIVES ============================== */
 
 function StatusMeta(status) {
   if (status === "COMPLIANT") return { label: "Compliant", color: C.compliant, bg: C.compliantBg, bd: C.compliantBd, Icon: ShieldCheck };
@@ -79,7 +141,10 @@ function StatusBadge({ status, size = "sm" }) {
   const pad = size === "sm" ? "2px 9px" : "5px 14px";
   const fs = size === "sm" ? 11 : 12.5;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-sm border transition-colors" style={{ background: m.bg, borderColor: m.bd, color: m.color, padding: pad, fontSize: fs, fontWeight: 600, ...FONT.body }}>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-sm border transition-colors"
+      style={{ background: m.bg, borderColor: m.bd, color: m.color, padding: pad, fontSize: fs, fontWeight: 600, letterSpacing: "0.03em", ...FONT.body }}
+    >
       <m.Icon size={size === "sm" ? 12 : 14} strokeWidth={2.3} />
       {m.label.toUpperCase()}
     </span>
@@ -91,11 +156,10 @@ function ReqStatusChip({ status }) {
     PASS: { c: C.compliant, bg: C.compliantBg, bd: C.compliantBd, Icon: CheckCircle2 },
     FAIL: { c: C.violation, bg: C.violationBg, bd: C.violationBd, Icon: XCircle },
     REVIEW: { c: C.review, bg: C.reviewBg, bd: C.reviewBd, Icon: AlertTriangle },
-    WARNING: { c: C.review, bg: C.reviewBg, bd: C.reviewBd, Icon: AlertTriangle },
   };
   const m = map[status] || map.REVIEW;
   return (
-    <span className="inline-flex items-center gap-1 rounded-sm border px-2 py-0.5" style={{ background: m.bg, borderColor: m.bd, color: m.c, fontWeight: 700, fontSize: 11 }}>
+    <span className="inline-flex items-center gap-1 rounded-sm border px-2 py-0.5" style={{ background: m.bg, borderColor: m.bd, color: m.c, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em" }}>
       <m.Icon size={12.5} /> {status}
     </span>
   );
@@ -104,18 +168,32 @@ function ReqStatusChip({ status }) {
 function VerdictStamp({ status, caseNo }) {
   const m = StatusMeta(status);
   return (
-    <div className="ll-stamp inline-flex flex-col items-center justify-center border-2 rounded-full px-6 py-4" style={{ borderColor: m.color, color: m.color, transform: "rotate(-4deg)", minWidth: 190 }}>
+    <div
+      className="ll-stamp inline-flex flex-col items-center justify-center border-2 rounded-full px-6 py-4 transition-transform hover:rotate-0"
+      style={{
+        borderColor: m.color,
+        color: m.color,
+        transform: "rotate(-4deg)",
+        background: "repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 2px)",
+        minWidth: 190,
+      }}
+    >
       <div className="border rounded-full w-full h-full absolute inset-1 pointer-events-none" style={{ borderColor: m.color, opacity: 0.45 }} />
       <m.Icon size={22} strokeWidth={2} className="mb-1" />
-      <div style={{ ...FONT.display, fontWeight: 700, fontSize: 15.5, letterSpacing: "0.06em", lineHeight: 1.1 }}>{m.label.toUpperCase()}</div>
-      <div style={{ ...FONT.mono, fontSize: 9.5, opacity: 0.8, marginTop: 3 }}>{caseNo}</div>
+      <div style={{ ...FONT.display, fontWeight: 700, fontSize: 15.5, letterSpacing: "0.06em", lineHeight: 1.1 }}>
+        {m.label.toUpperCase()}
+      </div>
+      <div style={{ ...FONT.mono, fontSize: 9.5, letterSpacing: "0.08em", opacity: 0.8, marginTop: 3 }}>{caseNo}</div>
     </div>
   );
 }
 
 function Card({ children, className = "", style, padded = true }) {
   return (
-    <div className={`border rounded-sm transition-colors shadow-sm ${className}`} style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-charcoal)", ...style }}>
+    <div
+      className={`border rounded-sm transition-colors shadow-sm ${className}`}
+      style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-charcoal)", ...style }}
+    >
       <div className={padded ? "p-5" : ""}>{children}</div>
     </div>
   );
@@ -153,7 +231,7 @@ function Button({ children, variant = "primary", onClick, className = "", type =
 function Field({ label, children, required = false }) {
   return (
     <label className="block mb-4">
-      <div style={{ ...FONT.body, fontSize: 12, fontWeight: 600, color: C.slate, marginBottom: 6 }}>
+      <div style={{ ...FONT.body, fontSize: 12, fontWeight: 600, color: C.slate, marginBottom: 6, letterSpacing: "0.02em" }}>
         {label} {required && <span style={{ color: "var(--ll-violation)" }}>*</span>}
       </div>
       {children}
@@ -166,150 +244,317 @@ const inputStyle = {
   background: "var(--ll-input-bg)", fontSize: 13.5, color: "var(--ll-input-text)", ...FONT.body,
 };
 
+/* ============================== MOCK DATA ============================== */
+
 const CATEGORIES = ["Packaged Food", "Cosmetics", "Household Chemicals", "Beverages", "Personal Care", "Stationery"];
 
+const STATS = { total: 1284, compliant: 812, nonCompliant: 341, review: 131 };
+
+const VIOLATIONS_BY_CATEGORY = [
+  { category: "Packaged Food", violations: 128 },
+  { category: "Cosmetics", violations: 96 },
+  { category: "Household", violations: 54 },
+  { category: "Beverages", violations: 41 },
+  { category: "Personal Care", violations: 22 },
+];
+
+const TREND = [
+  { month: "Mar", inspections: 96 }, { month: "Apr", inspections: 121 },
+  { month: "May", inspections: 142 }, { month: "Jun", inspections: 158 },
+  { month: "Jul", inspections: 176 }, { month: "Aug", inspections: 203 },
+];
+
+const COMMON_VIOLATIONS = [
+  { rule: "PCR-MRP-001", desc: "MRP declaration missing or illegible", count: 84 },
+  { rule: "PCR-COO-004", desc: "Country of origin not declared", count: 57 },
+  { rule: "PCR-CC-007", desc: "Consumer care details incomplete", count: 45 },
+  { rule: "PCR-NQ-002", desc: "Net quantity in non-standard unit", count: 33 },
+];
+
+const INSPECTIONS = [
+  { id: "LM/2026/000482", product: "Nutrimax Glucose Biscuits 200g", category: "Packaged Food", manufacturer: "Nutrimax Foods Pvt. Ltd.", status: "NON_COMPLIANT", inspector: "R. Bhaskaran", date: "2026-08-24", location: "Karol Bagh, Delhi" },
+  { id: "LM/2026/000481", product: "Silkessence Herbal Shampoo 340ml", category: "Cosmetics", manufacturer: "Silkessence Care Ltd.", status: "REVIEW", inspector: "A. Mehta", date: "2026-08-24", location: "Lajpat Nagar, Delhi" },
+  { id: "LM/2026/000479", product: "Suvarna Refined Sunflower Oil 1L", category: "Packaged Food", manufacturer: "Suvarna Agro Industries", status: "COMPLIANT", inspector: "S. Iyer", date: "2026-08-23", location: "Connaught Place, Delhi" },
+  { id: "LM/2026/000477", product: "Zesto Orange Drink 500ml", category: "Beverages", manufacturer: "Zesto Beverages Pvt. Ltd.", status: "COMPLIANT", inspector: "R. Bhaskaran", date: "2026-08-22", location: "Rohini, Delhi" },
+  { id: "LM/2026/000474", product: "Glow & Co. Vitamin C Cream 50g", category: "Cosmetics", manufacturer: "Glow & Co. Cosmetics (Imported)", status: "NON_COMPLIANT", inspector: "A. Mehta", date: "2026-08-21", location: "Nehru Place, Delhi" },
+  { id: "LM/2026/000470", product: "Crispo Potato Wafers 90g", category: "Packaged Food", manufacturer: "Crispo Snacks Ltd.", status: "NON_COMPLIANT", inspector: "S. Iyer", date: "2026-08-20", location: "Dwarka, Delhi" },
+  { id: "LM/2026/000468", product: "HomeShine Dish Wash Gel 500ml", category: "Household Chemicals", manufacturer: "HomeShine Chemicals Pvt. Ltd.", status: "COMPLIANT", inspector: "R. Bhaskaran", date: "2026-08-19", location: "Pitampura, Delhi" },
+];
+
+const RULES = [
+  { code: "PCR-MRP-001", name: "Retail Sale Price (MRP) Declaration", category: "All Categories", severity: "HIGH", version: "2026.1", effective: "2026-01-01", status: "ACTIVE" },
+  { code: "PCR-NQ-002", name: "Net Quantity Declaration", category: "All Categories", severity: "HIGH", version: "2026.1", effective: "2026-01-01", status: "ACTIVE" },
+  { code: "PCR-MFR-003", name: "Manufacturer / Packer / Importer Details", category: "All Categories", severity: "HIGH", version: "2025.3", effective: "2025-07-01", status: "ACTIVE" },
+  { code: "PCR-COO-004", name: "Country of Origin (Imported Goods)", category: "Imported Products", severity: "MEDIUM", version: "2025.3", effective: "2025-07-01", status: "ACTIVE" },
+  { code: "PCR-MD-005", name: "Manufacturing / Packing Date", category: "All Categories", severity: "MEDIUM", version: "2025.1", effective: "2025-01-01", status: "ACTIVE" },
+  { code: "PCR-BB-006", name: "Best Before / Expiry Date", category: "Packaged Food, Cosmetics", severity: "HIGH", version: "2025.1", effective: "2025-01-01", status: "ACTIVE" },
+  { code: "PCR-CC-007", name: "Consumer Care Details", category: "All Categories", severity: "MEDIUM", version: "2024.2", effective: "2024-06-01", status: "ACTIVE" },
+  { code: "PCR-USP-008", name: "Unit Sale Price Declaration", category: "Multi-piece Packages", severity: "LOW", version: "2024.2", effective: "2024-06-01", status: "SUPERSEDED" },
+];
+
+const REQUIREMENTS = [
+  { key: "manufacturer", label: "Manufacturer / Packer Details", status: "PASS", confidence: 98, rule: "PCR-MFR-003", reason: "Manufacturer name and full address detected and legible." },
+  { key: "netQty", label: "Net Quantity", status: "PASS", confidence: 99, rule: "PCR-NQ-002", reason: "Declared as 200 g, standard unit, consistent with package size." },
+  { key: "mrp", label: "Maximum Retail Price (MRP)", status: "FAIL", confidence: 94, rule: "PCR-MRP-001", reason: "MRP field is present but the 'inclusive of all taxes' qualifier is missing." },
+  { key: "coo", label: "Country of Origin", status: "PASS", confidence: 97, rule: "PCR-COO-004", reason: "Not applicable — domestically manufactured; declaration correctly omitted." },
+  { key: "consumerCare", label: "Consumer Care Details", status: "REVIEW", confidence: 71, rule: "PCR-CC-007", reason: "Phone number partially obstructed by a fold in the packaging; manual check advised." },
+  { key: "mfgDate", label: "Manufacturing / Packing Date", status: "PASS", confidence: 96, rule: "PCR-MD-005", reason: "Packing date clearly printed and within expected format." },
+  { key: "bestBefore", label: "Best Before Date", status: "PASS", confidence: 95, rule: "PCR-BB-006", reason: "Best before period declared and legible." },
+];
+
+const EXTRACTED_DECLARATION = {
+  "Product Name": "Nutrimax Glucose Biscuits",
+  "Generic Name": "Glucose Biscuits",
+  "Net Quantity": "200 g",
+  "MRP": "₹ 20.00 (tax qualifier missing)",
+  "Manufacturer": "Nutrimax Foods Pvt. Ltd., Sonepat, Haryana",
+  "Packing Date": "07/2026",
+  "Best Before": "12 months from packing",
+  "Consumer Care": "1800-XXX-XX99 (partially obstructed)",
+};
+
+const PRODUCT_HISTORY = [
+  { id: "LM/2026/000482", date: "2026-08-24", status: "NON_COMPLIANT", note: "MRP tax-inclusive qualifier missing" },
+  { id: "LM/2026/000201", date: "2026-04-11", status: "NON_COMPLIANT", note: "Consumer care phone number illegible" },
+  { id: "LM/2025/008857", date: "2025-11-02", status: "COMPLIANT", note: "All mandatory declarations verified" },
+];
+
+const PRODUCTS = [
+  { name: "Nutrimax Glucose Biscuits 200g", barcode: "8901234567891", category: "Packaged Food", inspections: 3, status: "NON_COMPLIANT" },
+  { name: "Silkessence Herbal Shampoo 340ml", barcode: "8901234561122", category: "Cosmetics", inspections: 2, status: "REVIEW" },
+  { name: "Suvarna Refined Sunflower Oil 1L", barcode: "8901234509877", category: "Packaged Food", inspections: 5, status: "COMPLIANT" },
+  { name: "Zesto Orange Drink 500ml", barcode: "8901234533221", category: "Beverages", inspections: 4, status: "COMPLIANT" },
+  { name: "Glow & Co. Vitamin C Cream 50g", barcode: "8901234598765", category: "Cosmetics", inspections: 1, status: "NON_COMPLIANT" },
+];
+
+const REPORTS = INSPECTIONS.map((i) => ({ ...i }));
+
 const INITIAL_USERS = [
-  { id: "USR-001", name: "Poonam Desai", role: "Admin", email: "admin@legallens.gov.in", badge: "LMD-HQ-001", active: true, initials: "PD" },
-  { id: "USR-002", name: "R. Bhaskaran", role: "Enforcement Officer", email: "inspector@legallens.gov.in", badge: "LMD-DL-0412", active: true, initials: "RB" },
-  { id: "USR-003", name: "A. Mehta", role: "Reviewer", email: "reviewer@legallens.gov.in", badge: "LMD-REV-104", active: true, initials: "AM" },
+  { id: "USR-001", name: "Poonam Desai", role: "Admin", email: "p.desai@lm.gov.in", badge: "LMD-HQ-001", jurisdiction: "National Directorate / HQ", active: true, phone: "+91 98112 34501", initials: "PD" },
+  { id: "USR-002", name: "Rangan Bhaskaran", role: "Enforcement Officer", email: "r.bhaskaran@lm.gov.in", badge: "LMD-DL-0412", jurisdiction: "Delhi North & Central", active: true, phone: "+91 98230 45612", initials: "RB" },
+  { id: "USR-003", name: "Aditi Mehta", role: "Enforcement Officer", email: "a.mehta@lm.gov.in", badge: "LMD-DL-0418", jurisdiction: "Delhi South & East", active: true, phone: "+91 98765 43210", initials: "AM" },
+  { id: "USR-004", name: "Sanjay Iyer", role: "Reviewer", email: "s.iyer@lm.gov.in", badge: "LMD-REV-008", jurisdiction: "Appellate & Review Cell", active: true, phone: "+91 99100 87654", initials: "SI" },
+  { id: "USR-005", name: "Karan Vohra", role: "Reviewer", email: "k.vohra@lm.gov.in", badge: "LMD-REV-014", jurisdiction: "Special Compliance Unit", active: false, phone: "+91 98321 09876", initials: "KV" },
 ];
 
 const PIPELINE_STAGES = [
-  "Image quality assessment", "Resolution & blur analysis", "Text contour detection",
-  "OCR text extraction", "Declaration structuring", "Legal rule retrieval (PCR 2011)",
-  "Deterministic compliance validation", "Evidence coordinate mapping", "Report generation ready",
+  "Image preprocessing", "Text region detection", "OCR extraction",
+  "Declaration structuring", "Product classification", "Applicable rule retrieval",
+  "Compliance validation", "Evidence mapping", "Report generation",
 ];
 
 /* ============================== LOGIN ============================== */
 
 function Login({ onLogin, users, isDark, toggleTheme }) {
-  const [selectedRole, setSelectedRole] = useState("Enforcement Officer");
-  const [officerId, setOfficerId] = useState("LMD-DL-0412");
+  const [selectedRole, setSelectedRole] = useState("Admin");
+  const [officerId, setOfficerId] = useState("LMD-HQ-001");
 
   const handleRoleChange = (role) => {
     setSelectedRole(role);
     if (role === "Admin") setOfficerId("LMD-HQ-001");
     else if (role === "Enforcement Officer") setOfficerId("LMD-DL-0412");
-    else if (role === "Reviewer") setOfficerId("LMD-REV-104");
+    else if (role === "Reviewer") setOfficerId("LMD-REV-008");
   };
 
   const handleSignIn = () => {
-    const matched = users.find((u) => u.role === selectedRole && u.active) || users[1];
+    const matched = users.find((u) => u.role === selectedRole && u.active) || {
+      id: "USR-TEMP",
+      name: selectedRole === "Admin" ? "Poonam Desai" : selectedRole === "Reviewer" ? "Sanjay Iyer" : "Rangan Bhaskaran",
+      role: selectedRole,
+      email: `${selectedRole.toLowerCase().replace(" ", ".")}@lm.gov.in`,
+      badge: officerId,
+      jurisdiction: "Delhi Division",
+      active: true,
+      initials: selectedRole === "Admin" ? "PD" : selectedRole === "Reviewer" ? "SI" : "RB"
+    };
     onLogin(matched);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ background: "var(--ll-bg-paper)" }}>
-      <div className="absolute top-6 right-6">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="ll-focus flex items-center justify-center w-9 h-9 rounded-full border shadow-sm transition-all"
-          style={{ borderColor: "var(--ll-color-line)", background: "var(--ll-bg-card)", color: C.ink }}
-        >
-          {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} />}
-        </button>
+    <div className="min-h-screen w-full flex" style={{ background: "var(--ll-bg-paper)" }}>
+      <div className="hidden md:flex w-[42%] flex-col justify-between p-12 ll-hatch" style={{ background: "var(--ll-bg-sidebar)", color: "#EDEAE0" }}>
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <ScanLine size={22} strokeWidth={2.2} style={{ color: "#C7A75A" }} />
+              <span style={{ ...FONT.mono, fontSize: 12, letterSpacing: "0.22em", color: "#C7A75A" }}>LEGAL METROLOGY DIVISION</span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="ll-focus flex items-center justify-center w-8 h-8 rounded-full border transition-all hover:scale-105"
+              style={{
+                borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(255,255,255,0.25)",
+                background: isDark ? "rgba(229,184,66,0.15)" : "rgba(255,255,255,0.1)",
+                color: isDark ? "#E5B842" : "#E2E8F0",
+              }}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+          </div>
+          <h1 style={{ ...FONT.display, fontSize: 42, fontWeight: 700, letterSpacing: "0.01em", marginTop: 18, color: "#F7F5EF" }}>
+            Legal-Lens
+          </h1>
+          <p style={{ ...FONT.body, fontSize: 14.5, color: "#C7C2B4", maxWidth: 360, marginTop: 14, lineHeight: 1.6 }}>
+            AI-assisted compliance inspection for packaged commodities under the Legal Metrology Act, 2009 and the Packaged Commodities Rules, 2011.
+          </p>
+        </div>
+        <div className="border-t pt-6" style={{ borderColor: "rgba(255,255,255,0.15)" }}>
+          <div className="grid grid-cols-3 gap-6">
+            {[["1284", "Inspections logged"], ["63%", "First-pass compliance"], ["8", "Active rule sets"]].map(([n, l]) => (
+              <div key={l}>
+                <div style={{ ...FONT.display, fontSize: 22, fontWeight: 700, color: "#F7F5EF" }}>{n}</div>
+                <div style={{ ...FONT.body, fontSize: 11.5, color: "#A9A392", marginTop: 2 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <p style={{ ...FONT.mono, fontSize: 10.5, color: "#847E6E", marginTop: 24, letterSpacing: "0.04em" }}>
+            PROTOTYPE — SMART INDIA HACKATHON 2026 · ENFORCEMENT-ASSISTANCE SYSTEM · NOT AN AUTONOMOUS LEGAL AUTHORITY
+          </p>
+        </div>
       </div>
 
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-3" style={{ background: "var(--ll-bg-sidebar)", color: C.gold }}>
-            <ScanLine size={26} />
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-sm ll-rise">
+          <div className="mb-8 md:hidden flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ScanLine size={20} style={{ color: C.gold }} />
+              <span style={{ ...FONT.display, fontSize: 22, fontWeight: 700, color: C.ink }}>Legal-Lens</span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-full border flex items-center justify-center"
+              style={{ borderColor: "var(--ll-color-line)", color: C.gold }}
+            >
+              {isDark ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
           </div>
-          <h1 style={{ ...FONT.display, fontSize: 28, fontWeight: 700, color: C.ink }}>Legal-Lens</h1>
-          <p style={{ ...FONT.body, fontSize: 13, color: C.slate, marginTop: 4 }}>
-            AI-Powered Legal Metrology Compliance Assistant
-          </p>
-          <div className="inline-block mt-2 px-2.5 py-0.5 rounded-full border text-[11px] font-semibold tracking-wider" style={{ background: C.paperDeep, borderColor: C.line, color: C.gold, ...FONT.mono }}>
-            SMART INDIA HACKATHON 2026
+          <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: C.gold, fontWeight: 600 }}>OFFICER SIGN-IN</div>
+          <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 600, color: C.ink, marginTop: 4, marginBottom: 24 }}>Access the inspection console</h2>
+
+          <Field label="Role / Authority Level">
+            <div className="relative">
+              <select
+                className="ll-focus appearance-none"
+                style={{ ...inputStyle, paddingRight: 30, fontWeight: 600 }}
+                value={selectedRole}
+                onChange={(e) => handleRoleChange(e.target.value)}
+              >
+                <option value="Admin">Admin (Full User & Rule Management)</option>
+                <option value="Enforcement Officer">Enforcement Officer (Inspections & Cases)</option>
+                <option value="Reviewer">Reviewer (Appeals & Determinations)</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: C.slate }} />
+            </div>
+          </Field>
+
+          <Field label="Officer ID / Badge">
+            <div className="relative">
+              <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+              <input
+                className="ll-focus"
+                style={{ ...inputStyle, paddingLeft: 34 }}
+                value={officerId}
+                onChange={(e) => setOfficerId(e.target.value)}
+              />
+            </div>
+          </Field>
+
+          <Field label="Security Key / Password">
+            <div className="relative">
+              <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+              <input type="password" className="ll-focus" style={{ ...inputStyle, paddingLeft: 34 }} defaultValue="••••••••••" />
+            </div>
+          </Field>
+
+          <Button className="w-full mt-2" onClick={handleSignIn}>
+            Sign in as {selectedRole} <ArrowRight size={15} />
+          </Button>
+
+          <div className="flex items-start gap-2 mt-6 p-3 rounded-sm border" style={{ borderColor: C.line, background: C.paperDeep }}>
+            <Info size={14} style={{ color: C.slate, marginTop: 2, flexShrink: 0 }} />
+            <p style={{ ...FONT.body, fontSize: 11.5, color: C.slate, lineHeight: 1.5 }}>
+              <strong>Tip for Testing:</strong> Select <em>Admin</em> to add and edit user accounts in the Users & Settings section.
+            </p>
           </div>
         </div>
-
-        <Card>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: C.slate }}>Select Role</label>
-              <div className="grid grid-cols-3 gap-2">
-                {["Enforcement Officer", "Reviewer", "Admin"].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => handleRoleChange(r)}
-                    className="p-2.5 text-xs font-medium rounded-sm border transition-colors text-center"
-                    style={{
-                      borderColor: selectedRole === r ? C.ink : C.line,
-                      background: selectedRole === r ? "var(--ll-bg-sidebar)" : "var(--ll-bg-card)",
-                      color: selectedRole === r ? "#FFF" : C.ink,
-                    }}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <Field label="Officer / Badge ID">
-              <input style={inputStyle} value={officerId} onChange={(e) => setOfficerId(e.target.value)} />
-            </Field>
-
-            <Field label="Password">
-              <input style={inputStyle} type="password" defaultValue="password123" />
-            </Field>
-
-            <Button className="w-full mt-2" onClick={handleSignIn}>
-              Enter Inspector Portal <ArrowRight size={15} />
-            </Button>
-          </div>
-        </Card>
       </div>
     </div>
   );
 }
 
-/* ============================== NAVIGATION SHELL ============================== */
+/* ============================== SHELL ============================== */
 
 const NAV = [
   { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { key: "inspections", label: "Inspections", Icon: ClipboardList },
   { key: "new-inspection", label: "New Inspection", Icon: FilePlus2 },
-  { key: "rules", label: "Legal Rules", Icon: ScrollText },
-  { key: "reports", label: "Reports Archive", Icon: FileText },
-  { key: "settings", label: "Settings", Icon: Settings },
+  { key: "products", label: "Products", Icon: Package },
+  { key: "rules", label: "Rule Repository", Icon: ScrollText },
+  { key: "reports", label: "Reports", Icon: FileText },
+  { key: "settings", label: "Users & Settings", Icon: Settings },
 ];
 
 const PAGE_TITLES = {
   dashboard: ["OVERVIEW", "Enforcement Dashboard"],
-  inspections: ["CASE REGISTER", "Inspections Register"],
-  "new-inspection": ["NEW CASE", "New Label Inspection"],
-  "inspection-detail": ["CASE FILE", "Inspection Findings & Evidence"],
-  rules: ["LEGAL FRAMEWORK", "Legal Metrology (PCR 2011) Rules"],
+  inspections: ["CASE REGISTER", "Inspections"],
+  "new-inspection": ["NEW CASE", "New Inspection"],
+  "inspection-detail": ["CASE FILE", "Inspection Result"],
+  products: ["CATALOGUE", "Products"],
+  rules: ["LEGAL FRAMEWORK", "Rule Repository"],
   reports: ["ARCHIVE", "Inspection Reports"],
-  settings: ["ADMINISTRATION", "System Settings"],
+  settings: ["ADMINISTRATION", "Users & Settings"],
 };
 
-function Shell({ page, setPage, currentUser, isDark, toggleTheme, children }) {
+function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected, children }) {
   const [eyebrow, title] = PAGE_TITLES[page] || ["", ""];
+  const roleBadgeStyle = {
+    Admin: { bg: C.violationBg, color: C.violation, bd: C.violationBd },
+    "Enforcement Officer": { bg: "rgba(19,34,56,0.08)", color: C.ink, bd: C.line },
+    Reviewer: { bg: C.reviewBg, color: C.review, bd: C.reviewBd },
+  }[currentUser?.role] || { bg: "#eee", color: C.slate, bd: C.line };
+
   return (
     <div className={`ll-root min-h-screen flex ${isDark ? "dark" : ""}`} style={{ background: "var(--ll-bg-paper)", ...FONT.body }}>
       <GlobalStyle />
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
+        
+        {/* Top Brand Header with Dark Mode Toggle placed directly to the right of Legal-Lens */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-          <button type="button" onClick={() => setPage("dashboard")} className="ll-focus flex items-center gap-2.5 text-left cursor-pointer">
-            <ScanLine size={20} style={{ color: "#C7A75A" }} />
-            <span style={{ ...FONT.display, fontSize: 19, fontWeight: 700, color: "#F7F5EF" }}>Legal-Lens</span>
+          <button
+            type="button"
+            onClick={() => setPage("dashboard")}
+            className="ll-focus flex items-center gap-2.5 text-left cursor-pointer select-none"
+            style={{ background: "transparent", opacity: 1 }}
+            title="Go to Home / Dashboard"
+          >
+            <ScanLine size={20} style={{ color: "#C7A75A", opacity: 1 }} />
+            <span style={{ ...FONT.display, fontSize: 19, fontWeight: 700, color: "#F7F5EF", opacity: 1, letterSpacing: "0.02em" }}>
+              Legal-Lens
+            </span>
           </button>
 
+          {/* AESTHETIC DARK MODE TOGGLE BUTTON */}
           <button
             type="button"
             onClick={toggleTheme}
-            className="ll-focus flex items-center justify-center w-8 h-8 rounded-full border transition-all hover:scale-110"
+            className="ll-focus group relative flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 hover:scale-110"
             style={{
               borderColor: isDark ? "rgba(229,184,66,0.6)" : "rgba(255,255,255,0.25)",
               background: isDark ? "rgba(229,184,66,0.18)" : "rgba(255,255,255,0.08)",
               color: isDark ? "#E5B842" : "#E2E8F0",
+              boxShadow: isDark ? "0 0 12px rgba(229,184,66,0.3)" : "none",
             }}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle dark mode"
           >
-            {isDark ? <Sun size={15} className="text-amber-300" /> : <Moon size={15} className="text-slate-200" />}
+            {isDark ? (
+              <Sun size={15} className="text-amber-300 transition-transform group-hover:rotate-45" />
+            ) : (
+              <Moon size={15} className="text-slate-200 transition-transform group-hover:-rotate-12" />
+            )}
           </button>
         </div>
 
@@ -333,7 +578,6 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, children }) {
             );
           })}
         </nav>
-
         <div className="px-3 pb-4">
           <button className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-left" style={{ color: "#B7B2A2" }} onClick={() => setPage("login")}>
             <LogOut size={16} />
@@ -349,15 +593,25 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, children }) {
             <h1 style={{ ...FONT.display, fontSize: 23, fontWeight: 600, color: C.ink }}>{title}</h1>
           </div>
           <div className="flex items-center gap-4">
+            <div className="relative hidden sm:block">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+              <input placeholder="Search case no., product, barcode…" className="ll-focus" style={{ ...inputStyle, paddingLeft: 30, width: 260, fontSize: 12.5 }} />
+            </div>
+
             <div className="flex items-center gap-3 pl-4 border-l" style={{ borderColor: C.line }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
                 {currentUser?.initials || "OF"}
               </div>
-              <div className="text-left">
+              <div className="hidden md:block text-left">
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</div>
-                <span className="inline-block px-1.5 py-0.2 rounded border text-[10px] font-bold" style={{ background: C.paperDeep, color: C.ink, borderColor: C.line }}>
-                  {currentUser?.role || "Enforcement"}
-                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    className="inline-block px-1.5 py-0.2 rounded border"
+                    style={{ fontSize: 10, fontWeight: 700, background: roleBadgeStyle.bg, color: roleBadgeStyle.color, borderColor: roleBadgeStyle.bd }}
+                  >
+                    {currentUser?.role || "Enforcement"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -388,74 +642,90 @@ function StatCard({ label, value, Icon, color }) {
   );
 }
 
-function Dashboard({ onOpenInspection, onNewInspection }) {
-  const [stats, setStats] = useState({ total_inspections: 0, compliant_count: 0, non_compliant_count: 0, review_count: 0 });
-  const [recentInspections, setRecentInspections] = useState([]);
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const s = await ApiService.getDashboardStats();
-        if (s) setStats(s);
-        const insps = await ApiService.getInspections({ limit: 5 });
-        if (insps) setRecentInspections(insps);
-      } catch (e) {
-        console.error("Dashboard fetch error:", e);
-      }
-    }
-    loadData();
-  }, []);
-
+function Dashboard({ onOpenInspection, isDark }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Inspections" value={stats.total_inspections} Icon={ClipboardList} color={C.ink} />
-        <StatCard label="Compliant" value={stats.compliant_count} Icon={ShieldCheck} color={C.compliant} />
-        <StatCard label="Non-Compliant" value={stats.non_compliant_count} Icon={ShieldAlert} color={C.violation} />
-        <StatCard label="Requires Review" value={stats.review_count} Icon={ShieldQuestion} color={C.review} />
+        <StatCard label="Total Inspections" value={STATS.total.toLocaleString()} Icon={ClipboardList} color={C.ink} />
+        <StatCard label="Compliant" value={STATS.compliant} Icon={ShieldCheck} color={C.compliant} />
+        <StatCard label="Non-Compliant" value={STATS.nonCompliant} Icon={ShieldAlert} color={C.violation} />
+        <StatCard label="Requires Verification" value={STATS.review} Icon={ShieldQuestion} color={C.review} />
       </div>
 
-      {stats.total_inspections === 0 ? (
-        <Card className="text-center py-12">
-          <ScanLine size={44} className="mx-auto mb-3" style={{ color: C.gold }} />
-          <h3 style={{ ...FONT.display, fontSize: 20, fontWeight: 700, color: C.ink }}>No Inspections Recorded Yet</h3>
-          <p style={{ fontSize: 13, color: C.slate, maxWidth: 450, margin: "8px auto 20px" }}>
-            The database is clean and ready. Click below to run an automated label inspection or test a standard Legal Metrology preset.
-          </p>
-          <Button onClick={onNewInspection}><Plus size={15} /> Start New Inspection</Button>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <Card className="lg:col-span-3">
+          <SectionLabel eyebrow="BY CATEGORY" title="Violations by Category" />
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={VIOLATIONS_BY_CATEGORY} margin={{ left: -18 }}>
+              <CartesianGrid vertical={false} stroke={isDark ? "#25354C" : "#DAD4C2"} />
+              <XAxis dataKey="category" tick={{ fontSize: 10.5, fill: isDark ? "#94A3B8" : "#5B6470" }} interval={0} angle={-12} textAnchor="end" height={50} />
+              <YAxis tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
+              <Tooltip
+                cursor={false}
+                contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 4, fontSize: 12, ...FONT.body }}
+              />
+              <Bar dataKey="violations" fill={isDark ? "#E5B842" : "#132238"} radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </Card>
-      ) : (
-        <Card padded={false}>
+        <Card className="lg:col-span-2">
+          <SectionLabel eyebrow="MONTHLY" title="Inspection Trend" />
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={TREND} margin={{ left: -18 }}>
+              <CartesianGrid vertical={false} stroke={isDark ? "#25354C" : "#DAD4C2"} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
+              <YAxis tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
+              <Tooltip
+                cursor={{ stroke: isDark ? "#25354C" : "#DAD4C2", strokeWidth: 1 }}
+                contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 4, fontSize: 12, ...FONT.body }}
+              />
+              <Line type="monotone" dataKey="inspections" stroke={isDark ? "#E5B842" : "#96742E"} strokeWidth={2.5} dot={{ r: 3, fill: isDark ? "#E5B842" : "#96742E" }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <Card className="lg:col-span-3 overflow-x-auto" padded={false}>
           <div className="p-5 pb-0">
-            <SectionLabel eyebrow="RECENT CASES" title="Latest Inspection Cases" />
+            <SectionLabel eyebrow="LATEST ACTIVITY" title="Recent Inspections" />
           </div>
           <table className="w-full" style={{ fontSize: 12.5 }}>
             <thead>
               <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-                {["CASE NO.", "PRODUCT", "CATEGORY", "STATUS", "SCORE", "ACTION"].map((h) => (
-                  <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                {["CASE NO.", "PRODUCT", "STATUS", "DATE"].map((h) => (
+                  <th key={h} className="text-left font-semibold px-5 py-2 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {recentInspections.map((i) => (
-                <tr key={i.id} className="ll-tr">
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontWeight: 600 }}>{i.case_number}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{i.product?.name}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.product?.category}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 700 }}>{i.score}%</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                    <button onClick={() => onOpenInspection(i)} className="ll-focus inline-flex items-center gap-1" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}>
-                      <Eye size={13} /> View Findings
-                    </button>
-                  </td>
+              {INSPECTIONS.slice(0, 5).map((i) => (
+                <tr key={i.id} className="ll-tr cursor-pointer" onClick={() => onOpenInspection(i)}>
+                  <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{i.id}</td>
+                  <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, maxWidth: 220 }}>{i.product}</td>
+                  <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
+                  <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.date}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </Card>
-      )}
+
+        <Card className="lg:col-span-2">
+          <SectionLabel eyebrow="RECURRING" title="Most Common Violations" />
+          <div className="space-y-3">
+            {COMMON_VIOLATIONS.map((v) => (
+              <div key={v.rule} className="flex items-center justify-between pb-3 border-b" style={{ borderColor: C.line }}>
+                <div className="min-w-0">
+                  <div style={{ ...FONT.mono, fontSize: 11, color: C.gold, fontWeight: 600 }}>{v.rule}</div>
+                  <div style={{ fontSize: 12.5, color: C.charcoal, marginTop: 1 }}>{v.desc}</div>
+                </div>
+                <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink, flexShrink: 0, marginLeft: 12 }}>{v.count}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -463,113 +733,101 @@ function Dashboard({ onOpenInspection, onNewInspection }) {
 /* ============================== INSPECTIONS LIST ============================== */
 
 function InspectionsList({ onOpen, onNew }) {
-  const [inspections, setInspections] = useState([]);
-  const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await ApiService.getInspections({ search });
-        if (data) setInspections(data);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    load();
-  }, [search]);
-
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const filtered = statusFilter === "ALL" ? INSPECTIONS : INSPECTIONS.filter((i) => i.status === statusFilter);
   return (
-    <Card padded={false}>
-      <div className="p-5 flex items-center justify-between flex-wrap gap-4 border-b" style={{ borderColor: C.line }}>
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-          <input
-            placeholder="Filter by case no, product..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ ...inputStyle, paddingLeft: 30, width: 280, fontSize: 12.5 }}
-          />
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+            <input placeholder="Search inspections…" className="ll-focus" style={{ ...inputStyle, paddingLeft: 30, width: 240, fontSize: 12.5 }} />
+          </div>
+          <select className="ll-focus" style={{ ...inputStyle, width: 170, fontSize: 12.5 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="ALL">All statuses</option>
+            <option value="COMPLIANT">Compliant</option>
+            <option value="NON_COMPLIANT">Non-Compliant</option>
+            <option value="REVIEW">Requires Verification</option>
+          </select>
+          <select className="ll-focus" style={{ ...inputStyle, width: 170, fontSize: 12.5 }} defaultValue="">
+            <option value="">All categories</option>
+            {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+          </select>
+          <Button variant="ghost" size="sm"><Filter size={13} /> More filters</Button>
         </div>
-        <Button onClick={onNew}><Plus size={14} /> New Inspection</Button>
+        <Button onClick={onNew}><FilePlus2 size={15} /> New Inspection</Button>
       </div>
 
-      {inspections.length === 0 ? (
-        <div className="text-center py-12">
-          <p style={{ color: C.slate, fontSize: 13 }}>No inspections found. Click "New Inspection" to start.</p>
-        </div>
-      ) : (
+      <Card padded={false} className="overflow-x-auto">
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
             <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-              {["CASE NO.", "PRODUCT", "CATEGORY", "STATUS", "SCORE", "CHECKS", ""].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3 border-b" style={{ borderColor: C.line }}>{h}</th>
+              {["CASE NO.", "PRODUCT", "CATEGORY", "MANUFACTURER", "STATUS", "INSPECTOR", "DATE", ""].map((h) => (
+                <th key={h} className="text-left font-semibold px-4 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {inspections.map((i) => (
+            {filtered.map((i) => (
               <tr key={i.id} className="ll-tr">
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontWeight: 600 }}>{i.case_number}</td>
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{i.product?.name}</td>
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.product?.category}</td>
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 700 }}>{i.score}%</td>
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.passed_checks}/{i.total_checks} passed</td>
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                  <button onClick={() => onOpen(i)} className="ll-focus inline-flex items-center gap-1" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}>
-                    <Eye size={13} /> View Findings
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{i.id}</td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{i.product}</td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.category}</td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.manufacturer}</td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.inspector}</td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.date}</td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
+                  <button onClick={() => onOpen(i)} className="ll-focus inline-flex items-center gap-1" style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}>
+                    View <ChevronRight size={13} />
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      )}
-    </Card>
+      </Card>
+    </div>
   );
 }
 
-/* ============================== NEW INSPECTION ============================== */
+/* ============================== NEW INSPECTION WIZARD ============================== */
+
+const STEPS = ["Upload Images", "Metadata", "Review", "Processing"];
+
+function Dropzone({ label, required }) {
+  const [fileName, setFileName] = useState(null);
+  const ref = useRef(null);
+  return (
+    <div>
+      <input ref={ref} type="file" className="hidden" onChange={(e) => setFileName(e.target.files?.[0]?.name || null)} />
+      <button
+        type="button"
+        onClick={() => ref.current?.click()}
+        className="ll-focus w-full h-32 border-2 border-dashed rounded-sm flex flex-col items-center justify-center gap-2 transition-colors"
+        style={{ borderColor: fileName ? "var(--ll-compliant)" : "var(--ll-color-line)", background: fileName ? "var(--ll-compliant-bg)" : "var(--ll-bg-paper-deep)" }}
+      >
+        {fileName ? <CheckCircle2 size={20} style={{ color: "var(--ll-compliant)" }} /> : <Camera size={20} style={{ color: C.slate }} />}
+        <span style={{ fontSize: 12, fontWeight: 600, color: fileName ? "var(--ll-compliant)" : "var(--ll-color-charcoal)" }}>{label}{required && <span style={{ color: "var(--ll-violation)" }}> *</span>}</span>
+        <span style={{ fontSize: 10.5, color: C.slate, maxWidth: 180, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {fileName || "Click to upload or capture"}
+        </span>
+      </button>
+    </div>
+  );
+}
 
 function NewInspection({ onFinish }) {
   const [step, setStep] = useState(0);
-  const [formData, setFormData] = useState({
-    product_name: "Nutrimax Glucose Biscuits 200g",
-    brand: "Nutrimax",
-    category: "Packaged Food",
-    barcode: "8901234567890",
-    is_imported: false,
-    location: "Connaught Place, New Delhi",
-    notes: ""
-  });
-  const [files, setFiles] = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [createdInsp, setCreatedInsp] = useState(null);
-
-  const handleCreateAndScan = async () => {
-    setIsProcessing(true);
-    try {
-      const insp = await ApiService.createInspection(formData);
-      if (files.length > 0) {
-        await ApiService.uploadImages(insp.id, files, "FRONT");
-      }
-      const scanned = await ApiService.runScan(insp.id);
-      setCreatedInsp(scanned);
-      setStep(3);
-    } catch (e) {
-      console.error("Scan error:", e);
-      alert("Scan failed: " + e.message);
-      setIsProcessing(false);
-    }
-  };
-
   return (
     <div className="max-w-4xl">
+
+      {/* SIH Golden Demo Presets (1-Click Compliance Test) */}
       <div className="mb-6 p-4 rounded-sm border" style={{ background: "var(--ll-bg-card)", borderColor: C.gold }}>
         <div className="flex items-center gap-2 mb-1">
           <Sparkles size={16} style={{ color: C.gold }} />
           <span style={{ ...FONT.display, fontSize: 14, fontWeight: 700, color: C.ink }}>
-            SIH Golden Demo Presets (1-Click Evaluation)
+            SIH Golden Demo Presets (1-Click Compliance Test)
           </span>
         </div>
         <p style={{ fontSize: 12, color: C.slate, marginBottom: 12 }}>
@@ -577,122 +835,167 @@ function NewInspection({ onFinish }) {
         </p>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={async () => {
-            const res = await ApiService.seedDemoCase("case_1_compliant");
-            const full = await ApiService.getInspection(res.inspection_id);
-            onFinish(full);
+            try {
+              const res = await ApiService.seedDemoCase("case_1_compliant");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || INSPECTIONS[2]);
+            } catch(e) {
+              onFinish(INSPECTIONS[2]);
+            }
           }}>
             <CheckCircle2 size={13} style={{ color: C.compliant }} /> Case 1: Fully Compliant (100%)
           </Button>
 
           <Button size="sm" variant="outline" onClick={async () => {
-            const res = await ApiService.seedDemoCase("case_2_missing_mrp");
-            const full = await ApiService.getInspection(res.inspection_id);
-            onFinish(full);
+            try {
+              const res = await ApiService.seedDemoCase("case_2_missing_mrp");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || INSPECTIONS[0]);
+            } catch(e) {
+              onFinish(INSPECTIONS[0]);
+            }
           }}>
             <XCircle size={13} style={{ color: C.violation }} /> Case 2: Missing MRP Tax Qualifier
           </Button>
 
           <Button size="sm" variant="outline" onClick={async () => {
-            const res = await ApiService.seedDemoCase("case_3_missing_mfr");
-            const full = await ApiService.getInspection(res.inspection_id);
-            onFinish(full);
+            try {
+              const res = await ApiService.seedDemoCase("case_3_missing_mfr");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || INSPECTIONS[5]);
+            } catch(e) {
+              onFinish(INSPECTIONS[5]);
+            }
           }}>
             <XCircle size={13} style={{ color: C.violation }} /> Case 3: Missing Manufacturer Details
           </Button>
 
           <Button size="sm" variant="outline" onClick={async () => {
-            const res = await ApiService.seedDemoCase("case_4_imported_missing_origin");
-            const full = await ApiService.getInspection(res.inspection_id);
-            onFinish(full);
+            try {
+              const res = await ApiService.seedDemoCase("case_4_imported_missing_origin");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || INSPECTIONS[4]);
+            } catch(e) {
+              onFinish(INSPECTIONS[4]);
+            }
           }}>
             <AlertTriangle size={13} style={{ color: C.review }} /> Case 4: Imported Item Missing Origin
           </Button>
 
           <Button size="sm" variant="outline" onClick={async () => {
-            const res = await ApiService.seedDemoCase("case_5_poor_quality");
-            const full = await ApiService.getInspection(res.inspection_id);
-            onFinish(full);
+            try {
+              const res = await ApiService.seedDemoCase("case_5_poor_quality");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || INSPECTIONS[1]);
+            } catch(e) {
+              onFinish(INSPECTIONS[1]);
+            }
           }}>
             <AlertTriangle size={13} style={{ color: C.review }} /> Case 5: Image Quality Alert
           </Button>
         </div>
       </div>
 
+      <div className="flex items-center mb-8 overflow-x-auto pb-2">
+        {STEPS.map((s, idx) => (
+          <div key={s} className="flex items-center flex-1 last:flex-none min-w-[140px]">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{
+                background: idx <= step ? C.ink : "var(--ll-bg-card)", border: `1.5px solid ${idx <= step ? C.ink : "var(--ll-color-line)"}`,
+                color: idx <= step ? "var(--ll-button-primary-color)" : C.slate, fontSize: 12, fontWeight: 700, ...FONT.mono,
+              }}>{idx + 1}</div>
+              <span style={{ fontSize: 12.5, fontWeight: idx === step ? 700 : 500, color: idx <= step ? C.ink : C.slate }}>{s}</span>
+            </div>
+            {idx < STEPS.length - 1 && <div className="flex-1 h-px mx-3" style={{ background: idx < step ? C.ink : "var(--ll-color-line)" }} />}
+          </div>
+        ))}
+      </div>
+
       {step === 0 && (
         <Card>
-          <SectionLabel eyebrow="STEP 1" title="Upload Product Label Photos" />
-          <div className="border-2 border-dashed rounded p-8 text-center" style={{ borderColor: C.line, background: "var(--ll-bg-paper)" }}>
-            <UploadCloud size={36} className="mx-auto mb-2" style={{ color: C.gold }} />
-            <p style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Select package photographs (Front / Back / Sides)</p>
-            <p style={{ fontSize: 11.5, color: C.slate, marginBottom: 12 }}>Supports PNG, JPG, JPEG with high readability</p>
-            <input type="file" multiple accept="image/*" onChange={(e) => setFiles(Array.from(e.target.files))} className="text-xs" />
-            {files.length > 0 && <div className="mt-3 text-xs font-semibold" style={{ color: C.compliant }}>? {files.length} image(s) selected</div>}
+          <SectionLabel eyebrow="STEP 1" title="Upload Product Images" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <Dropzone label="Front" required />
+            <Dropzone label="Back" required />
+            <Dropzone label="Side" />
+            <Dropzone label="Additional" />
+          </div>
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: C.line }}>
+            <Dropzone label="E-commerce listing screenshot (optional)" />
           </div>
           <div className="flex justify-end mt-6">
-            <Button onClick={() => setStep(1)}>Continue to Metadata <ArrowRight size={15} /></Button>
+            <Button onClick={() => setStep(1)}>Continue <ArrowRight size={15} /></Button>
           </div>
         </Card>
       )}
 
       {step === 1 && (
         <Card>
-          <SectionLabel eyebrow="STEP 2" title="Product & Retailer Information" />
+          <SectionLabel eyebrow="STEP 2" title="Inspection Metadata" right={<span style={{ fontSize: 11.5, color: C.slate }}>All fields optional</span>} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-            <Field label="Product Name" required>
-              <input style={inputStyle} value={formData.product_name} onChange={(e) => setFormData({...formData, product_name: e.target.value})} />
-            </Field>
-            <Field label="Brand Name">
-              <input style={inputStyle} value={formData.brand} onChange={(e) => setFormData({...formData, brand: e.target.value})} />
-            </Field>
-            <Field label="Category" required>
-              <select style={inputStyle} value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})}>
+            <Field label="Product Category">
+              <select style={inputStyle} defaultValue="">
+                <option value="" disabled>Select category</option>
                 {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </Field>
-            <Field label="Barcode / EAN">
-              <input style={inputStyle} value={formData.barcode} onChange={(e) => setFormData({...formData, barcode: e.target.value})} />
+            <Field label="Product Name">
+              <input style={inputStyle} placeholder="e.g. Nutrimax Glucose Biscuits 200g" />
+            </Field>
+            <Field label="Barcode">
+              <input style={inputStyle} placeholder="EAN / UPC" />
+            </Field>
+            <Field label="Manufacturer">
+              <input style={inputStyle} placeholder="Registered manufacturer name" />
+            </Field>
+            <Field label="Package Width (mm)">
+              <input style={inputStyle} type="number" placeholder="For readability calibration" />
+            </Field>
+            <Field label="Package Height (mm)">
+              <input style={inputStyle} type="number" placeholder="For readability calibration" />
             </Field>
             <Field label="Inspection Location">
-              <input style={inputStyle} value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} />
+              <input style={inputStyle} placeholder="Store / market, area, city" />
             </Field>
-            <Field label="Is this an Imported Product?">
-              <select style={inputStyle} value={formData.is_imported ? "true" : "false"} onChange={(e) => setFormData({...formData, is_imported: e.target.value === "true"})}>
-                <option value="false">No (Domestic Packaged Commodity)</option>
-                <option value="true">Yes (Imported Commodity ? Rule 6(10) Applies)</option>
-              </select>
+            <Field label="Inspection Date">
+              <input style={inputStyle} type="date" defaultValue="2026-08-28" />
             </Field>
           </div>
-          <Field label="Inspector Field Notes">
-            <textarea style={{ ...inputStyle, minHeight: 60 }} placeholder="Retail premises, observations..." value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} />
+          <Field label="Inspector Notes">
+            <textarea style={{ ...inputStyle, minHeight: 70 }} placeholder="Observations at point of inspection…" />
           </Field>
           <div className="flex justify-between mt-2">
             <Button variant="ghost" onClick={() => setStep(0)}><ArrowLeft size={15} /> Back</Button>
-            <Button onClick={() => setStep(2)}>Review & Execute Scan <ArrowRight size={15} /></Button>
+            <Button onClick={() => setStep(2)}>Continue <ArrowRight size={15} /></Button>
           </div>
         </Card>
       )}
 
       {step === 2 && (
         <Card>
-          <SectionLabel eyebrow="STEP 3" title="Confirm & Run Automated Compliance Engine" />
+          <SectionLabel eyebrow="STEP 3" title="Review Before Submission" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-6">
-            <div className="py-2 border-b" style={{ borderColor: C.line }}><span style={{ color: C.slate }}>Product:</span> <b>{formData.product_name}</b></div>
-            <div className="py-2 border-b" style={{ borderColor: C.line }}><span style={{ color: C.slate }}>Category:</span> <b>{formData.category}</b></div>
-            <div className="py-2 border-b" style={{ borderColor: C.line }}><span style={{ color: C.slate }}>Imported:</span> <b>{formData.is_imported ? "Yes (Rule 6(10) mandatory origin)" : "No (Domestic)"}</b></div>
-            <div className="py-2 border-b" style={{ borderColor: C.line }}><span style={{ color: C.slate }}>Location:</span> <b>{formData.location}</b></div>
+            {[["Images attached", "2 of 4 uploaded"], ["Category", "Packaged Food"], ["Location", "Karol Bagh, Delhi"], ["Inspection Date", "2026-08-28"]].map(([k, v]) => (
+              <div key={k} className="flex justify-between py-2 border-b" style={{ borderColor: C.line }}>
+                <span style={{ color: C.slate }}>{k}</span>
+                <span style={{ fontWeight: 600, color: C.ink }}>{v}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-start gap-2 p-3 rounded-sm border mb-6" style={{ borderColor: C.reviewBd, background: C.reviewBg }}>
+            <Info size={14} style={{ color: C.review, marginTop: 2, flexShrink: 0 }} />
+            <p style={{ fontSize: 12, color: C.charcoal, lineHeight: 1.5 }}>
+              Submitting will run the automated OCR and rule-validation pipeline. Results are AI-assisted findings and require officer confirmation before any enforcement action.
+            </p>
           </div>
           <div className="flex justify-between">
             <Button variant="ghost" onClick={() => setStep(1)}><ArrowLeft size={15} /> Back</Button>
-            <Button onClick={handleCreateAndScan} disabled={isProcessing}>
-              {isProcessing ? <><Loader2 size={15} className="animate-spin" /> Processing OCR & Rules...</> : <>Run Compliance Engine <ArrowRight size={15} /></>}
-            </Button>
+            <Button onClick={() => setStep(3)}>Submit for Processing <ArrowRight size={15} /></Button>
           </div>
         </Card>
       )}
 
-      {step === 3 && createdInsp && (
-        <ProcessingScreen onDone={() => onFinish(createdInsp)} />
-      )}
+      {step === 3 && <ProcessingScreen onDone={onFinish} />}
     </div>
   );
 }
@@ -701,25 +1004,26 @@ function ProcessingScreen({ onDone }) {
   const [doneCount, setDoneCount] = useState(0);
   useEffect(() => {
     if (doneCount >= PIPELINE_STAGES.length) {
-      const t = setTimeout(onDone, 400);
+      const t = setTimeout(() => onDone(INSPECTIONS[0]), 500);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setDoneCount((c) => c + 1), 350);
+    const t = setTimeout(() => setDoneCount((c) => c + 1), 550);
     return () => clearTimeout(t);
-  }, [doneCount, onDone]);
+  }, [doneCount]);
 
   return (
     <Card>
-      <SectionLabel eyebrow="PIPELINE EXECUTION" title="Running Legal Metrology Compliance Inspection" />
+      <SectionLabel eyebrow="STEP 4" title="Running Compliance Pipeline" />
       <div className="space-y-1">
         {PIPELINE_STAGES.map((s, idx) => {
           const complete = idx < doneCount;
           const active = idx === doneCount;
           return (
-            <div key={s} className="flex items-center gap-3 py-2 border-b" style={{ borderColor: C.line }}>
-              {complete ? <CheckCircle2 size={16} style={{ color: C.compliant }} /> : active ? <Loader2 size={16} className="animate-spin" style={{ color: C.gold }} /> : <div className="w-3.5 h-3.5 rounded-full border" style={{ borderColor: C.line }} />}
-              <span style={{ fontSize: 13, fontWeight: complete || active ? 600 : 500, color: complete ? C.compliant : active ? C.ink : C.slate }}>{s}</span>
-              {complete && <span style={{ fontSize: 11, color: C.compliant, marginLeft: "auto" }}>done</span>}
+            <div key={s} className="flex items-center gap-3 py-2.5 border-b" style={{ borderColor: C.line }}>
+              {complete ? <CheckCircle2 size={17} style={{ color: "var(--ll-compliant)" }} /> : active ? <Loader2 size={17} className="animate-spin" style={{ color: C.gold }} /> : <div className="w-4 h-4 rounded-full border" style={{ borderColor: C.line }} />}
+              <span style={{ fontSize: 13, fontWeight: complete || active ? 600 : 500, color: complete ? "var(--ll-compliant)" : active ? C.ink : C.slate }}>{s}</span>
+              {active && <span style={{ fontSize: 11, color: C.slate, marginLeft: "auto" }}>processing…</span>}
+              {complete && <span style={{ fontSize: 11, color: "var(--ll-compliant)", marginLeft: "auto" }}>done</span>}
             </div>
           );
         })}
@@ -728,104 +1032,160 @@ function ProcessingScreen({ onDone }) {
   );
 }
 
+/* ============================== EVIDENCE VIEWER ============================== */
+
+const LABEL_LAYOUT = {
+  manufacturer: { top: "10%", left: "6%", width: "60%", height: "10%" },
+  netQty: { top: "22%", left: "6%", width: "30%", height: "8%" },
+  mrp: { top: "22%", left: "62%", width: "32%", height: "8%" },
+  coo: { top: "32%", left: "6%", width: "40%", height: "8%" },
+  consumerCare: { top: "42%", left: "6%", width: "88%", height: "14%" },
+  mfgDate: { top: "58%", left: "6%", width: "40%", height: "8%" },
+  bestBefore: { top: "58%", left: "50%", width: "44%", height: "8%" },
+};
+
+function MockLabel({ highlightKey, requirement }) {
+  const m = requirement ? ({ PASS: C.compliant, FAIL: C.violation, REVIEW: C.review }[requirement.status] || C.ink) : C.ink;
+  return (
+    <div className="relative w-full rounded-sm border overflow-hidden" style={{ borderColor: C.line, background: "var(--ll-bg-card)", aspectRatio: "4/5" }}>
+      <div className="absolute inset-0 p-4 opacity-90">
+        <div className="h-4 w-2/3 rounded-sm mb-3" style={{ background: "var(--ll-bg-paper-deep)" }} />
+        {Object.entries(LABEL_LAYOUT).map(([key, pos]) => (
+          <div key={key} className="absolute rounded-sm" style={{ ...pos, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}` }} />
+        ))}
+      </div>
+      {highlightKey && (
+        <div
+          className="absolute rounded-sm border-2"
+          style={{
+            ...LABEL_LAYOUT[highlightKey],
+            borderColor: m,
+            boxShadow: `0 0 0 3px ${m}33`,
+            transition: "all .3s ease",
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EvidenceModal({ requirement, onClose }) {
+  if (!requirement) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" style={{ background: "var(--ll-modal-overlay)" }} onClick={onClose}>
+      <div className="ll-rise rounded-sm max-w-3xl w-full grid grid-cols-1 md:grid-cols-2 overflow-hidden border shadow-2xl" style={{ background: "var(--ll-bg-card)", borderColor: C.line, maxHeight: "85vh" }} onClick={(e) => e.stopPropagation()}>
+        <div className="p-5" style={{ background: "var(--ll-bg-paper-deep)" }}>
+          <MockLabel highlightKey={requirement.key} requirement={requirement} />
+          <div className="flex items-center justify-center gap-4 mt-3 text-xs" style={{ color: C.slate }}>
+            <span className="flex items-center gap-1"><ZoomIn size={13} /> Zoom & pan supported</span>
+          </div>
+        </div>
+        <div className="p-6 overflow-y-auto ll-scroll">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.08em" }}>EVIDENCE</div>
+              <h3 style={{ ...FONT.display, fontSize: 18, fontWeight: 600, color: C.ink }}>{requirement.label}</h3>
+            </div>
+            <button onClick={onClose} className="ll-focus p-1 text-slate-400 hover:text-slate-200"><X size={18} /></button>
+          </div>
+          <ReqStatusChip status={requirement.status} />
+
+          <div className="mt-5 space-y-4">
+            <div>
+              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>DETECTED TEXT</div>
+              <div style={{ ...FONT.mono, fontSize: 13, color: C.charcoal, marginTop: 3, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, padding: "8px 10px", borderRadius: 2 }}>
+                {EXTRACTED_DECLARATION[Object.keys(EXTRACTED_DECLARATION).find((k) => k.toLowerCase().includes(requirement.label.split(" ")[0].toLowerCase())) || "Product Name"] || "MRP ₹20.00"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>OCR CONFIDENCE</div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className="flex-1 h-1.5 rounded-full" style={{ background: "var(--ll-bg-paper-deep)" }}>
+                  <div className="h-1.5 rounded-full" style={{ width: `${requirement.confidence}%`, background: C.gold }} />
+                </div>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{requirement.confidence}%</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>RELATED RULE</div>
+              <div style={{ ...FONT.mono, fontSize: 13, color: C.ink, fontWeight: 600, marginTop: 3 }}>{requirement.rule}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>REASON</div>
+              <p style={{ fontSize: 12.5, color: C.charcoal, marginTop: 3, lineHeight: 1.5 }}>{requirement.reason}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ============================== INSPECTION DETAIL ============================== */
 
-function InspectionDetail({ inspection, onRefresh }) {
-  const [editDecl, setEditDecl] = useState(null);
-  const [editValue, setEditValue] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [evidenceItem, setEvidenceItem] = useState(null);
-
-  if (!inspection) return null;
-
-  const handleSaveEdit = async () => {
-    if (!editDecl) return;
-    setSaving(true);
-    try {
-      await ApiService.updateDeclaration(inspection.id, editDecl.id, editValue);
-      const refreshed = await ApiService.getInspection(inspection.id);
-      if (onRefresh) onRefresh(refreshed);
-      setEditDecl(null);
-    } catch (e) {
-      alert("Update failed: " + e.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const declarations = inspection.declarations || [];
-  const violations = inspection.violations || [];
+function InspectionDetail({ inspection }) {
+  const [evidenceReq, setEvidenceReq] = useState(null);
+  const insp = inspection || INSPECTIONS[0];
+  const passCount = REQUIREMENTS.filter((r) => r.status === "PASS").length;
+  const failCount = REQUIREMENTS.filter((r) => r.status === "FAIL").length;
+  const reviewCount = REQUIREMENTS.filter((r) => r.status === "REVIEW").length;
+  const avgConf = Math.round(REQUIREMENTS.reduce((s, r) => s + r.confidence, 0) / REQUIREMENTS.length);
 
   return (
     <div className="space-y-6">
       <Card>
         <div className="flex items-start justify-between flex-wrap gap-6">
           <div>
-            <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.08em" }}>{inspection.case_number}</div>
-            <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 2 }}>{inspection.product?.name}</h2>
+            <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.08em" }}>{insp.id}</div>
+            <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 2 }}>{insp.product}</h2>
             <div className="flex items-center gap-4 mt-3 flex-wrap" style={{ fontSize: 12.5, color: C.slate }}>
-              <span className="flex items-center gap-1.5"><Building2 size={13} /> {inspection.product?.category}</span>
-              <span className="flex items-center gap-1.5"><MapPin size={13} /> {inspection.location}</span>
-              <span className="flex items-center gap-1.5"><Calendar size={13} /> {new Date(inspection.created_at).toLocaleDateString()}</span>
+              <span className="flex items-center gap-1.5"><Building2 size={13} /> {insp.manufacturer}</span>
+              <span className="flex items-center gap-1.5"><MapPin size={13} /> {insp.location}</span>
+              <span className="flex items-center gap-1.5"><Calendar size={13} /> {insp.date}</span>
+              <span className="flex items-center gap-1.5"><User size={13} /> {insp.inspector}</span>
             </div>
           </div>
-          <VerdictStamp status={inspection.status} caseNo={inspection.case_number} />
+          <VerdictStamp status={insp.status} caseNo={insp.id} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t" style={{ borderColor: C.line }}>
-          <div>
-            <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>COMPLIANCE SCORE</div>
-            <div style={{ ...FONT.display, fontSize: 28, fontWeight: 700, color: C.ink }}>{inspection.score}%</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>PASSED CHECKS</div>
-            <div style={{ ...FONT.display, fontSize: 28, fontWeight: 700, color: C.compliant }}>{inspection.passed_checks} / {inspection.total_checks}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>VIOLATIONS FLAGGED</div>
-            <div style={{ ...FONT.display, fontSize: 28, fontWeight: 700, color: C.violation }}>{inspection.failed_checks}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>IMAGE READABILITY</div>
-            <div style={{ ...FONT.display, fontSize: 28, fontWeight: 700, color: C.gold }}>{inspection.readability_score || 95}%</div>
-          </div>
+          {[
+            ["Mandatory Declarations", `${passCount} / ${REQUIREMENTS.length}`, "detected & verified"],
+            ["Violations", failCount, "require correction"],
+            ["Manual Verification", reviewCount, "needs officer review"],
+            ["Overall Confidence", `${avgConf}%`, "AI extraction average"],
+          ].map(([l, v, s]) => (
+            <div key={l}>
+              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600, letterSpacing: "0.02em" }}>{l.toUpperCase()}</div>
+              <div style={{ ...FONT.display, fontSize: 26, fontWeight: 700, color: C.ink, marginTop: 3 }}>{v}</div>
+              <div style={{ fontSize: 11, color: C.slate }}>{s}</div>
+            </div>
+          ))}
         </div>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 overflow-x-auto" padded={false}>
-          <div className="p-5 pb-0">
-            <SectionLabel eyebrow="STATUTORY AUDIT" title="Mandatory Declarations Checklist (PCR 2011)" />
-          </div>
+          <div className="p-5 pb-0"><SectionLabel eyebrow="RULE-BY-RULE" title="Compliance Checklist" /></div>
           <table className="w-full" style={{ fontSize: 12.5 }}>
             <thead>
               <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-                {["DECLARATION FIELD", "EXTRACTED VALUE", "CONFIDENCE", "STATUS", "ACTION"].map((h) => (
+                {["REQUIREMENT", "RULE", "STATUS", "CONFIDENCE", ""].map((h) => (
                   <th key={h} className="text-left font-semibold px-5 py-2 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {declarations.map((d) => (
-                <tr key={d.id} className="ll-tr">
-                  <td className="px-5 py-3 border-b font-medium" style={{ borderColor: C.line }}>
-                    {d.label}
-                    {d.is_verified && <span className="ml-2 text-[10px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded font-bold">HUMAN VERIFIED</span>}
-                  </td>
-                  <td className="px-5 py-3 border-b text-xs max-w-xs truncate" style={{ borderColor: C.line }}>
-                    {d.value || <span className="text-red-600 font-semibold">NOT DETECTED</span>}
-                  </td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>{intConf(d.confidence)}%</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><ReqStatusChip status={d.value ? "PASS" : "FAIL"} /></td>
+              {REQUIREMENTS.map((r) => (
+                <tr key={r.key} className="ll-tr">
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.label}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.gold }}>{r.rule}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><ReqStatusChip status={r.status} /></td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.charcoal }}>{r.confidence}%</td>
                   <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => { setEditDecl(d); setEditValue(d.value || ""); }} className="ll-focus text-xs font-semibold hover:underline" style={{ color: C.ink }}>
-                        <Edit size={12} className="inline mr-0.5" /> Edit
-                      </button>
-                      <button onClick={() => setEvidenceItem(d)} className="ll-focus text-xs font-semibold hover:underline" style={{ color: C.gold }}>
-                        <Eye size={12} className="inline mr-0.5" /> Evidence
-                      </button>
-                    </div>
+                    <button onClick={() => setEvidenceReq(r)} className="ll-focus inline-flex items-center gap-1" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}>
+                      <Eye size={13} /> View
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -835,125 +1195,210 @@ function InspectionDetail({ inspection, onRefresh }) {
 
         <div className="space-y-6">
           <Card>
-            <SectionLabel eyebrow="FINDINGS" title={`Violations & Notices (${violations.length})`} />
-            {violations.length === 0 ? (
-              <div className="text-xs text-green-700 p-3 bg-green-50 rounded border border-green-200 font-medium">
-                ? All mandatory declarations comply with statutory requirements.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {violations.map((v) => (
-                  <div key={v.id} className="p-3 rounded border text-xs" style={{ background: C.violationBg, borderColor: C.violationBd }}>
-                    <div className="font-bold flex items-center justify-between" style={{ color: C.violation }}>
-                      <span>{v.rule_code}</span>
-                      <span>{v.severity} SEVERITY</span>
-                    </div>
-                    <p className="mt-1" style={{ color: C.ink }}>{v.message}</p>
-                    <div className="mt-1.5 text-[11px]" style={{ color: C.slate }}>Ref: {v.statutory_reference}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <SectionLabel eyebrow="EXTRACTED" title="Structured Declaration" />
+            <dl className="space-y-2.5">
+              {Object.entries(EXTRACTED_DECLARATION).map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-3 pb-2 border-b" style={{ borderColor: C.line }}>
+                  <dt style={{ fontSize: 11.5, color: C.slate, flexShrink: 0 }}>{k}</dt>
+                  <dd style={{ fontSize: 12, color: C.ink, fontWeight: 600, textAlign: "right" }}>{v}</dd>
+                </div>
+              ))}
+            </dl>
           </Card>
 
           <Card>
-            <SectionLabel eyebrow="ACTION" title="Official Determination & PDF" />
-            <p style={{ fontSize: 11.5, color: C.slate, marginBottom: 12 }}>
-              Generate official tamper-evident Legal Metrology Department Inspection Report:
+            <SectionLabel eyebrow="ACCOUNTABILITY" title="Officer Determination" />
+            <p style={{ fontSize: 11.5, color: C.slate, lineHeight: 1.5, marginBottom: 10 }}>
+              The finding above is AI-assisted. Confirm, override, or flag for further review before it becomes the final determination.
             </p>
-            <Button className="w-full" onClick={() => window.open(ApiService.getPdfUrl(inspection.id), "_blank")}>
-              <FileText size={15} /> Download Official PDF Report
-            </Button>
+            <select style={{ ...inputStyle, marginBottom: 10 }} defaultValue="">
+              <option value="" disabled>Select determination</option>
+              <option>Confirm AI finding — Non-Compliant</option>
+              <option>Override — mark Compliant</option>
+              <option>Escalate for senior review</option>
+            </select>
+            <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks…" />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => window.open(ApiService.getPdfUrl(insp?.id && typeof insp.id === "number" ? insp.id : 1), "_blank")}><FileText size={13} /> Generate Official PDF</Button>
+              <Button size="sm" variant="ghost">Save Draft</Button>
+            </div>
           </Card>
         </div>
       </div>
 
-      {editDecl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(19,34,56,0.6)" }}>
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded p-6 shadow-xl border" style={{ borderColor: C.line }}>
-            <h3 style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink }}>Human-in-the-Loop Review</h3>
-            <p style={{ fontSize: 12, color: C.slate, margin: "4px 0 16px" }}>
-              Correcting declaration value for <b>{editDecl.label}</b>. The rule engine will automatically re-evaluate compliance.
-            </p>
-            <Field label="Corrected Value">
-              <input style={inputStyle} value={editValue} onChange={(e) => setEditValue(e.target.value)} placeholder="Enter verified value..." />
-            </Field>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="ghost" onClick={() => setEditDecl(null)}>Cancel</Button>
-              <Button onClick={handleSaveEdit} disabled={saving}>
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} /> Save & Re-evaluate</>}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EvidenceModal requirement={evidenceReq} onClose={() => setEvidenceReq(null)} />
+    </div>
+  );
+}
 
-      {evidenceItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(19,34,56,0.6)" }}>
-          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded p-6 shadow-xl border" style={{ borderColor: C.line }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink }}>Visual Evidence & OCR Bounding Box</h3>
-              <button onClick={() => setEvidenceItem(null)}><X size={18} /></button>
+/* ============================== PRODUCTS ============================== */
+
+function Products({ onOpen }) {
+  return (
+    <Card padded={false}>
+      <div className="p-5 pb-0"><SectionLabel eyebrow="ALL PRODUCTS" title="Product Catalogue" /></div>
+      <table className="w-full" style={{ fontSize: 12.5 }}>
+        <thead>
+          <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+            {["PRODUCT", "BARCODE", "CATEGORY", "INSPECTIONS", "CURRENT STATUS", ""].map((h) => (
+              <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {PRODUCTS.map((p) => (
+            <tr key={p.barcode} className="ll-tr">
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{p.name}</td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.slate }}>{p.barcode}</td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{p.category}</td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{p.inspections}</td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={p.status} /></td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
+                <button onClick={() => onOpen(p)} className="ll-focus inline-flex items-center gap-1" style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}>History <ChevronRight size={13} /></button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="p-5 border-t" style={{ borderColor: C.line }}>
+        <SectionLabel eyebrow="CASE HISTORY" title={`Timeline — ${PRODUCTS[0].name}`} />
+        <div className="space-y-0">
+          {PRODUCT_HISTORY.map((h, idx) => {
+            const m = StatusMeta(h.status);
+            return (
+              <div key={h.id} className="flex gap-4">
+                <div className="flex flex-col items-center">
+                  <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: m.color, background: "var(--ll-bg-card)" }} />
+                  {idx < PRODUCT_HISTORY.length - 1 && <div className="w-px flex-1" style={{ background: C.line, minHeight: 34 }} />}
+                </div>
+                <div className="pb-6">
+                  <div className="flex items-center gap-3">
+                    <span style={{ ...FONT.mono, fontSize: 11.5, color: C.ink, fontWeight: 600 }}>{h.id}</span>
+                    <StatusBadge status={h.status} />
+                    <span style={{ fontSize: 11.5, color: C.slate }}>{h.date}</span>
+                  </div>
+                  <p style={{ fontSize: 12.5, color: C.charcoal, marginTop: 3 }}>{h.note}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* ============================== RULES ============================== */
+
+function Rules() {
+  const [showAdd, setShowAdd] = useState(false);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 520 }}>
+          Rules are versioned so amendments to the Packaged Commodities Rules can be added without changing application code. The deterministic engine always evaluates against the currently active version.
+        </p>
+        <Button onClick={() => setShowAdd(true)}><Plus size={15} /> Add Rule</Button>
+      </div>
+
+      <Card padded={false} className="overflow-x-auto">
+        <table className="w-full" style={{ fontSize: 12.5 }}>
+          <thead>
+            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+              {["RULE CODE", "NAME", "APPLICABLE CATEGORY", "SEVERITY", "VERSION", "EFFECTIVE FROM", "STATUS"].map((h) => (
+                <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {RULES.map((r) => {
+              const sevColor = r.severity === "HIGH" ? C.violation : r.severity === "MEDIUM" ? C.review : C.slate;
+              return (
+                <tr key={r.code} className="ll-tr">
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontWeight: 600, color: C.ink }}>{r.code}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.name}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.category}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
+                    <span style={{ color: sevColor, fontWeight: 700, fontSize: 11 }}>{r.severity}</span>
+                  </td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5 }}>{r.version}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.effective}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
+                    <span style={{
+                      fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 2,
+                      background: r.status === "ACTIVE" ? "var(--ll-compliant-bg)" : "var(--ll-bg-paper-deep)",
+                      color: r.status === "ACTIVE" ? "var(--ll-compliant)" : C.slate,
+                    }}>{r.status}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Card>
+
+      {showAdd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: "var(--ll-modal-overlay)" }} onClick={() => setShowAdd(false)}>
+          <Card className="ll-rise max-w-lg w-full">
+            <div onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between mb-4">
+                <SectionLabel eyebrow="RULE REPOSITORY" title="Add New Rule Version" />
+                <button onClick={() => setShowAdd(false)} className="ll-focus p-1 text-slate-400 hover:text-slate-200"><X size={18} /></button>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4">
+                <Field label="Rule Code"><input style={inputStyle} placeholder="e.g. PCR-MRP-001" /></Field>
+                <Field label="Severity">
+                  <select style={inputStyle}><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select>
+                </Field>
+                <Field label="Rule Name" ><input style={inputStyle} placeholder="Short descriptive name" /></Field>
+                <Field label="Version"><input style={inputStyle} placeholder="e.g. 2026.2" /></Field>
+                <Field label="Effective From"><input style={inputStyle} type="date" /></Field>
+                <Field label="Applicable Category">
+                  <select style={inputStyle}><option>All Categories</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
+                </Field>
+              </div>
+              <Field label="Description & Source"><textarea style={{ ...inputStyle, minHeight: 60 }} placeholder="Legal text reference / gazette citation" /></Field>
+              <div className="flex justify-end gap-2 mt-2">
+                <Button variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
+                <Button onClick={() => setShowAdd(false)}>Save Rule</Button>
+              </div>
             </div>
-            <div className="p-4 rounded border text-xs mb-4" style={{ background: "var(--ll-bg-paper)", borderColor: C.line }}>
-              <div className="font-semibold" style={{ color: C.ink }}>Field: {evidenceItem.label}</div>
-              <div className="mt-1" style={{ color: C.slate }}>Extracted Text: <b>{evidenceItem.raw_text || evidenceItem.value || "Not Detected"}</b></div>
-              <div className="mt-1" style={{ color: C.slate }}>OCR Confidence: <b>{intConf(evidenceItem.confidence)}%</b></div>
-              <div className="mt-1" style={{ color: C.slate }}>Coordinates [ymin, xmin, ymax, xmax]: <code>{JSON.stringify(evidenceItem.bbox || [200, 150, 260, 780])}</code></div>
-            </div>
-            <div className="flex justify-end">
-              <Button size="sm" onClick={() => setEvidenceItem(null)}>Close</Button>
-            </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>
   );
 }
 
-function intConf(c) {
-  if (!c) return 90;
-  return c > 1 ? Math.round(c) : Math.round(c * 100);
-}
+/* ============================== REPORTS ============================== */
 
-/* ============================== RULES PAGE ============================== */
-
-function Rules() {
-  const [rules, setRules] = useState([]);
-  useEffect(() => {
-    async function load() {
-      const data = await ApiService.getRules();
-      if (data) setRules(data);
-    }
-    load();
-  }, []);
-
+function Reports() {
   return (
-    <Card padded={false}>
-      <div className="p-5 pb-0">
-        <SectionLabel eyebrow="STATUTORY DATABASE" title="Active Legal Metrology (Packaged Commodities) Rules, 2011" />
-      </div>
+    <Card padded={false} className="overflow-x-auto">
+      <div className="p-5 pb-0"><SectionLabel eyebrow="GENERATED" title="Inspection Reports" /></div>
       <table className="w-full" style={{ fontSize: 12.5 }}>
         <thead>
           <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-            {["RULE CODE", "NAME", "FIELD", "STATUTORY REF", "SEVERITY", "VALIDATION TYPE"].map((h) => (
+            {["CASE NO.", "PRODUCT", "INSPECTOR", "DATE", "STATUS", ""].map((h) => (
               <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rules.map((r) => (
-            <tr key={r.id || r.code} className="ll-tr">
-              <td className="px-5 py-3 border-b font-mono font-bold" style={{ borderColor: C.line, color: C.gold }}>{r.code}</td>
-              <td className="px-5 py-3 border-b font-medium" style={{ borderColor: C.line }}>{r.name}</td>
-              <td className="px-5 py-3 border-b text-xs" style={{ borderColor: C.line, color: C.slate }}>{r.field}</td>
-              <td className="px-5 py-3 border-b text-xs font-semibold" style={{ borderColor: C.line }}>{r.statutory_reference}</td>
+          {REPORTS.map((r) => (
+            <tr key={r.id} className="ll-tr">
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{r.id}</td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.product}</td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.inspector}</td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.date}</td>
+              <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={r.status} /></td>
               <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.severity === "HIGH" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>
-                  {r.severity}
-                </span>
+                <div className="flex gap-3">
+                  <button className="ll-focus inline-flex items-center gap-1" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}><Eye size={13} /> View</button>
+                  <button onClick={() => window.open(ApiService.getPdfUrl(1), "_blank")} className="ll-focus inline-flex items-center gap-1" style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}><Download size={13} /> Official PDF</button>
+                </div>
               </td>
-              <td className="px-5 py-3 border-b text-xs" style={{ borderColor: C.line }}>{r.validation_type}</td>
             </tr>
           ))}
         </tbody>
@@ -962,57 +1407,7 @@ function Rules() {
   );
 }
 
-/* ============================== REPORTS PAGE ============================== */
-
-function Reports({ onOpenInspection }) {
-  const [inspections, setInspections] = useState([]);
-  useEffect(() => {
-    async function load() {
-      const data = await ApiService.getInspections();
-      if (data) setInspections(data);
-    }
-    load();
-  }, []);
-
-  return (
-    <Card padded={false}>
-      <div className="p-5 pb-0">
-        <SectionLabel eyebrow="ARCHIVE" title="Generated Compliance Reports" />
-      </div>
-      {inspections.length === 0 ? (
-        <div className="text-center py-12 text-sm text-slate-500">No inspection reports generated yet.</div>
-      ) : (
-        <table className="w-full" style={{ fontSize: 12.5 }}>
-          <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-              {["CASE NO.", "PRODUCT", "DATE", "STATUS", "SCORE", "REPORT"].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {inspections.map((i) => (
-              <tr key={i.id} className="ll-tr">
-                <td className="px-5 py-3 border-b font-mono font-bold" style={{ borderColor: C.line }}>{i.case_number}</td>
-                <td className="px-5 py-3 border-b font-medium" style={{ borderColor: C.line }}>{i.product?.name}</td>
-                <td className="px-5 py-3 border-b text-xs" style={{ borderColor: C.line, color: C.slate }}>{new Date(i.created_at).toLocaleDateString()}</td>
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
-                <td className="px-5 py-3 border-b font-bold" style={{ borderColor: C.line }}>{i.score}%</td>
-                <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                  <button onClick={() => window.open(ApiService.getPdfUrl(i.id), "_blank")} className="ll-focus inline-flex items-center gap-1 font-semibold text-xs text-amber-700 hover:underline">
-                    <Download size={13} /> Download PDF
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Card>
-  );
-}
-
-/* ============================== SETTINGS PAGE ============================== */
+/* ============================== SETTINGS & USER MANAGEMENT ============================== */
 
 function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser, onSwitchRole, isDbConnected, onRefreshDb, onSeedDb, loadingDb }) {
   const [searchTerm, setSearchTerm] = useState("");
