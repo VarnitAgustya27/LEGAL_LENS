@@ -638,7 +638,7 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
 
             <div className="flex items-center gap-3 pl-4 border-l" style={{ borderColor: C.line }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
-                {currentUser?.initials || "OF"}
+                {currentUser?.initials || currentUser?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
               </div>
               <div className="hidden md:block text-left">
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</div>
