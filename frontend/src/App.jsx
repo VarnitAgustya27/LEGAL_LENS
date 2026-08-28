@@ -1,3 +1,20 @@
+import ApiService from "./services/api.js";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  LayoutDashboard, ClipboardList, FilePlus2, Package, FileText, ScrollText,
+  Settings, Users, LogOut, Search, UploadCloud, Camera, ChevronRight, ChevronLeft,
+  ChevronDown, CheckCircle2, XCircle, AlertTriangle, ZoomIn, X, Filter, Calendar,
+  MapPin, Phone, Mail, ShieldCheck, ShieldAlert, ShieldQuestion, ScanLine,
+  ArrowLeft, ArrowRight, Download, Eye, Loader2, Building2, Hash, Lock, Unlock,
+  User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
+  Sun, Moon, Sparkles, Database
+} from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line,
+} from "recharts";
+import { supabase, isSupabaseConfigured } from "./supabaseClient";
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -37,22 +54,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-import ApiService from "./services/api.js";
-import React, { useState, useEffect, useRef } from "react";
-import {
-  LayoutDashboard, ClipboardList, FilePlus2, Package, FileText, ScrollText,
-  Settings, Users, LogOut, Search, UploadCloud, Camera, ChevronRight, ChevronLeft,
-  ChevronDown, CheckCircle2, XCircle, AlertTriangle, ZoomIn, X, Filter, Calendar,
-  MapPin, Phone, Mail, ShieldCheck, ShieldAlert, ShieldQuestion, ScanLine,
-  ArrowLeft, ArrowRight, Download, Eye, Loader2, Building2, Hash, Lock, Unlock,
-  User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
-  Sun, Moon, Sparkles, Database
-} from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line,
-} from "recharts";
-import { supabase, isSupabaseConfigured } from "./supabaseClient";
+
 
 /* ============================== DESIGN TOKENS ============================== */
 const C = {
@@ -1187,22 +1189,33 @@ function InspectionDetail({ inspection }) {
   let reqs = REQUIREMENTS;
   let extractedMap = EXTRACTED_DECLARATION;
 
-  if (insp.declarations && insp.declarations.length > 0) {
-    reqs = insp.declarations.map((d) => ({
-      key: d.field_name,
-      label: d.field_name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
-      rule: d.rule_citation || "Rule 6(1) PCR 2011",
-      status: d.is_compliant ? "PASS" : (d.status === "REVIEW" ? "REVIEW" : "FAIL"),
-      confidence: Math.round((d.confidence_score || 0.95) * 100),
-      detected: d.detected_value || (d.is_present ? "Detected" : "NOT DETECTED"),
-      reason: d.remarks || (d.is_compliant ? "Verified compliant under PCR 2011" : "Mandatory statutory requirement missing or invalid"),
-      bbox: d.bounding_box
-    }));
+  if (insp.declarations && Array.isArray(insp.declarations) && insp.declarations.length > 0) {
+    reqs = insp.declarations.map((d, index) => {
+      const fieldKey = d.field || d.field_name || `decl_${index}`;
+      const fieldLabel = d.label || (typeof fieldKey === "string" ? fieldKey.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "Declaration");
+      const statusVal = d.status ? (d.status === "COMPLIANT" ? "PASS" : d.status === "NON_COMPLIANT" ? "FAIL" : d.status) : (d.is_compliant ? "PASS" : "FAIL");
+      const confNum = typeof d.confidence === "number" ? d.confidence : (typeof d.confidence_score === "number" ? d.confidence_score : 0.95);
+      const confVal = Math.round(confNum > 1 ? confNum : confNum * 100);
+      const detectedVal = d.value || d.detected_value || d.raw_text || (d.is_present ? "Detected" : "NOT DETECTED");
+      const reasonVal = d.reason || d.remarks || (statusVal === "PASS" ? "Verified compliant under Legal Metrology (PCR 2011)" : "Mandatory statutory requirement missing or invalid");
+
+      return {
+        key: fieldKey,
+        label: fieldLabel,
+        rule: d.rule || d.rule_citation || "Rule 6(1) PCR 2011",
+        status: statusVal,
+        confidence: confVal,
+        detected: detectedVal,
+        reason: reasonVal,
+        bbox: d.bbox || d.bounding_box
+      };
+    });
 
     extractedMap = {};
-    insp.declarations.forEach(d => {
-      const k = d.field_name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-      extractedMap[k] = d.detected_value || (d.is_present ? "Present" : "Missing");
+    insp.declarations.forEach((d, index) => {
+      const fieldKey = d.field || d.field_name || `decl_${index}`;
+      const fieldLabel = d.label || (typeof fieldKey === "string" ? fieldKey.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : `Declaration ${index + 1}`);
+      extractedMap[fieldLabel] = d.value || d.detected_value || d.raw_text || (d.is_present ? "Present" : "Missing");
     });
   }
 
