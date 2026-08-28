@@ -1,3 +1,42 @@
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Legal-Lens UI caught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-100 text-slate-800">
+          <div className="max-w-md w-full bg-white p-6 rounded-lg shadow-lg border border-slate-300 text-center">
+            <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3 text-xl font-bold">??</div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">View Render Notice</h2>
+            <p className="text-xs text-slate-500 mb-4">{this.state.error?.message || "An unexpected view error occurred."}</p>
+            <button
+              onClick={() => {
+                localStorage.setItem("legallens_active_page", "dashboard");
+                window.location.href = "/";
+              }}
+              className="px-4 py-2 bg-slate-800 text-white rounded font-medium text-sm hover:bg-slate-700 transition-colors"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 import ApiService from "./services/api.js";
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -2210,7 +2249,14 @@ export default function App() {
     localStorage.setItem("legallens_active_page", nextPage);
   };
 
-  const [selectedInspection, setSelectedInspection] = useState(INSPECTIONS[0]);
+  const [selectedInspection, setSelectedInspection] = useState(() => {
+    try {
+      const saved = localStorage.getItem("legallens_current_inspection");
+      return saved ? JSON.parse(saved) : (INSPECTIONS ? INSPECTIONS[0] : null);
+    } catch {
+      return INSPECTIONS ? INSPECTIONS[0] : null;
+    }
+  });
   const [users, setUsers] = useState(INITIAL_USERS);
   const [loadingDb, setLoadingDb] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
@@ -2385,6 +2431,7 @@ export default function App() {
   }
 
   return (
+    <ErrorBoundary>
     <Shell
       page={page}
       setPage={navigateTo}
@@ -2396,17 +2443,17 @@ export default function App() {
       {page === "dashboard" && (
         <Dashboard
           isDark={isDark}
-          onOpenInspection={(i) => { setSelectedInspection(i); navigateTo("inspection-detail"); }}
+          onOpenInspection={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
         />
       )}
       {page === "inspections" && (
         <InspectionsList
-          onOpen={(i) => { setSelectedInspection(i); navigateTo("inspection-detail"); }}
+          onOpen={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
           onNew={() => navigateTo("new-inspection")}
         />
       )}
       {page === "new-inspection" && (
-        <NewInspection onFinish={(i) => { setSelectedInspection(i); navigateTo("inspection-detail"); }} />
+        <NewInspection onFinish={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }} />
       )}
       {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
       {page === "products" && <Products onOpen={() => { }} />}
@@ -2427,5 +2474,6 @@ export default function App() {
         />
       )}
     </Shell>
+    </ErrorBoundary>
   );
 }
