@@ -14,7 +14,7 @@ def init_database():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        # 1. Seed Users
+        # 1. Seed Essential System Users (Admin, Inspector, Reviewer)
         if db.query(User).count() == 0:
             users = [
                 User(
@@ -23,7 +23,7 @@ def init_database():
                     hashed_password=get_password_hash("inspector123"),
                     role="INSPECTOR",
                     badge_number="LM-DL-842",
-                    department="Delhi Legal Metrology Enforcement"
+                    department="Legal Metrology Enforcement Directorate"
                 ),
                 User(
                     email="admin@legallens.gov.in",
@@ -44,9 +44,9 @@ def init_database():
             ]
             db.add_all(users)
             db.commit()
-            print("Users seeded successfully.")
+            print("System users initialized.")
 
-        # 2. Seed Legal Rules
+        # 2. Seed Legal Rules from official PCR 2011 source
         if db.query(Rule).count() == 0:
             rules_path = os.path.join(os.path.dirname(__file__), "..", "rules", "legal_rules.json")
             if os.path.exists(rules_path):
@@ -68,70 +68,7 @@ def init_database():
                         )
                         db.add(rule_obj)
                 db.commit()
-                print("Rules seeded successfully.")
-
-        # 3. Seed Demo Products & Inspections
-        if db.query(Inspection).count() == 0:
-            inspector = db.query(User).filter(User.role == "INSPECTOR").first()
-            p1 = Product(
-                name="Nutrimax Glucose Biscuits 200g",
-                brand="Nutrimax",
-                category="Packaged Food",
-                barcode="8901234567890",
-                is_imported=False,
-                declared_net_quantity="200 g"
-            )
-            p2 = Product(
-                name="Silkessence Herbal Shampoo 340ml",
-                brand="Silkessence",
-                category="Cosmetics",
-                barcode="8909876543210",
-                is_imported=False,
-                declared_net_quantity="340 ml"
-            )
-            p3 = Product(
-                name="Glow & Co. Vitamin C Cream 50g",
-                brand="Glow & Co.",
-                category="Cosmetics",
-                barcode="8905555444333",
-                is_imported=True,
-                declared_net_quantity="50 g"
-            )
-            db.add_all([p1, p2, p3])
-            db.commit()
-
-            i1 = Inspection(
-                case_number="LM/2026/000482",
-                product_id=p1.id,
-                inspector_id=inspector.id,
-                status="NON_COMPLIANT",
-                score=78.5,
-                readability_score=94.0,
-                location="Karol Bagh, Delhi",
-                total_checks=8,
-                passed_checks=6,
-                failed_checks=2,
-                warning_checks=0,
-                review_checks=0
-            )
-            i2 = Inspection(
-                case_number="LM/2026/000481",
-                product_id=p2.id,
-                inspector_id=inspector.id,
-                status="REVIEW",
-                score=87.5,
-                readability_score=72.0,
-                location="Lajpat Nagar, Delhi",
-                total_checks=8,
-                passed_checks=7,
-                failed_checks=0,
-                warning_checks=1,
-                review_checks=1
-            )
-            db.add_all([i1, i2])
-            db.commit()
-
-            print("Demo products & inspections seeded successfully.")
+                print("Legal Metrology (PCR 2011) rules loaded.")
     finally:
         db.close()
 

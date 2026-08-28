@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.database.session import get_db
 from app.models.inspection import Inspection
+from app.models.product import Product
+from app.models.violation import Violation
 from app.schemas.dashboard import DashboardStats
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -13,38 +16,47 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     non_compliant = db.query(Inspection).filter(Inspection.status == "NON_COMPLIANT").count()
     review = db.query(Inspection).filter(Inspection.status == "REVIEW").count()
 
-    compliance_rate = round((compliant / max(1, total)) * 100, 1)
+    compliance_rate = round((compliant / max(1, total)) * 100, 1) if total > 0 else 0.0
 
-    violations_by_category = [
-        {"category": "Packaged Food", "violations": 128},
-        {"category": "Cosmetics", "violations": 96},
-        {"category": "Household", "violations": 54},
-        {"category": "Beverages", "violations": 41},
-        {"category": "Personal Care", "violations": 22}
-    ]
+    # Real Violations by Product Category from Database
+    cat_counts = (
+        db.query(Product.category, func.count(Violation.id))
+        .join(Inspection, Inspection.product_id == Product.id)
+        .join(Violation, Violation.inspection_id == Inspection.id)
+        .group_by(Product.category)
+        .all()
+    )
+    violations_by_category = [{"category": cat, "violations": cnt} for cat, cnt in cat_counts]
+    if not violations_by_category:
+        violations_by_category = []
 
-    inspections_trend = [
-        {"month": "Mar", "inspections": 96},
-        {"month": "Apr", "inspections": 121},
-        {"month": "May", "inspections": 142},
-        {"month": "Jun", "inspections": 158},
-        {"month": "Jul", "inspections": 176},
-        {"month": "Aug", "inspections": 203}
-    ]
-
-    common_violations = [
-        {"rule": "PCR-MRP-001", "desc": "MRP declaration missing or illegible taxes statement", "count": 84},
-        {"rule": "PCR-COO-004", "desc": "Country of origin not declared on imported item", "count": 57},
-        {"rule": "PCR-CC-007", "desc": "Consumer care helpline or email incomplete", "count": 45},
-        {"rule": "PCR-NQ-002", "desc": "Net quantity in non-standard metric unit", "count": 33}
-    ]
+    # Real Inspection Trend from Database
+    inspections_trend = []
+    if total > 0:
+        # Group by month or day
+        date_counts = (
+            db.query(func.strftime("%b", Inspection.created_at), func.count(Inspection.id))
+            .group_by(func.strftime("%b", Inspection.created_at))
+            .all()
+        )
+        inspections_trend = [{"month": m or "Aug", "inspections": c} for m, c in date_counts]
+    
+    # Real Common Violations from Database
+    viol_counts = (
+        db.query(Violation.rule_code, Violation.message, func.count(Violation.id))
+        .group_by(Violation.rule_code)
+        .order_by(func.count(Violation.id).desc())
+        .limit(5)
+        .all()
+    )
+    common_violations = [{"rule": code, "desc": msg[:45] + "...", "count": cnt} for code, msg, cnt in viol_counts]
 
     return {
-        "total_inspections": total or 1284,
-        "compliant_count": compliant or 812,
-        "non_compliant_count": non_compliant or 341,
-        "review_count": review or 131,
-        "compliance_rate": compliance_rate if total > 0 else 63.2,
+        "total_inspections": total,
+        "compliant_count": compliant,
+        "non_compliant_count": non_compliant,
+        "review_count": review,
+        "compliance_rate": compliance_rate,
         "violations_by_category": violations_by_category,
         "inspections_trend": inspections_trend,
         "common_violations": common_violations
