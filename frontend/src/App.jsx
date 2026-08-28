@@ -6,12 +6,13 @@ import {
   MapPin, Phone, Mail, ShieldCheck, ShieldAlert, ShieldQuestion, ScanLine,
   ArrowLeft, ArrowRight, Download, Eye, Loader2, Building2, Hash, Lock, Unlock,
   User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
-  Sun, Moon, Sparkles
+  Sun, Moon, Sparkles, Database
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line,
 } from "recharts";
+import { supabase, isSupabaseConfigured } from "./supabaseClient";
 
 /* ============================== DESIGN TOKENS ============================== */
 const C = {
@@ -392,7 +393,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
             </button>
           </div>
           <h1 style={{ ...FONT.display, fontSize: 42, fontWeight: 700, letterSpacing: "0.01em", marginTop: 18, color: "#F7F5EF" }}>
-            Metria
+            Legal-Lens
           </h1>
           <p style={{ ...FONT.body, fontSize: 14.5, color: "#C7C2B4", maxWidth: 360, marginTop: 14, lineHeight: 1.6 }}>
             AI-assisted compliance inspection for packaged commodities under the Legal Metrology Act, 2009 and the Packaged Commodities Rules, 2011.
@@ -418,7 +419,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           <div className="mb-8 md:hidden flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ScanLine size={20} style={{ color: C.gold }} />
-              <span style={{ ...FONT.display, fontSize: 22, fontWeight: 700, color: C.ink }}>Metria</span>
+              <span style={{ ...FONT.display, fontSize: 22, fontWeight: 700, color: C.ink }}>Legal-Lens</span>
             </div>
             <button
               type="button"
@@ -506,7 +507,7 @@ const PAGE_TITLES = {
   settings: ["ADMINISTRATION", "Users & Settings"],
 };
 
-function Shell({ page, setPage, currentUser, isDark, toggleTheme, children }) {
+function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected, children }) {
   const [eyebrow, title] = PAGE_TITLES[page] || ["", ""];
   const roleBadgeStyle = {
     Admin: { bg: C.violationBg, color: C.violation, bd: C.violationBd },
@@ -519,7 +520,7 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, children }) {
       <GlobalStyle />
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
         
-        {/* Top Brand Header with Dark Mode Toggle placed directly to the right of Metria */}
+        {/* Top Brand Header with Dark Mode Toggle placed directly to the right of Legal-Lens */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
           <button
             type="button"
@@ -530,7 +531,7 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, children }) {
           >
             <ScanLine size={20} style={{ color: "#C7A75A", opacity: 1 }} />
             <span style={{ ...FONT.display, fontSize: 19, fontWeight: 700, color: "#F7F5EF", opacity: 1, letterSpacing: "0.02em" }}>
-              Metria
+              Legal-Lens
             </span>
           </button>
 
@@ -943,10 +944,10 @@ function ProcessingScreen({ onDone }) {
           const active = idx === doneCount;
           return (
             <div key={s} className="flex items-center gap-3 py-2.5 border-b" style={{ borderColor: C.line }}>
-              {complete ? <CheckCircle2 size={17} style={{ color: C.compliant }} /> : active ? <Loader2 size={17} className="animate-spin" style={{ color: C.gold }} /> : <div className="w-4 h-4 rounded-full border" style={{ borderColor: C.line }} />}
-              <span style={{ fontSize: 13, fontWeight: complete || active ? 600 : 500, color: complete ? C.compliant : active ? C.ink : C.slate }}>{s}</span>
+              {complete ? <CheckCircle2 size={17} style={{ color: "var(--ll-compliant)" }} /> : active ? <Loader2 size={17} className="animate-spin" style={{ color: C.gold }} /> : <div className="w-4 h-4 rounded-full border" style={{ borderColor: C.line }} />}
+              <span style={{ fontSize: 13, fontWeight: complete || active ? 600 : 500, color: complete ? "var(--ll-compliant)" : active ? C.ink : C.slate }}>{s}</span>
               {active && <span style={{ fontSize: 11, color: C.slate, marginLeft: "auto" }}>processing…</span>}
-              {complete && <span style={{ fontSize: 11, color: C.compliant, marginLeft: "auto" }}>done</span>}
+              {complete && <span style={{ fontSize: 11, color: "var(--ll-compliant)", marginLeft: "auto" }}>done</span>}
             </div>
           );
         })}
@@ -1332,7 +1333,7 @@ function Reports() {
 
 /* ============================== SETTINGS & USER MANAGEMENT ============================== */
 
-function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser, onSwitchRole }) {
+function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser, onSwitchRole, isDbConnected, onRefreshDb, onSeedDb, loadingDb }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1349,8 +1350,8 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (u.badge && u.badge.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (u.jurisdiction && u.jurisdiction.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
@@ -1386,7 +1387,7 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
         </div>
       )}
 
-      {/* Role Switcher & System Authority Card */}
+      {/* Database Connection & Role Status Banner */}
       <Card className="border-l-4" style={{ borderLeftColor: isAdmin ? "var(--ll-compliant)" : "var(--ll-review)" }}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -1401,7 +1402,7 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 style={{ ...FONT.display, fontSize: 16, fontWeight: 700, color: C.ink }}>
                   {isAdmin ? "Administrator Authority Active" : "Restricted Officer View — Read Only"}
                 </h3>
@@ -1414,6 +1415,19 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
                   }}
                 >
                   {currentUser?.role}
+                </span>
+
+                {/* Supabase status badge */}
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border"
+                  style={{
+                    background: isDbConnected ? "rgba(34,197,94,0.12)" : "rgba(234,179,8,0.12)",
+                    color: isDbConnected ? "#22C55E" : "#EAB308",
+                    borderColor: isDbConnected ? "rgba(34,197,94,0.3)" : "rgba(234,179,8,0.3)"
+                  }}
+                >
+                  <Database size={11} />
+                  {isDbConnected ? "Supabase Live DB" : "Local / Offline Mode"}
                 </span>
               </div>
               <p style={{ fontSize: 12.5, color: C.slate, marginTop: 3, maxWidth: 620, lineHeight: 1.4 }}>
@@ -1430,33 +1444,59 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
             </div>
           </div>
 
-          {/* Role simulation bar for evaluator/tester convenience */}
-          <div className="p-2.5 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
-            <div style={{ ...FONT.mono, fontSize: 10, color: C.slate, fontWeight: 600, letterSpacing: "0.08em", marginBottom: 6 }}>
-              SIMULATE ROLE (DEMO)
+          {/* Quick Actions & Role Switcher */}
+          <div className="flex flex-col gap-2 items-end">
+            <div className="p-2 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
+              <div style={{ ...FONT.mono, fontSize: 10, color: C.slate, fontWeight: 600, letterSpacing: "0.08em", marginBottom: 4 }}>
+                SIMULATE ROLE (DEMO)
+              </div>
+              <div className="flex gap-1.5">
+                {["Admin", "Enforcement Officer", "Reviewer"].map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => {
+                      onSwitchRole(r);
+                      showToast(`Switched active session to ${r}`);
+                    }}
+                    className={`ll-focus px-2 py-0.5 text-xs font-semibold rounded transition-all ${
+                      currentUser?.role === r ? "shadow-sm font-bold" : "opacity-75 hover:opacity-100"
+                    }`}
+                    style={{
+                      background: currentUser?.role === r ? C.ink : "var(--ll-bg-card)",
+                      color: currentUser?.role === r ? "var(--ll-button-primary-color)" : C.charcoal,
+                      border: `1px solid ${currentUser?.role === r ? C.ink : C.line}`,
+                    }}
+                  >
+                    {r === "Admin" ? "★ Admin" : r}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-1.5">
-              {["Admin", "Enforcement Officer", "Reviewer"].map((r) => (
+
+            {isDbConnected && (
+              <div className="flex gap-2">
                 <button
-                  key={r}
                   type="button"
-                  onClick={() => {
-                    onSwitchRole(r);
-                    showToast(`Switched active session to ${r}`);
-                  }}
-                  className={`ll-focus px-2.5 py-1 text-xs font-semibold rounded transition-all ${
-                    currentUser?.role === r ? "shadow-sm font-bold" : "opacity-75 hover:opacity-100"
-                  }`}
-                  style={{
-                    background: currentUser?.role === r ? C.ink : "var(--ll-bg-card)",
-                    color: currentUser?.role === r ? "var(--ll-button-primary-color)" : C.charcoal,
-                    border: `1px solid ${currentUser?.role === r ? C.ink : C.line}`,
-                  }}
+                  onClick={onRefreshDb}
+                  disabled={loadingDb}
+                  className="ll-focus inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded border hover:bg-slate-700/10 text-slate-400"
+                  style={{ borderColor: C.line }}
                 >
-                  {r === "Admin" ? "★ Admin" : r}
+                  <RefreshCw size={11} className={loadingDb ? "animate-spin" : ""} /> Refresh DB
                 </button>
-              ))}
-            </div>
+                {users.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={onSeedDb}
+                    disabled={loadingDb}
+                    className="ll-focus inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-amber-500/20 text-amber-500 border border-amber-500/40 hover:bg-amber-500/30 font-semibold"
+                  >
+                    <Plus size={11} /> Seed Sample Officers
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -1559,7 +1599,7 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
                           className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                           style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4" }}
                         >
-                          {u.initials || u.name.slice(0, 2).toUpperCase()}
+                          {u.initials || (u.name ? u.name.slice(0, 2).toUpperCase() : "OF")}
                         </div>
                         <div>
                           <div style={{ fontWeight: 600, color: C.ink }}>
@@ -1657,7 +1697,7 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
               {filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-slate-500">
-                    No officer accounts matched the query.
+                    No officer accounts found.
                   </td>
                 </tr>
               )}
@@ -2034,10 +2074,12 @@ export default function App() {
   const [selectedInspection, setSelectedInspection] = useState(INSPECTIONS[0]);
   const [users, setUsers] = useState(INITIAL_USERS);
   const [currentUser, setCurrentUser] = useState(INITIAL_USERS[0]); // Default to Admin Poonam Desai
-  
+  const [loadingDb, setLoadingDb] = useState(false);
+  const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
+
   // Theme state: dark / light
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("metria_theme") || "light";
+    return localStorage.getItem("Legal-Lens_theme") || "light";
   });
 
   const isDark = theme === "dark";
@@ -2045,24 +2087,131 @@ export default function App() {
   const toggleTheme = () => {
     const next = isDark ? "light" : "dark";
     setTheme(next);
-    localStorage.setItem("metria_theme", next);
+    localStorage.setItem("Legal-Lens_theme", next);
   };
 
-  const handleAddUser = (newUser) => {
+  // Fetch users from Supabase on mount if configured
+  const fetchSupabaseUsers = async () => {
+    if (!isSupabaseConfigured() || !supabase) return;
+    try {
+      setLoadingDb(true);
+      const { data, error } = await supabase
+        .from("officer_users")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.warn("Supabase fetch error, fallback to local:", error.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setUsers(data);
+        setIsDbConnected(true);
+        // Sync current user if present
+        const currentFound = data.find((u) => u.email === currentUser.email) || data[0];
+        if (currentFound) setCurrentUser(currentFound);
+      }
+    } catch (err) {
+      console.warn("Supabase connection error:", err);
+    } finally {
+      setLoadingDb(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSupabaseUsers();
+  }, []);
+
+  // Add User Handler (optimistic + Supabase persistence)
+  const handleAddUser = async (newUser) => {
     setUsers((prev) => [newUser, ...prev]);
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase.from("officer_users").insert([
+          {
+            custom_id: newUser.id,
+            name: newUser.name,
+            badge: newUser.badge,
+            role: newUser.role,
+            email: newUser.email,
+            jurisdiction: newUser.jurisdiction,
+            phone: newUser.phone,
+            active: newUser.active,
+            initials: newUser.initials,
+          },
+        ]);
+        if (error) console.error("Supabase insert error:", error);
+      } catch (err) {
+        console.error("Supabase insert exception:", err);
+      }
+    }
   };
 
-  const handleUpdateUser = (targetEmail, updatedFields) => {
+  // Update User Handler (optimistic + Supabase persistence)
+  const handleUpdateUser = async (targetEmail, updatedFields) => {
     setUsers((prev) =>
       prev.map((u) => (u.email === targetEmail ? { ...u, ...updatedFields } : u))
     );
     if (currentUser?.email === targetEmail) {
       setCurrentUser((prev) => ({ ...prev, ...updatedFields }));
     }
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase
+          .from("officer_users")
+          .update(updatedFields)
+          .eq("email", targetEmail);
+        if (error) console.error("Supabase update error:", error);
+      } catch (err) {
+        console.error("Supabase update exception:", err);
+      }
+    }
   };
 
-  const handleDeleteUser = (targetEmail) => {
+  // Delete User Handler (optimistic + Supabase persistence)
+  const handleDeleteUser = async (targetEmail) => {
     setUsers((prev) => prev.filter((u) => u.email !== targetEmail));
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase
+          .from("officer_users")
+          .delete()
+          .eq("email", targetEmail);
+        if (error) console.error("Supabase delete error:", error);
+      } catch (err) {
+        console.error("Supabase delete exception:", err);
+      }
+    }
+  };
+
+  // Helper to seed initial mock users to Supabase if empty
+  const handleSeedDb = async () => {
+    if (!isSupabaseConfigured() || !supabase) return;
+    try {
+      setLoadingDb(true);
+      const rows = INITIAL_USERS.map((u) => ({
+        custom_id: u.id,
+        name: u.name,
+        badge: u.badge,
+        role: u.role,
+        email: u.email,
+        jurisdiction: u.jurisdiction,
+        phone: u.phone,
+        active: u.active,
+        initials: u.initials,
+      }));
+      const { error } = await supabase.from("officer_users").upsert(rows, { onConflict: "email" });
+      if (error) throw error;
+      await fetchSupabaseUsers();
+    } catch (err) {
+      console.error("Seed error:", err);
+    } finally {
+      setLoadingDb(false);
+    }
   };
 
   const handleSwitchRole = (newRole) => {
@@ -2103,6 +2252,7 @@ export default function App() {
       currentUser={currentUser}
       isDark={isDark}
       toggleTheme={toggleTheme}
+      isDbConnected={isDbConnected}
     >
       {page === "dashboard" && (
         <Dashboard
@@ -2120,7 +2270,7 @@ export default function App() {
         <NewInspection onFinish={(i) => { setSelectedInspection(i); setPage("inspection-detail"); }} />
       )}
       {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
-      {page === "products" && <Products onOpen={() => {}} />}
+      {page === "products" && <Products onOpen={() => { }} />}
       {page === "rules" && <Rules />}
       {page === "reports" && <Reports />}
       {page === "settings" && (
@@ -2131,6 +2281,10 @@ export default function App() {
           onUpdateUser={handleUpdateUser}
           onDeleteUser={handleDeleteUser}
           onSwitchRole={handleSwitchRole}
+          isDbConnected={isDbConnected}
+          onRefreshDb={fetchSupabaseUsers}
+          onSeedDb={handleSeedDb}
+          loadingDb={loadingDb}
         />
       )}
     </Shell>
