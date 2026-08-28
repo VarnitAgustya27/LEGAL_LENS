@@ -1,3 +1,4 @@
+import { supabase, isSupabaseConfigured } from "./supabaseClient.js";
 import React, { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard, ClipboardList, FilePlus2, Package, FileText, ScrollText,
@@ -1013,11 +1014,26 @@ function Reports({ onOpenInspection }) {
 
 /* ============================== SETTINGS PAGE ============================== */
 
-function SettingsPage({ users, currentUser }) {
+function SettingsPage({ users, currentUser, isDbConnected, onRefreshDb, onSeedDb, loadingDb }) {
   return (
     <div className="space-y-6">
       <Card>
-        <SectionLabel eyebrow="SYSTEM USERS" title="Enforcement Directorate Personnel" />
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+          <div>
+            <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.12em", color: C.gold, fontWeight: 600 }}>SYSTEM USERS</div>
+            <h2 style={{ ...FONT.display, fontSize: 20, color: C.ink, fontWeight: 600 }}>Enforcement Directorate Personnel</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border font-semibold ${isDbConnected ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-slate-100 text-slate-700 border-slate-300"}`}>
+              {isDbConnected ? "? Supabase Connected" : "? Local Engine Active"}
+            </span>
+            {isDbConnected && (
+              <Button size="sm" variant="ghost" onClick={onRefreshDb} disabled={loadingDb}>
+                <RefreshCw size={12} className={loadingDb ? "animate-spin" : ""} /> Sync
+              </Button>
+            )}
+          </div>
+        </div>
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
             <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
@@ -1050,9 +1066,32 @@ export default function App() {
   const [selectedInspection, setSelectedInspection] = useState(null);
   const [users, setUsers] = useState(INITIAL_USERS);
   const [currentUser, setCurrentUser] = useState(INITIAL_USERS[1]);
+  const [loadingDb, setLoadingDb] = useState(false);
+  const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
   
   const [theme, setTheme] = useState(() => localStorage.getItem("legallens_theme") || "light");
   const isDark = theme === "dark";
+
+  // Fetch users from Supabase if configured
+  const fetchSupabaseUsers = async () => {
+    if (!isSupabaseConfigured() || !supabase) return;
+    try {
+      setLoadingDb(true);
+      const { data, error } = await supabase.from("officer_users").select("*").order("created_at", { ascending: false });
+      if (!error && data && data.length > 0) {
+        setUsers(data);
+        setIsDbConnected(true);
+      }
+    } catch (err) {
+      console.warn("Supabase fetch notice:", err);
+    } finally {
+      setLoadingDb(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSupabaseUsers();
+  }, []);
 
   const toggleTheme = () => {
     const next = isDark ? "light" : "dark";
@@ -1097,7 +1136,7 @@ export default function App() {
       {page === "reports" && (
         <Reports onOpenInspection={(i) => { setSelectedInspection(i); setPage("inspection-detail"); }} />
       )}
-      {page === "settings" && <SettingsPage users={users} currentUser={currentUser} />}
+      {page === "settings" && <SettingsPage users={users} currentUser={currentUser} isDbConnected={isDbConnected} onRefreshDb={fetchSupabaseUsers} loadingDb={loadingDb} />}
     </Shell>
   );
 }
