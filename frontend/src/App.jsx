@@ -839,7 +839,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                 <span className="text-[10px] text-slate-400 font-mono">1-click select</span>
               </div>
               
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {users.map((u) => {
                   const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
                   return (
@@ -847,14 +847,14 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                       key={u.id || u.badge}
                       type="button"
                       onClick={() => handleBadgeClick(u.badge)}
-                      className="ll-focus text-xs font-mono px-2.5 py-1.5 rounded-md border transition-all cursor-pointer shadow-sm flex items-center gap-1.5 hover:scale-105"
+                      className="ll-focus text-xs font-mono px-3 py-2 rounded-md border cursor-pointer shadow-sm flex items-center justify-between gap-2 transition-all duration-200 hover:border-[#E5B842] hover:shadow-[0_0_12px_rgba(229,184,66,0.5)] hover:-translate-y-0.5"
                       style={{
                         background: isSelected
                           ? (isDark ? "#E5B842" : "#132238")
                           : (isDark ? "#132034" : "#FFFFFF"),
                         borderColor: isSelected
                           ? (isDark ? "#E5B842" : "#132238")
-                          : (isDark ? "rgba(255,255,255,0.15)" : "rgba(19,34,56,0.15)"),
+                          : (isDark ? "rgba(229,184,66,0.35)" : "rgba(19,34,56,0.2)"),
                         color: isSelected
                           ? (isDark ? "#090E17" : "#FFFFFF")
                           : (isDark ? "#F1F5F9" : "#132238"),
@@ -862,13 +862,15 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                       }}
                       title={`Sign in as ${u.name} (${u.role})`}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full"
-                        style={{
-                          background: u.role === "Admin" ? "#EF4444" : u.role === "Reviewer" ? "#F59E0B" : "#10B981",
-                        }}
-                      />
-                      <span>{u.badge}</span>
-                      <span className="text-[10px] opacity-75 font-sans font-normal">({u.role?.split(" ")[0]})</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{
+                            background: u.role === "Admin" ? "#EF4444" : u.role === "Reviewer" ? "#F59E0B" : "#10B981",
+                          }}
+                        />
+                        <span className="truncate font-semibold">{u.badge}</span>
+                      </div>
+                      <span className="text-[10px] opacity-75 font-sans font-normal flex-shrink-0">({u.role === "Enforcement Officer" ? "Enforcement" : u.role})</span>
                     </button>
                   );
                 })}
