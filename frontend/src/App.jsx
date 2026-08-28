@@ -497,9 +497,9 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
         }}
       />
 
-      {/* SPREAD SCALES OF JUSTICE WATERMARK SVG (PROMINENT & BEAUTIFUL ON LEFT) */}
-      <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none select-none z-0 overflow-hidden">
-        <svg viewBox="0 0 500 500" className="w-[780px] h-[780px] max-w-none opacity-[0.09] dark:opacity-[0.14] transform -translate-x-[12%] md:-translate-x-[6%] lg:translate-x-[0%]" style={{ color: isDark ? "#E5B842" : "#96742E" }}>
+      {/* SPREAD SCALES OF JUSTICE WATERMARK SVG (ULTRA-FAINT AMBIENT ON LEFT) */}
+      <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none select-none -z-10 overflow-hidden" style={{ zIndex: 0 }}>
+        <svg viewBox="0 0 500 500" className="w-[780px] h-[780px] max-w-none opacity-[0.035] dark:opacity-[0.045] transform -translate-x-[12%] md:-translate-x-[6%] lg:translate-x-[0%]" style={{ color: isDark ? "#E5B842" : "#96742E" }}>
           {/* Outer dashed circle */}
           <circle cx="250" cy="250" r="220" fill="none" stroke="currentColor" strokeWidth="1.8" strokeDasharray="6 6" />
           {/* Inner solid circle */}
@@ -675,10 +675,10 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                     <p.icon size={16} style={{ color: isDark ? "#E5B842" : "#96742E" }} />
                     <span className="text-xs font-bold" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>{p.title}</span>
                   </div>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border"
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border whitespace-nowrap flex-shrink-0 font-semibold"
                     style={{
                       background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+                      borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
                       color: isDark ? "#94A3B8" : "#64748B",
                     }}
                   >
