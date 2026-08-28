@@ -437,7 +437,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
             localStorage.setItem("legallens_avatars", JSON.stringify(map));
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [matchedUser?.badge]);
 
@@ -1610,7 +1610,7 @@ function evaluateImageQuality(file, callback) {
 
       if (width < 800 || height < 600 || totalPixels < 500000) {
         quality = "LOW";
-        qualityLabel = "Low Res / OCR Alert";
+        qualityLabel = "Low Res";
         qualityBadge = "text-amber-400 bg-amber-500/15 border-amber-500/30";
       } else if (width < 1400 || height < 1000) {
         quality = "MODERATE";
@@ -2661,7 +2661,7 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
