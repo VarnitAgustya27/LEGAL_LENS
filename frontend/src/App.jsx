@@ -488,7 +488,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
     >
       {/* Ambient background glow & grid lines */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20"
+        className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 z-0"
         style={{
           backgroundImage: isDark
             ? "linear-gradient(rgba(229,184,66,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(229,184,66,0.06) 1px, transparent 1px)"
@@ -496,6 +496,41 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           backgroundSize: "40px 40px",
         }}
       />
+
+      {/* SPREAD SCALES OF JUSTICE WATERMARK SVG (PROMINENT & BEAUTIFUL ON LEFT) */}
+      <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none select-none z-0 overflow-hidden">
+        <svg viewBox="0 0 500 500" className="w-[780px] h-[780px] max-w-none opacity-[0.09] dark:opacity-[0.14] transform -translate-x-[12%] md:-translate-x-[6%] lg:translate-x-[0%]" style={{ color: isDark ? "#E5B842" : "#96742E" }}>
+          {/* Outer dashed circle */}
+          <circle cx="250" cy="250" r="220" fill="none" stroke="currentColor" strokeWidth="1.8" strokeDasharray="6 6" />
+          {/* Inner solid circle */}
+          <circle cx="250" cy="250" r="170" fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.7" />
+          {/* Axis lines with 4 node points */}
+          <line x1="250" y1="20" x2="250" y2="480" stroke="currentColor" strokeWidth="1.4" />
+          <line x1="20" y1="250" x2="480" y2="250" stroke="currentColor" strokeWidth="1.4" />
+          <circle cx="250" cy="20" r="6" fill="currentColor" />
+          <circle cx="250" cy="480" r="6" fill="currentColor" />
+          <circle cx="20" cy="250" r="6" fill="currentColor" />
+          <circle cx="480" cy="250" r="6" fill="currentColor" />
+          
+          {/* Center Vertical Pillar */}
+          <rect x="243" y="125" width="14" height="230" rx="3" fill="currentColor" />
+          <rect x="165" y="345" width="170" height="20" rx="4" fill="currentColor" />
+          <circle cx="250" cy="125" r="16" fill="currentColor" />
+          
+          {/* Balance Beam (Curved arc) */}
+          <path d="M 85 158 Q 250 140 415 158" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+          
+          {/* Left Pan Chains & Dish */}
+          <line x1="85" y1="158" x2="45" y2="255" stroke="currentColor" strokeWidth="2.2" />
+          <line x1="85" y1="158" x2="125" y2="255" stroke="currentColor" strokeWidth="2.2" />
+          <path d="M 35 255 Q 85 295 135 255 Z" fill="currentColor" opacity="0.9" />
+          
+          {/* Right Pan Chains & Dish */}
+          <line x1="415" y1="158" x2="375" y2="255" stroke="currentColor" strokeWidth="2.2" />
+          <line x1="415" y1="158" x2="455" y2="255" stroke="currentColor" strokeWidth="2.2" />
+          <path d="M 365 255 Q 415 295 465 255 Z" fill="currentColor" opacity="0.9" />
+        </svg>
+      </div>
 
       {/* ── TOP NAVIGATION BAR ── */}
       <header className="relative z-10 w-full px-5 sm:px-8 lg:px-12 py-4 border-b flex items-center justify-between backdrop-blur-md transition-colors duration-300"
