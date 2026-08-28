@@ -346,24 +346,15 @@ const PIPELINE_STAGES = [
 /* ============================== LOGIN ============================== */
 
 function Login({ onLogin, users, isDark, toggleTheme }) {
-  const [selectedRole, setSelectedRole] = useState("Admin");
   const [officerId, setOfficerId] = useState("LMD-DL-2705");
 
-  // Find user dynamically by badge or fallback to first matching role
-  const matchedUser = users.find((u) => u.badge === officerId) ||
-                      users.find((u) => u.role === selectedRole && u.active) ||
+  // Find user dynamically by badge or fallback to first active user
+  const matchedUser = users.find((u) => u.badge?.toLowerCase() === officerId?.trim().toLowerCase()) ||
+                      users.find((u) => u.active) ||
                       users[0];
 
   const handleBadgeClick = (badge) => {
     setOfficerId(badge);
-    const u = users.find((x) => x.badge === badge);
-    if (u) setSelectedRole(u.role);
-  };
-
-  const handleRoleChange = (role) => {
-    setSelectedRole(role);
-    const u = users.find((x) => x.role === role && x.active);
-    if (u) setOfficerId(u.badge);
   };
 
   const handleSignIn = () => {
@@ -434,50 +425,31 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: C.gold, fontWeight: 600 }}>OFFICER SIGN-IN</div>
           <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 600, color: C.ink, marginTop: 4, marginBottom: 20 }}>Access the inspection console</h2>
 
-          <Field label="Role / Authority Level">
-            <div className="relative">
-              <select
-                className="ll-focus appearance-none"
-                style={{ ...inputStyle, paddingRight: 30, fontWeight: 600 }}
-                value={selectedRole}
-                onChange={(e) => handleRoleChange(e.target.value)}
-              >
-                <option value="Admin">Admin (Full User & Rule Management)</option>
-                <option value="Enforcement Officer">Enforcement Officer (Inspections & Cases)</option>
-                <option value="Reviewer">Reviewer (Appeals & Determinations)</option>
-              </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: C.slate }} />
-            </div>
-          </Field>
-
-          <Field label="Officer ID / Badge">
+          <Field label="Officer ID / Badge" required={true}>
             <div className="relative">
               <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input
                 className="ll-focus"
-                style={{ ...inputStyle, paddingLeft: 34 }}
+                style={{ ...inputStyle, paddingLeft: 34, fontWeight: 600 }}
                 value={officerId}
-                onChange={(e) => {
-                  setOfficerId(e.target.value);
-                  const u = users.find((x) => x.badge === e.target.value);
-                  if (u) setSelectedRole(u.role);
-                }}
+                placeholder="Enter badge e.g. LMD-DL-2705"
+                onChange={(e) => setOfficerId(e.target.value)}
               />
             </div>
           </Field>
 
-          <Field label="Security Key / Password">
+          <Field label="Security Key / Password" required={true}>
             <div className="relative">
               <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input type="password" className="ll-focus" style={{ ...inputStyle, paddingLeft: 34 }} defaultValue="password123" />
             </div>
           </Field>
 
-          {/* Matched User Card */}
+          {/* Matched User Card (Auto-detected from Badge) */}
           {matchedUser && (
             <div className="p-3 mb-4 rounded border flex items-center gap-3 transition-all" style={{ background: "rgba(58,107,53,0.08)", borderColor: "rgba(58,107,53,0.3)" }}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4" }}>
-                {matchedUser.initials || (matchedUser.name ? matchedUser.name.slice(0, 2).toUpperCase() : "OF")}
+              <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4" }}>
+                {matchedUser.initials || (matchedUser.name ? matchedUser.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "OF")}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-bold truncate" style={{ color: C.ink }}>{matchedUser.name}</div>
@@ -490,31 +462,36 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           )}
 
           <Button className="w-full mt-1" onClick={handleSignIn}>
-            Sign in as {matchedUser?.name || selectedRole} <ArrowRight size={15} />
+            Sign in as {matchedUser?.name || "Enforcement Officer"} <ArrowRight size={15} />
           </Button>
 
-          {/* Quick Start Badge Selector */}
-          <div className="mt-5 p-3 rounded border" style={{ borderColor: C.line, background: "var(--ll-bg-paper-deep)" }}>
-            <div className="flex items-center gap-1.5 text-xs font-semibold mb-2" style={{ color: C.slate }}>
+          {/* High-Contrast Quick Start Badge Selector */}
+          <div className="mt-5 p-3.5 rounded border" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
+            <div className="flex items-center gap-1.5 text-xs font-semibold mb-2.5" style={{ color: C.slate }}>
               <Info size={13} style={{ color: C.gold }} />
-              <span>Quick Start:</span> Enter a badge ID from your database.
+              <span>Quick Start:</span> Click a badge ID to auto-fill:
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {users.map((u) => (
-                <button
-                  key={u.id || u.badge}
-                  type="button"
-                  onClick={() => handleBadgeClick(u.badge)}
-                  className="ll-focus text-xs font-mono px-2 py-1 rounded border bg-white dark:bg-slate-800 transition-colors hover:border-amber-500 hover:text-amber-500"
-                  style={{
-                    borderColor: officerId === u.badge ? C.gold : C.line,
-                    color: officerId === u.badge ? C.gold : C.ink,
-                    fontWeight: officerId === u.badge ? 700 : 500
-                  }}
-                >
-                  {u.badge}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {users.map((u) => {
+                const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
+                return (
+                  <button
+                    key={u.id || u.badge}
+                    type="button"
+                    onClick={() => handleBadgeClick(u.badge)}
+                    className="ll-focus text-xs font-mono px-2.5 py-1.5 rounded border transition-all cursor-pointer shadow-sm"
+                    style={{
+                      background: isSelected ? "var(--ll-bg-sidebar)" : "var(--ll-bg-paper)",
+                      borderColor: isSelected ? C.gold : C.line,
+                      color: isSelected ? "#F7F5EF" : C.ink,
+                      fontWeight: isSelected ? 700 : 600,
+                    }}
+                    title={`Sign in as ${u.name} (${u.role})`}
+                  >
+                    {u.badge}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
