@@ -668,6 +668,34 @@ const PAGE_TITLES = {
 
 function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected, children }) {
   const [eyebrow, title] = PAGE_TITLES[page] || ["", ""];
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  const handleSignOut = () => {
+    setProfileOpen(false);
+    localStorage.removeItem("legallens_active_page");
+    localStorage.removeItem("legallens_current_user");
+    setPage("login");
+  };
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const onPointerDown = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setProfileOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [profileOpen]);
+
   const roleBadgeStyle = {
     Admin: { bg: C.violationBg, color: C.violation, bd: C.violationBd },
     "Enforcement Officer": { bg: "rgba(19,34,56,0.08)", color: C.ink, bd: C.line },
@@ -737,7 +765,7 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
           })}
         </nav>
         <div className="px-3 pb-4">
-          <button className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-left" style={{ color: "#B7B2A2" }} onClick={() => { localStorage.removeItem("legallens_active_page"); localStorage.removeItem("legallens_current_user"); setPage("login"); }}>
+          <button className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-left" style={{ color: "#B7B2A2" }} onClick={handleSignOut}>
             <LogOut size={16} />
             <span style={{ fontSize: 13, fontWeight: 500 }}>Sign out</span>
           </button>
@@ -756,21 +784,61 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
               <input placeholder="Search case no., product, barcode…" className="ll-focus" style={{ ...inputStyle, paddingLeft: 30, width: 260, fontSize: 12.5 }} />
             </div>
 
-            <div className="flex items-center gap-3 pl-4 border-l" style={{ borderColor: C.line }}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
-                {currentUser?.initials || currentUser?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
-              </div>
-              <div className="hidden md:block text-left">
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span
-                    className="inline-block px-1.5 py-0.2 rounded border"
-                    style={{ fontSize: 10, fontWeight: 700, background: roleBadgeStyle.bg, color: roleBadgeStyle.color, borderColor: roleBadgeStyle.bd }}
-                  >
-                    {currentUser?.role || "Enforcement"}
-                  </span>
+            <div className="relative pl-4 border-l" style={{ borderColor: C.line }} ref={profileMenuRef}>
+              <button
+                type="button"
+                className="ll-focus flex items-center gap-3 rounded-sm px-1.5 py-1 -mr-1 transition-colors"
+                style={{
+                  background: profileOpen ? "var(--ll-tr-hover)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+                onClick={() => setProfileOpen((open) => !open)}
+                aria-haspopup="menu"
+                aria-expanded={profileOpen}
+                title="Account menu"
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
+                  {currentUser?.initials || currentUser?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
                 </div>
-              </div>
+                <div className="hidden md:block text-left">
+                  <div className="flex items-center gap-1.5">
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</span>
+                    <ChevronDown size={13} style={{ color: C.slate, transform: profileOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span
+                      className="inline-block px-1.5 py-0.2 rounded border"
+                      style={{ fontSize: 10, fontWeight: 700, background: roleBadgeStyle.bg, color: roleBadgeStyle.color, borderColor: roleBadgeStyle.bd }}
+                    >
+                      {currentUser?.role || "Enforcement"}
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {profileOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-52 rounded-sm border shadow-lg overflow-hidden z-40"
+                  style={{ background: "var(--ll-bg-card)", borderColor: C.line }}
+                >
+                  <div className="px-3 py-2.5 border-b md:hidden" style={{ borderColor: C.line }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</div>
+                    <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}>{currentUser?.role || "Enforcement"}</div>
+                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="ll-focus w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors"
+                    style={{ color: "var(--ll-violation)", background: "transparent", border: "none", fontSize: 13, fontWeight: 600 }}
+                    onClick={handleSignOut}
+                  >
+                    <LogOut size={14} />
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
