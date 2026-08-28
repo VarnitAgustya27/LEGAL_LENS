@@ -108,6 +108,33 @@ class ApiService {
     return await res.json();
   }
 
+  static async processOcr(inspectionId) {
+    try {
+      const res = await fetch(`${API_BASE}/inspections/${inspectionId}/process-ocr`, {
+        method: 'POST',
+        headers: this.getHeaders()
+      });
+      if (!res.ok) throw new Error('OCR background process trigger failed');
+      return await res.json();
+    } catch (e) {
+      console.warn('OCR trigger note:', e);
+      return { status: 'fallback', inspection_id: inspectionId };
+    }
+  }
+
+  static async getOcrStatus(inspectionId) {
+    try {
+      const res = await fetch(`${API_BASE}/inspections/${inspectionId}/ocr-status`, {
+        headers: this.getHeaders()
+      });
+      if (!res.ok) throw new Error('Failed to query OCR status');
+      return await res.json();
+    } catch (e) {
+      console.warn('OCR status query note:', e);
+      return null;
+    }
+  }
+
   static async updateDeclaration(inspectionId, declId, value) {
     const res = await fetch(`${API_BASE}/inspections/${inspectionId}/declarations/${declId}`, {
       method: 'PATCH',

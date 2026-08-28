@@ -3,7 +3,7 @@ import shutil
 import uuid
 from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -17,9 +17,11 @@ from app.schemas.declaration import DeclarationUpdate, DeclarationOut
 from app.auth.security import get_current_user
 from app.services.inspection_service import InspectionService
 from app.services.audit_service import AuditService
+from app.services.ocr_service import OCRService
 
 router = APIRouter(prefix="/inspections", tags=["Inspections"])
 service = InspectionService()
+ocr_service = OCRService()
 
 @router.get("", response_model=List[InspectionOut])
 def list_inspections(
@@ -206,3 +208,28 @@ def submit_officer_review(
     )
 
     return {"status": "SUCCESS", "message": "Officer determination recorded successfully."}
+ 
+@router.post("/{inspection_id}/process-ocr")
+def process_inspection_ocr(
+    inspection_id: str,
+    background_tasks: BackgroundTasks
+):
+    """
+    Enqueues OCR processing for all uploaded images of an inspection in the background.
+    Non-blocking, idempotent, and updates public.extracted_text in Supabase.
+    """
+    background_tasks.add_task(ocr_service.process_inspection_uploads, str(inspection_id))
+    return {
+        "status": "processing",
+        "inspection_id": str(inspection_id),
+        "message": "OCR processing job enqueued in background."
+    }
+
+@router.get("/{inspection_id}/ocr-status")
+def get_inspection_ocr_status(
+    inspection_id: str
+):
+    """
+    Queries live OCR extraction status and full extracted text per packaging angle.
+    """
+    return ocr_service.get_inspection_ocr_status(str(inspection_id))

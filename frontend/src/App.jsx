@@ -2037,6 +2037,15 @@ function dataURItoBlob(dataURI) {
             console.log(`✅ Successfully inserted inspection_uploads row for [${angle}] in Supabase!`);
           }
         }
+
+        // Trigger backend asynchronous OCR processing pipeline
+        if (inspectionId) {
+          ApiService.processOcr(inspectionId).then((res) => {
+            console.log("⚡ Triggered backend OCR background job for case:", inspectionId, res);
+          }).catch((err) => {
+            console.warn("Backend OCR background trigger note:", err);
+          });
+        }
       } catch (e) {
         console.log("❌ Exception during Supabase inspection insert:", String(e));
       }

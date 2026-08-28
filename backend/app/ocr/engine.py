@@ -1,9 +1,12 @@
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from app.ocr.ocr_web_service import OCRWebServiceClient, OCRProcessResult
 
 class OCREngine:
-    def __init__(self):
+    def __init__(self, use_web_service: bool = True):
         self.engine_type = "HYBRID_OCR"
+        self.use_web_service = use_web_service
+        self.web_client = OCRWebServiceClient()
 
     def extract_text(self, image_path: str, image_id: str = "img_01") -> List[Dict[str, Any]]:
         results = []
