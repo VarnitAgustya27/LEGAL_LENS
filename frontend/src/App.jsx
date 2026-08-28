@@ -8,7 +8,7 @@ import {
   ArrowLeft, ArrowRight, Download, Eye, EyeOff, Loader2, Building2, Hash, Lock, Unlock,
   User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
   Sun, Moon, Sparkles, Database, Scale, Layers, Award, Zap, Check, ArrowUpRight,
-  Link2, Globe
+  Link2, Globe, RotateCw, ZoomOut, Crop, Move
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -409,6 +409,37 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
   const [signingIn, setSigningIn] = useState(false);
 
   const matchedUser = users.find((u) => u.badge?.toLowerCase() === officerId?.trim().toLowerCase());
+  const [matchedAvatar, setMatchedAvatar] = useState("");
+
+  useEffect(() => {
+    if (!matchedUser?.badge) {
+      setMatchedAvatar("");
+      return;
+    }
+    const getAvatarMap = () => {
+      try { return JSON.parse(localStorage.getItem("legallens_avatars") || "{}"); } catch { return {}; }
+    };
+    const badge = matchedUser.badge.trim();
+    const cached = getAvatarMap()[badge] || getAvatarMap()[matchedUser.badge] || "";
+    setMatchedAvatar(cached);
+
+    if (isSupabaseConfigured() && supabase) {
+      supabase
+        .from("officer_avatars")
+        .select("avatar_url")
+        .ilike("badge", badge)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (!error && data?.avatar_url) {
+            setMatchedAvatar(data.avatar_url);
+            const map = getAvatarMap();
+            map[badge] = data.avatar_url;
+            localStorage.setItem("legallens_avatars", JSON.stringify(map));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [matchedUser?.badge]);
 
   const handleBadgeClick = (badge) => {
     setOfficerId(badge);
@@ -807,14 +838,19 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                   }}
                 >
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm"
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm overflow-hidden border"
                     style={{
                       background: isDark ? "#E5B842" : "#132238",
                       color: isDark ? "#090E17" : "#F7F5EF",
+                      borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(19,34,56,0.3)",
                       ...FONT.display,
                     }}
                   >
-                    {matchedUser.initials || (matchedUser.name ? matchedUser.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "OF")}
+                    {matchedAvatar ? (
+                      <img src={matchedAvatar} alt={matchedUser.name} className="w-full h-full object-cover" />
+                    ) : (
+                      matchedUser.initials || (matchedUser.name ? matchedUser.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "OF")
+                    )}
                   </div>
                   <div className="min-w-0 flex-1 text-left">
                     <div className="text-xs font-bold truncate" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>
@@ -921,6 +957,228 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
   );
 }
 
+/* ============================== CROP PHOTO MODAL ============================== */
+
+function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const imgRef = useRef(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      imgRef.current = img;
+      setImageLoaded(true);
+    };
+    img.src = imageSrc;
+  }, [imageSrc]);
+
+  const handlePointerDown = (e) => {
+    setIsDragging(true);
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragStart.current = { x: clientX - pan.x, y: clientY - pan.y };
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    setPan({
+      x: clientX - dragStart.current.x,
+      y: clientY - dragStart.current.y,
+    });
+  };
+
+  const handlePointerUp = () => setIsDragging(false);
+
+  const handleRotate = () => {
+    setRotation((prev) => (prev + 90) % 360);
+  };
+
+  const handleReset = () => {
+    setZoom(1);
+    setRotation(0);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const handleCropAndSave = () => {
+    if (!imgRef.current) return;
+    const canvas = document.createElement("canvas");
+    const size = 400;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.clearRect(0, 0, size, size);
+
+    ctx.save();
+    ctx.translate(size / 2, size / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+
+    const img = imgRef.current;
+    const viewportSize = 260;
+    const baseScale = Math.max(viewportSize / img.naturalWidth, viewportSize / img.naturalHeight);
+    const finalScale = (baseScale * zoom) * (size / viewportSize);
+
+    const renderW = img.naturalWidth * finalScale;
+    const renderH = img.naturalHeight * finalScale;
+
+    const rad = (-rotation * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const rotPanX = (pan.x * cos - pan.y * sin) * (size / viewportSize);
+    const rotPanY = (pan.x * sin + pan.y * cos) * (size / viewportSize);
+
+    ctx.drawImage(img, -renderW / 2 + rotPanX, -renderH / 2 + rotPanY, renderW, renderH);
+    ctx.restore();
+
+    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    onSave(croppedDataUrl);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        className="w-full max-w-md rounded-2xl border shadow-2xl overflow-hidden flex flex-col"
+        style={{
+          background: "var(--ll-bg-card)",
+          borderColor: "var(--ll-color-line)",
+          color: "var(--ll-color-ink)",
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b" style={{ borderColor: "var(--ll-color-line)" }}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500/15 border border-amber-500/30">
+              <Crop size={16} className="text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold leading-tight" style={{ color: "var(--ll-color-ink)" }}>Crop & Adjust Profile Photo</h3>
+              <p className="text-[11px] text-slate-400">Drag to reposition, use slider to zoom</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="ll-focus p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <X size={17} />
+          </button>
+        </div>
+
+        {/* Crop Stage / Viewport */}
+        <div className="p-6 flex flex-col items-center justify-center bg-black/40">
+          <div
+            className="relative w-[260px] h-[260px] rounded-full overflow-hidden border-2 border-amber-500 shadow-[0_0_25px_rgba(229,184,66,0.25)] select-none cursor-grab active:cursor-grabbing flex items-center justify-center bg-slate-950"
+            onMouseDown={handlePointerDown}
+            onMouseMove={handlePointerMove}
+            onMouseUp={handlePointerUp}
+            onMouseLeave={handlePointerUp}
+            onTouchStart={handlePointerDown}
+            onTouchMove={handlePointerMove}
+            onTouchEnd={handlePointerUp}
+          >
+            {imageLoaded && (
+              <img
+                src={imageSrc}
+                alt="Crop preview"
+                className="max-w-none pointer-events-none transition-transform duration-75"
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) rotate(${rotation}deg) scale(${zoom})`,
+                  transformOrigin: "center center",
+                }}
+              />
+            )}
+
+            {/* Circular Grid Guidelines overlay */}
+            <div className="absolute inset-0 rounded-full border border-white/20 pointer-events-none" />
+            <div className="absolute inset-[33%] rounded-full border border-white/15 pointer-events-none" />
+            <div className="absolute inset-[66%] rounded-full border border-white/15 pointer-events-none" />
+          </div>
+
+          <span className="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5 font-mono">
+            <Move size={12} className="text-amber-400" /> Click & drag photo to center face
+          </span>
+        </div>
+
+        {/* Toolbar Controls */}
+        <div className="px-6 py-4 border-t space-y-3.5" style={{ borderColor: "var(--ll-color-line)", background: "var(--ll-bg-paper-deep)" }}>
+          {/* Zoom Slider */}
+          <div className="flex items-center gap-3">
+            <ZoomOut size={15} className="text-slate-400 flex-shrink-0" />
+            <input
+              type="range"
+              min="1"
+              max="3"
+              step="0.05"
+              value={zoom}
+              onChange={(e) => setZoom(parseFloat(e.target.value))}
+              className="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg appearance-none"
+            />
+            <ZoomIn size={15} className="text-slate-400 flex-shrink-0" />
+            <span className="text-xs font-mono w-10 text-right text-amber-500 font-bold">{Math.round(zoom * 100)}%</span>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleRotate}
+                className="ll-focus px-2.5 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 hover:bg-amber-500/10 hover:border-amber-500/50 transition-all cursor-pointer"
+                style={{ borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
+                title="Rotate 90 degrees clockwise"
+              >
+                <RotateCw size={13} className="text-amber-500" />
+                <span>Rotate</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleReset}
+                className="ll-focus px-2.5 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 hover:bg-slate-500/10 transition-all cursor-pointer text-slate-400 hover:text-slate-200"
+                style={{ borderColor: "var(--ll-color-line)" }}
+                title="Reset zoom, rotation, and position"
+              >
+                <RefreshCw size={13} />
+                <span>Reset</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold hover:bg-slate-800 transition-all cursor-pointer"
+                style={{ borderColor: "var(--ll-color-line)", color: "var(--ll-color-slate)" }}
+              >
+                Cancel
+              </button>
+
+              <Button
+                onClick={handleCropAndSave}
+                size="sm"
+                className="px-4 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-md hover:scale-105 transition-all"
+              >
+                <Check size={14} /> Crop & Set Avatar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ============================== SHELL ============================== */
 
 const NAV = [
@@ -947,6 +1205,7 @@ const PAGE_TITLES = {
 function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, toggleTheme, isDbConnected, children }) {
   const [eyebrow, title] = PAGE_TITLES[page] || ["", ""];
   const [profileOpen, setProfileOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState(null);
   const profileMenuRef = useRef(null);
   const avatarFileRef = useRef(null);
 
@@ -955,7 +1214,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
     if (!file || !file.type.startsWith("image/")) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      onUpdateAvatar?.(ev.target.result);
+      setCropImageSrc(ev.target.result);
       setProfileOpen(false);
     };
     reader.readAsDataURL(file);
@@ -1150,6 +1409,19 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
           <div key={page} className="ll-fade">{children}</div>
         </div>
       </main>
+
+      {/* Profile Photo Crop & Adjustment Modal */}
+      {cropImageSrc && (
+        <CropPhotoModal
+          imageSrc={cropImageSrc}
+          onClose={() => setCropImageSrc(null)}
+          onSave={(croppedDataUrl) => {
+            onUpdateAvatar?.(croppedDataUrl);
+            setCropImageSrc(null);
+          }}
+          isDark={isDark}
+        />
+      )}
     </div>
   );
 }
@@ -2365,6 +2637,36 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [avatarMap, setAvatarMap] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("legallens_avatars") || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    if (isSupabaseConfigured() && supabase) {
+      supabase
+        .from("officer_avatars")
+        .select("badge, avatar_url")
+        .then(({ data, error }) => {
+          if (!error && data?.length) {
+            setAvatarMap((prev) => {
+              const updated = { ...prev };
+              data.forEach((row) => {
+                if (row.badge && row.avatar_url) {
+                  updated[row.badge.trim()] = row.avatar_url;
+                }
+              });
+              localStorage.setItem("legallens_avatars", JSON.stringify(updated));
+              return updated;
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   const isAdmin = currentUser?.role === "Admin";
 
@@ -2620,10 +2922,18 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
                     <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
                       <div className="flex items-center gap-3">
                         <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                          style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4" }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden border shadow-sm"
+                          style={{
+                            background: "var(--ll-bg-sidebar)",
+                            borderColor: "var(--ll-color-line)",
+                            color: "#F0E4C4",
+                          }}
                         >
-                          {u.initials || (u.name ? u.name.slice(0, 2).toUpperCase() : "OF")}
+                          {avatarMap[u.badge?.trim()] ? (
+                            <img src={avatarMap[u.badge?.trim()]} alt={u.name} className="w-full h-full object-cover" />
+                          ) : (
+                            u.initials || (u.name ? u.name.slice(0, 2).toUpperCase() : "OF")
+                          )}
                         </div>
                         <div>
                           <div style={{ fontWeight: 600, color: C.ink }}>
