@@ -1652,9 +1652,8 @@ function NewInspection({ onFinish }) {
         <Card>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-5 border-b" style={{ borderColor: C.line }}>
             <SectionLabel eyebrow="STEP 1" title="Upload Product Images" />
-            <div className="flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line, color: C.slate }}>
-              <Zap size={13} style={{ color: C.gold }} />
-              <span>Tip: Press <strong className="text-amber-400 font-bold">Ctrl + V</strong> to paste screenshots directly</span>
+            <div className="flex items-center text-xs font-mono px-3 py-1.5 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line, color: C.slate }}>
+              <span>Tip: Press <strong className="font-bold" style={{ color: "var(--ll-color-ink)" }}>Ctrl + V</strong> to paste screenshots directly</span>
             </div>
           </div>
 
