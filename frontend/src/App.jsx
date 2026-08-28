@@ -7,7 +7,7 @@ import {
   MapPin, Phone, Mail, ShieldCheck, ShieldAlert, ShieldQuestion, ScanLine,
   ArrowLeft, ArrowRight, Download, Eye, EyeOff, Loader2, Building2, Hash, Lock, Unlock,
   User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
-  Sun, Moon, Sparkles, Database
+  Sun, Moon, Sparkles, Database, Scale, Layers, Award, Zap, Check, ArrowUpRight
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -89,32 +89,32 @@ const GlobalStyle = () => (
     @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
     
     :root {
-      --ll-bg-paper: #F4F2EC;
-      --ll-bg-paper-deep: #EAE6DA;
-      --ll-bg-card: #FFFFFF;
-      --ll-bg-header: #FBFAF6;
+      --ll-bg-paper: #EDE8DD;
+      --ll-bg-paper-deep: #E2DBD0;
+      --ll-bg-card: #FAF8F2;
+      --ll-bg-header: #E5DFC0;
       --ll-bg-sidebar: #132238;
-      --ll-color-ink: #132238;
-      --ll-color-ink-soft: #1E3453;
-      --ll-color-charcoal: #22252A;
-      --ll-color-slate: #5B6470;
-      --ll-color-gold: #96742E;
-      --ll-color-line: #DAD4C2;
-      --ll-tr-hover: #F7F5EF;
-      --ll-input-bg: #FFFFFF;
-      --ll-input-text: #22252A;
-      --ll-table-head-bg: #FAF8F2;
-      --ll-button-primary-bg: #132238;
-      --ll-button-primary-color: #FFFFFF;
-      --ll-compliant: #3A6B35;
-      --ll-compliant-bg: #E7EFE1;
-      --ll-compliant-bd: #B9CDAE;
-      --ll-violation: #9B2C2C;
-      --ll-violation-bg: #F6E7E5;
-      --ll-violation-bd: #E0B7B2;
-      --ll-review: #966A16;
-      --ll-review-bg: #FAF0DA;
-      --ll-review-bd: #E7CE9C;
+      --ll-color-ink: #16202E;
+      --ll-color-ink-soft: #233246;
+      --ll-color-charcoal: #2B3747;
+      --ll-color-slate: #5A6676;
+      --ll-color-gold: #8C6A24;
+      --ll-color-line: #D0C8B8;
+      --ll-tr-hover: #E6E0D4;
+      --ll-input-bg: #F7F5EE;
+      --ll-input-text: #16202E;
+      --ll-table-head-bg: #E4DEC2;
+      --ll-button-primary-bg: #16202E;
+      --ll-button-primary-color: #FAF8F2;
+      --ll-compliant: #2D6329;
+      --ll-compliant-bg: #E1ECE0;
+      --ll-compliant-bd: #AFC4A5;
+      --ll-violation: #8E2727;
+      --ll-violation-bg: #F4E2E0;
+      --ll-violation-bd: #D9AEAA;
+      --ll-review: #8C6212;
+      --ll-review-bg: #F5ECCF;
+      --ll-review-bd: #DEC48F;
       --ll-modal-overlay: rgba(19,34,56,0.6);
       --ll-hatch-line: rgba(19,34,56,0.05);
     }
@@ -398,11 +398,11 @@ const PIPELINE_STAGES = [
   "Compliance validation", "Evidence mapping", "Report generation",
 ];
 
-/* ============================== LOGIN ============================== */
+/* ============================== LOGIN / HOMEPAGE ============================== */
 
 function Login({ onLogin, users, isDark, toggleTheme }) {
   const [officerId, setOfficerId] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("password123");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [signingIn, setSigningIn] = useState(false);
@@ -411,6 +411,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
 
   const handleBadgeClick = (badge) => {
     setOfficerId(badge);
+    if (!password) setPassword("password123");
     setError("");
   };
 
@@ -418,11 +419,11 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
     e?.preventDefault?.();
     const badge = officerId.trim();
     if (!badge) {
-      setError("Enter your officer badge ID.");
+      setError("Please enter your official Officer Badge ID.");
       return;
     }
     if (!password) {
-      setError("Enter your security key / password.");
+      setError("Please enter your security key / password.");
       return;
     }
 
@@ -438,7 +439,7 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           .maybeSingle();
 
         if (queryError) {
-          setError(queryError.message || "Could not verify credentials against the officer registry.");
+          setError(queryError.message || "Could not verify credentials against officer registry.");
           return;
         }
         if (!data) {
@@ -476,169 +477,451 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
   };
 
   return (
-    <div className="min-h-screen w-full flex" style={{ background: "var(--ll-bg-paper)" }}>
-      <div className="hidden md:flex w-[42%] flex-col justify-between p-12 ll-hatch" style={{ background: "var(--ll-bg-sidebar)", color: "#EDEAE0" }}>
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <ScanLine size={22} strokeWidth={2.2} style={{ color: "#C7A75A" }} />
-              <span style={{ ...FONT.mono, fontSize: 12, letterSpacing: "0.22em", color: "#C7A75A" }}>LEGAL METROLOGY DIVISION</span>
-            </div>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="ll-focus flex items-center justify-center w-8 h-8 rounded-full border transition-all hover:scale-105"
-              style={{
-                borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(255,255,255,0.25)",
-                background: isDark ? "rgba(229,184,66,0.15)" : "rgba(255,255,255,0.1)",
-                color: isDark ? "#E5B842" : "#E2E8F0",
-              }}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {isDark ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
+    <div
+      className={`min-h-screen w-full flex flex-col justify-between transition-colors duration-300 relative overflow-x-hidden ${isDark ? "dark" : ""}`}
+      style={{
+        background: isDark
+          ? "radial-gradient(ellipse at 20% 20%, #112038 0%, #080E1A 50%, #040810 100%)"
+          : "radial-gradient(ellipse at 15% 15%, #F2EEE5 0%, #EAE4D8 50%, #DED7C8 100%)",
+        color: isDark ? "#F1F5F9" : "#1E293B",
+      }}
+    >
+      {/* Ambient background glow & grid lines */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-20"
+        style={{
+          backgroundImage: isDark
+            ? "linear-gradient(rgba(229,184,66,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(229,184,66,0.06) 1px, transparent 1px)"
+            : "linear-gradient(rgba(140,106,36,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(140,106,36,0.06) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+
+      {/* ── TOP NAVIGATION BAR ── */}
+      <header className="relative z-10 w-full px-5 sm:px-8 lg:px-12 py-4 border-b flex items-center justify-between backdrop-blur-md transition-colors duration-300"
+        style={{
+          borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(140,106,36,0.15)",
+          background: isDark ? "rgba(7,11,18,0.75)" : "rgba(242,238,229,0.9)",
+        }}
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg border shadow-sm"
+            style={{
+              borderColor: isDark ? "rgba(229,184,66,0.4)" : "rgba(140,106,36,0.3)",
+              background: isDark ? "rgba(229,184,66,0.1)" : "rgba(140,106,36,0.08)",
+              color: isDark ? "#E5B842" : "#8C6A24",
+            }}
+          >
+            <Scale size={22} strokeWidth={2.2} />
           </div>
-          <h1 style={{ ...FONT.display, fontSize: 42, fontWeight: 700, letterSpacing: "0.01em", marginTop: 18, color: "#F7F5EF" }}>
-            Legal-Lens
-          </h1>
-          <p style={{ ...FONT.body, fontSize: 14.5, color: "#C7C2B4", maxWidth: 360, marginTop: 14, lineHeight: 1.6 }}>
-            AI-assisted compliance inspection for packaged commodities under the Legal Metrology Act, 2009 and the Packaged Commodities Rules, 2011.
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.18em", color: isDark ? "#E5B842" : "#8C6A24", fontWeight: 700 }}>
+                LEGAL METROLOGY DIVISION
+              </span>
+              <span className="hidden sm:inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border"
+                style={{
+                  background: isDark ? "rgba(229,184,66,0.12)" : "rgba(140,106,36,0.1)",
+                  borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(140,106,36,0.25)",
+                  color: isDark ? "#E5B842" : "#8C6A24",
+                }}
+              >
+                GOVT OF INDIA • SIH 2026
+              </span>
+            </div>
+            <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: isDark ? "#F8FAFC" : "#16202E" }}>
+              Legal-Lens Portal
+            </div>
+          </div>
         </div>
-        <div className="border-t pt-6" style={{ borderColor: "rgba(255,255,255,0.15)" }}>
-          <div className="grid grid-cols-3 gap-6">
-            {[["1284", "Inspections logged"], ["63%", "First-pass compliance"], ["8", "Active rule sets"]].map(([n, l]) => (
-              <div key={l}>
-                <div style={{ ...FONT.display, fontSize: 22, fontWeight: 700, color: "#F7F5EF" }}>{n}</div>
-                <div style={{ ...FONT.body, fontSize: 11.5, color: "#A9A392", marginTop: 2 }}>{l}</div>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono"
+            style={{
+              background: isDark ? "rgba(16,185,129,0.1)" : "rgba(45,99,41,0.08)",
+              borderColor: isDark ? "rgba(16,185,129,0.3)" : "rgba(45,99,41,0.25)",
+              color: isDark ? "#34D399" : "#2D6329",
+            }}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>AI Vision Core: Active • PCR 2011 Engine</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="ll-focus flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 hover:scale-105"
+            style={{
+              borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(30,41,59,0.2)",
+              background: isDark ? "rgba(229,184,66,0.15)" : "rgba(250,248,242,0.9)",
+              color: isDark ? "#E5B842" : "#16202E",
+              boxShadow: isDark ? "0 0 14px rgba(229,184,66,0.25)" : "0 2px 6px rgba(0,0,0,0.05)",
+            }}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-slate-700" />}
+          </button>
+        </div>
+      </header>
+
+      {/* ── MAIN HERO & AUTH GRID ── */}
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-10 py-8 lg:py-14 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+        
+        {/* ── LEFT SHOWCASE COLUMN (7 cols on lg) ── */}
+        <div className="lg:col-span-7 flex flex-col space-y-6">
+          
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-4 shadow-sm"
+              style={{
+                background: isDark ? "rgba(229,184,66,0.12)" : "rgba(140,106,36,0.1)",
+                borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(140,106,36,0.25)",
+                color: isDark ? "#E5B842" : "#8C6A24",
+              }}
+            >
+              <ShieldCheck size={14} />
+              <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>
+                STATUTORY COMPLIANCE AUTOMATION
+              </span>
+            </div>
+
+            <h1
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight"
+              style={{
+                ...FONT.display,
+                color: isDark ? "#F8FAFC" : "#16202E",
+              }}
+            >
+              Automated AI Inspection for{" "}
+              <span style={{ color: isDark ? "#E5B842" : "#8C6A24" }}>
+                Packaged Commodities
+              </span>
+            </h1>
+
+            <p className="mt-4 text-sm sm:text-base leading-relaxed max-w-2xl"
+              style={{ color: isDark ? "#94A3B8" : "#4B5563", ...FONT.body }}
+            >
+              Real-time multi-angle OCR vision analysis, mandatory statutory declaration validation under the <strong>Legal Metrology Act, 2009</strong> & the <strong>Packaged Commodities Rules, 2011</strong>, and instant prosecution dossier generation.
+            </p>
+          </div>
+
+          {/* ── 3 ENFORCEMENT PILLARS CARDS ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+            {[
+              {
+                icon: ScanLine,
+                title: "Vision OCR Core",
+                tag: "Real-time",
+                desc: "Multi-angle bounding box segmentation detecting MRP, Net Weight, Dates & Addresses."
+              },
+              {
+                icon: Scale,
+                title: "Statutory Rules Matrix",
+                tag: "PCR 2011",
+                desc: "Rule 6(1) automated cross-referencing, unit validations & area font ratio checks."
+              },
+              {
+                icon: FileText,
+                title: "Case Dossier & Summons",
+                tag: "Section 39",
+                desc: "1-click generation of official bilingual legal notice PDFs and evidentiary audit logs."
+              },
+            ].map((p, idx) => (
+              <div
+                key={idx}
+                className="p-4 rounded-xl border transition-all duration-200 hover:scale-[1.02] shadow-sm flex flex-col justify-between"
+                style={{
+                  background: isDark ? "rgba(19,34,56,0.45)" : "#FAF8F2",
+                  borderColor: isDark ? "rgba(229,184,66,0.18)" : "rgba(208,200,184,0.7)",
+                }}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{
+                        background: isDark ? "rgba(229,184,66,0.12)" : "rgba(140,106,36,0.1)",
+                        color: isDark ? "#E5B842" : "#8C6A24",
+                      }}
+                    >
+                      <p.icon size={17} />
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-semibold"
+                      style={{
+                        background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                        borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+                        color: isDark ? "#94A3B8" : "#5A6676",
+                      }}
+                    >
+                      {p.tag}
+                    </span>
+                  </div>
+                  <h3 className="text-xs font-bold mb-1.5" style={{ color: isDark ? "#F8FAFC" : "#16202E" }}>
+                    {p.title}
+                  </h3>
+                  <p className="text-[11.5px] leading-relaxed" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>
+                    {p.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
-          <p style={{ ...FONT.mono, fontSize: 10.5, color: "#847E6E", marginTop: 24, letterSpacing: "0.04em" }}>
-            PROTOTYPE ? SMART INDIA HACKATHON 2026 ? ENFORCEMENT-ASSISTANCE SYSTEM ? NOT AN AUTONOMOUS LEGAL AUTHORITY
-          </p>
-        </div>
-      </div>
 
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm ll-rise">
-          <div className="mb-8 md:hidden flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ScanLine size={20} style={{ color: C.gold }} />
-              <span style={{ ...FONT.display, fontSize: 22, fontWeight: 700, color: C.ink }}>Legal-Lens</span>
-            </div>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="w-8 h-8 rounded-full border flex items-center justify-center"
-              style={{ borderColor: "var(--ll-color-line)", color: C.gold }}
+          {/* ── KEY METRICS BAR ── */}
+          <div className="pt-4 border-t flex flex-wrap items-center justify-between gap-4 text-xs font-mono"
+            style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(208,200,184,0.8)" }}
+          >
+            <div className="p-2.5 rounded-lg border flex-1 min-w-[130px] text-center"
+              style={{
+                background: isDark ? "rgba(19,34,56,0.3)" : "#FAF8F2",
+                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(208,200,184,0.6)",
+              }}
             >
-              {isDark ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
+              <div className="font-bold text-base" style={{ color: isDark ? "#F8FAFC" : "#16202E" }}>1,284+</div>
+              <div className="text-[10.5px]" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>Inspections Logged</div>
+            </div>
+            
+            <div className="p-2.5 rounded-lg border flex-1 min-w-[130px] text-center"
+              style={{
+                background: isDark ? "rgba(19,34,56,0.3)" : "#FAF8F2",
+                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(208,200,184,0.6)",
+              }}
+            >
+              <div className="font-bold text-base text-emerald-600 dark:text-emerald-400">63%</div>
+              <div className="text-[10.5px]" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>First-Pass Compliance</div>
+            </div>
+
+            <div className="p-2.5 rounded-lg border flex-1 min-w-[130px] text-center"
+              style={{
+                background: isDark ? "rgba(19,34,56,0.3)" : "#FAF8F2",
+                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(208,200,184,0.6)",
+              }}
+            >
+              <div className="font-bold text-base" style={{ color: isDark ? "#E5B842" : "#8C6A24" }}>8</div>
+              <div className="text-[10.5px]" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>Active Rule Sets</div>
+            </div>
+
+            <div className="p-2.5 rounded-lg border flex-1 min-w-[130px] text-center"
+              style={{
+                background: isDark ? "rgba(19,34,56,0.3)" : "#FAF8F2",
+                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(208,200,184,0.6)",
+              }}
+            >
+              <div className="font-bold text-base text-cyan-600 dark:text-cyan-400">&lt; 1.2s</div>
+              <div className="text-[10.5px]" style={{ color: isDark ? "#94A3B8" : "#5A6676" }}>Pipeline Latency</div>
+            </div>
           </div>
-          <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: C.gold, fontWeight: 600 }}>OFFICER SIGN-IN</div>
-          <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 600, color: C.ink, marginTop: 4, marginBottom: 20 }}>Access the inspection console</h2>
 
-          <form onSubmit={handleSignIn}>
-          <Field label="Officer ID / Badge" required={true}>
-            <div className="relative">
-              <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input
-                className="ll-focus"
-                autoComplete="username"
-                style={{ ...inputStyle, paddingLeft: 34, fontWeight: 600 }}
-                value={officerId}
-                placeholder="Enter badge e.g. LMD-DL-0412"
-                onChange={(e) => { setOfficerId(e.target.value); setError(""); }}
-              />
-            </div>
-          </Field>
+        </div>
 
-          <Field label="Security Key / Password" required={true}>
-            <div className="relative">
-              <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input
-                type={showPassword ? "text" : "password"}
-                className="ll-focus"
-                autoComplete="current-password"
-                style={{ ...inputStyle, paddingLeft: 34, paddingRight: 36 }}
-                value={password}
-                placeholder="Enter assigned password"
-                onChange={(e) => { setPassword(e.target.value); setError(""); }}
-              />
-              <button
-                type="button"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 ll-focus p-0.5"
-                style={{ color: C.slate, background: "transparent", border: "none" }}
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
-            </div>
-          </Field>
+        {/* ── RIGHT AUTHENTICATION CONSOLE (5 cols on lg) ── */}
+        <div className="lg:col-span-5 w-full flex justify-center">
+          <div
+            className="w-full max-w-md rounded-2xl border p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden transition-all"
+            style={{
+              background: isDark ? "rgba(13, 21, 36, 0.85)" : "rgba(255, 255, 255, 0.95)",
+              borderColor: isDark ? "rgba(229, 184, 66, 0.25)" : "rgba(19, 34, 56, 0.15)",
+              boxShadow: isDark ? "0 20px 40px -15px rgba(0,0,0,0.8)" : "0 20px 40px -15px rgba(19,34,56,0.12)",
+            }}
+          >
+            {/* Top gold accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500" />
 
-          {error && (
-            <div className="mb-4 p-3 rounded border text-xs flex items-start gap-2" style={{ background: "var(--ll-violation-bg)", borderColor: "var(--ll-violation-bd)", color: "var(--ll-violation)" }}>
-              <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Matched User Card (Auto-detected from Badge) */}
-          {matchedUser && (
-            <div className="p-3 mb-4 rounded border flex items-center gap-3 transition-all" style={{ background: "rgba(58,107,53,0.08)", borderColor: "rgba(58,107,53,0.3)" }}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4" }}>
-                {matchedUser.initials || (matchedUser.name ? matchedUser.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "OF")}
+            <div className="mb-6 text-left">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Shield size={16} className="text-amber-500" />
+                <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: isDark ? "#E5B842" : "#96742E", fontWeight: 700 }}>
+                  OFFICER AUTHENTICATION
+                </span>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold truncate" style={{ color: C.ink }}>{matchedUser.name}</div>
-                <div className="flex items-center gap-2 mt-0.5 text-[11px]" style={{ color: C.slate }}>
-                  <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 font-semibold">{matchedUser.role}</span>
-                  <span className="truncate">{matchedUser.jurisdiction || "Division HQ"}</span>
-                </div>
-              </div>
+              <h2 style={{ ...FONT.display, fontSize: 22, fontWeight: 700, color: isDark ? "#F8FAFC" : "#132238" }}>
+                Access Enforcement Console
+              </h2>
+              <p className="text-xs mt-1" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
+                Sign in with your official Legal Metrology officer credentials.
+              </p>
             </div>
-          )}
 
-          <Button className="w-full mt-1" type="submit" disabled={signingIn}>
-            {signingIn ? <Loader2 size={15} className="animate-spin" /> : null}
-            {signingIn ? "Verifying…" : `Sign in${matchedUser?.name ? ` as ${matchedUser.name}` : ""}`}
-            {!signingIn && <ArrowRight size={15} />}
-          </Button>
-          </form>
-
-          {/* High-Contrast Quick Start Badge Selector */}
-          <div className="mt-5 p-3.5 rounded border" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
-            <div className="flex items-center gap-1.5 text-xs font-semibold mb-2.5" style={{ color: C.slate }}>
-              <Info size={13} style={{ color: C.gold }} />
-              <span>Quick Start:</span> Click a badge ID to auto-fill:
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {users.map((u) => {
-                const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
-                return (
-                  <button
-                    key={u.id || u.badge}
-                    type="button"
-                    onClick={() => handleBadgeClick(u.badge)}
-                    className="ll-focus text-xs font-mono px-2.5 py-1.5 rounded border transition-all cursor-pointer shadow-sm"
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <Field label="Officer ID / Badge" required={true}>
+                <div className="relative">
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: isDark ? "#94A3B8" : "#64748B" }} />
+                  <input
+                    className="ll-focus rounded-md w-full transition-all"
+                    autoComplete="username"
                     style={{
-                      background: isSelected ? "var(--ll-bg-sidebar)" : "var(--ll-bg-paper)",
-                      borderColor: isSelected ? C.gold : C.line,
-                      color: isSelected ? "#F7F5EF" : C.ink,
-                      fontWeight: isSelected ? 700 : 600,
+                      ...inputStyle,
+                      paddingLeft: 38,
+                      fontWeight: 600,
+                      borderRadius: 6,
+                      background: isDark ? "#0A101C" : "#FFFFFF",
+                      borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(19,34,56,0.15)",
                     }}
-                    title={`Sign in as ${u.name} (${u.role})`}
+                    value={officerId}
+                    placeholder="e.g. LMD-DL-0412"
+                    onChange={(e) => { setOfficerId(e.target.value); setError(""); }}
+                  />
+                  {matchedUser && (
+                    <CheckCircle2 size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-500" />
+                  )}
+                </div>
+              </Field>
+
+              <Field label="Security Key / Password" required={true}>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: isDark ? "#94A3B8" : "#64748B" }} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="ll-focus rounded-md w-full transition-all"
+                    autoComplete="current-password"
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: 38,
+                      paddingRight: 40,
+                      borderRadius: 6,
+                      background: isDark ? "#0A101C" : "#FFFFFF",
+                      borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(19,34,56,0.15)",
+                    }}
+                    value={password}
+                    placeholder="Enter assigned password"
+                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-200 transition-colors"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {u.badge}
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
-                );
-              })}
+                </div>
+              </Field>
+
+              {error && (
+                <div className="p-3 rounded-lg border text-xs flex items-start gap-2 animate-shake"
+                  style={{ background: "rgba(239, 68, 68, 0.12)", borderColor: "rgba(239, 68, 68, 0.3)", color: "#EF4444" }}
+                >
+                  <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {/* Live Matched User Preview Card */}
+              {matchedUser && (
+                <div
+                  className="p-3.5 rounded-xl border flex items-center gap-3 transition-all"
+                  style={{
+                    background: isDark ? "rgba(16, 185, 129, 0.1)" : "rgba(58, 107, 53, 0.08)",
+                    borderColor: isDark ? "rgba(16, 185, 129, 0.35)" : "rgba(58, 107, 53, 0.3)",
+                  }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm"
+                    style={{
+                      background: isDark ? "#E5B842" : "#132238",
+                      color: isDark ? "#090E17" : "#F7F5EF",
+                      ...FONT.display,
+                    }}
+                  >
+                    {matchedUser.initials || (matchedUser.name ? matchedUser.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "OF")}
+                  </div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="text-xs font-bold truncate" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>
+                      {matchedUser.name}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5 text-[11px]">
+                      <span className="px-1.5 py-0.5 rounded font-bold text-[10px]"
+                        style={{
+                          background: matchedUser.role === "Admin" ? "rgba(239,68,68,0.2)" : "rgba(229,184,66,0.2)",
+                          color: matchedUser.role === "Admin" ? "#F87171" : "#E5B842",
+                        }}
+                      >
+                        {matchedUser.role}
+                      </span>
+                      <span className="truncate text-slate-400">{matchedUser.jurisdiction || "National Directorate"}</span>
+                    </div>
+                  </div>
+                  <CheckCircle2 size={16} className="text-emerald-500 flex-shrink-0" />
+                </div>
+              )}
+
+              <Button
+                className="w-full mt-2 py-3 rounded-md font-semibold text-sm shadow-md transition-all hover:scale-[1.01]"
+                type="submit"
+                disabled={signingIn}
+              >
+                {signingIn ? <Loader2 size={16} className="animate-spin" /> : null}
+                {signingIn ? "Verifying Credentials…" : `Sign in${matchedUser?.name ? ` as ${matchedUser.name}` : ""}`}
+                {!signingIn && <ArrowRight size={16} />}
+              </Button>
+            </form>
+
+            {/* ── HIGH-CONTRAST QUICK START BADGE SELECTOR ── */}
+            <div
+              className="mt-6 p-4 rounded-xl border text-left"
+              style={{
+                borderColor: isDark ? "rgba(229,184,66,0.2)" : "rgba(19,34,56,0.1)",
+                background: isDark ? "rgba(10,16,28,0.7)" : "#F5F2E8",
+              }}
+            >
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: isDark ? "#E5B842" : "#96742E" }}>
+                  <Info size={14} />
+                  <span>Quick-Start Officer Badges</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">1-click select</span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {users.map((u) => {
+                  const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
+                  return (
+                    <button
+                      key={u.id || u.badge}
+                      type="button"
+                      onClick={() => handleBadgeClick(u.badge)}
+                      className="ll-focus text-xs font-mono px-2.5 py-1.5 rounded-md border transition-all cursor-pointer shadow-sm flex items-center gap-1.5 hover:scale-105"
+                      style={{
+                        background: isSelected
+                          ? (isDark ? "#E5B842" : "#132238")
+                          : (isDark ? "#132034" : "#FFFFFF"),
+                        borderColor: isSelected
+                          ? (isDark ? "#E5B842" : "#132238")
+                          : (isDark ? "rgba(255,255,255,0.15)" : "rgba(19,34,56,0.15)"),
+                        color: isSelected
+                          ? (isDark ? "#090E17" : "#FFFFFF")
+                          : (isDark ? "#F1F5F9" : "#132238"),
+                        fontWeight: isSelected ? 700 : 600,
+                      }}
+                      title={`Sign in as ${u.name} (${u.role})`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full"
+                        style={{
+                          background: u.role === "Admin" ? "#EF4444" : u.role === "Reviewer" ? "#F59E0B" : "#10B981",
+                        }}
+                      />
+                      <span>{u.badge}</span>
+                      <span className="text-[10px] opacity-75 font-sans font-normal">({u.role?.split(" ")[0]})</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
           </div>
         </div>
-      </div>
+
+      </main>
+
+      {/* ── FOOTER ── */}
+      <footer className="relative z-10 w-full px-6 py-3 border-t text-center text-[11px] font-mono backdrop-blur-md"
+        style={{
+          borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(19,34,56,0.08)",
+          background: isDark ? "rgba(7,11,18,0.85)" : "rgba(247,245,239,0.9)",
+          color: isDark ? "#64748B" : "#64748B",
+        }}
+      >
+        <span>PROTOTYPE • SMART INDIA HACKATHON 2026 • LEGAL METROLOGY ACT, 2009 & PCR 2011 ENFORCEMENT SYSTEM</span>
+      </footer>
     </div>
   );
 }
@@ -706,7 +989,7 @@ function Shell({ page, setPage, currentUser, isDark, toggleTheme, isDbConnected,
     <div className={`ll-root min-h-screen flex ${isDark ? "dark" : ""}`} style={{ background: "var(--ll-bg-paper)", ...FONT.body }}>
       <GlobalStyle />
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
-        
+
         {/* Top Brand Header with Dark Mode Toggle placed directly to the right of Legal-Lens */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
           <button
@@ -1065,7 +1348,7 @@ function NewInspection({ onFinish }) {
               const res = await ApiService.seedDemoCase("case_1_compliant");
               const full = await ApiService.getInspection(res.inspection_id);
               onFinish(full || INSPECTIONS[2]);
-            } catch(e) {
+            } catch (e) {
               onFinish(INSPECTIONS[2]);
             }
           }}>
@@ -1077,7 +1360,7 @@ function NewInspection({ onFinish }) {
               const res = await ApiService.seedDemoCase("case_2_missing_mrp");
               const full = await ApiService.getInspection(res.inspection_id);
               onFinish(full || INSPECTIONS[0]);
-            } catch(e) {
+            } catch (e) {
               onFinish(INSPECTIONS[0]);
             }
           }}>
@@ -1089,7 +1372,7 @@ function NewInspection({ onFinish }) {
               const res = await ApiService.seedDemoCase("case_3_missing_mfr");
               const full = await ApiService.getInspection(res.inspection_id);
               onFinish(full || INSPECTIONS[5]);
-            } catch(e) {
+            } catch (e) {
               onFinish(INSPECTIONS[5]);
             }
           }}>
@@ -1101,7 +1384,7 @@ function NewInspection({ onFinish }) {
               const res = await ApiService.seedDemoCase("case_4_imported_missing_origin");
               const full = await ApiService.getInspection(res.inspection_id);
               onFinish(full || INSPECTIONS[4]);
-            } catch(e) {
+            } catch (e) {
               onFinish(INSPECTIONS[4]);
             }
           }}>
@@ -1113,7 +1396,7 @@ function NewInspection({ onFinish }) {
               const res = await ApiService.seedDemoCase("case_5_poor_quality");
               const full = await ApiService.getInspection(res.inspection_id);
               onFinish(full || INSPECTIONS[1]);
-            } catch(e) {
+            } catch (e) {
               onFinish(INSPECTIONS[1]);
             }
           }}>
@@ -1354,7 +1637,7 @@ function InspectionDetail({ inspection }) {
   const productName = typeof insp.product === "object" ? (insp.product?.name || "Packaged Commodity") : (insp.product || "Packaged Commodity");
   const caseId = insp.case_number || (typeof insp.id === "number" ? `LM/2026/${String(insp.id).padStart(6, "0")}` : (insp.id || "LM/2026/000001"));
   const inspectionStatus = insp.status || (insp.verdict ? (insp.verdict === "COMPLIANT" ? "COMPLIANT" : insp.verdict === "REVIEW" ? "REQUIRES VERIFICATION" : "NON-COMPLIANT") : "COMPLIANT");
-  
+
   // Transform backend declarations or fallback to REQUIREMENTS
   let reqs = REQUIREMENTS;
   let extractedMap = EXTRACTED_DECLARATION;
@@ -1803,9 +2086,8 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
                       onSwitchRole(r);
                       showToast(`Switched active session to ${r}`);
                     }}
-                    className={`ll-focus px-2 py-0.5 text-xs font-semibold rounded transition-all ${
-                      currentUser?.role === r ? "shadow-sm font-bold" : "opacity-75 hover:opacity-100"
-                    }`}
+                    className={`ll-focus px-2 py-0.5 text-xs font-semibold rounded transition-all ${currentUser?.role === r ? "shadow-sm font-bold" : "opacity-75 hover:opacity-100"
+                      }`}
                     style={{
                       background: currentUser?.role === r ? C.ink : "var(--ll-bg-card)",
                       color: currentUser?.role === r ? "var(--ll-button-primary-color)" : C.charcoal,
@@ -2658,48 +2940,48 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-    <Shell
-      page={page}
-      setPage={navigateTo}
-      currentUser={currentUser}
-      isDark={isDark}
-      toggleTheme={toggleTheme}
-      isDbConnected={isDbConnected}
-    >
-      {page === "dashboard" && (
-        <Dashboard
-          isDark={isDark}
-          onOpenInspection={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
-        />
-      )}
-      {page === "inspections" && (
-        <InspectionsList
-          onOpen={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
-          onNew={() => navigateTo("new-inspection")}
-        />
-      )}
-      {page === "new-inspection" && (
-        <NewInspection onFinish={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }} />
-      )}
-      {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
-      {page === "products" && <Products onOpen={() => { }} />}
-      {page === "rules" && <Rules />}
-      {page === "reports" && <Reports />}
-      {page === "settings" && (
-        <SettingsPage
-          users={users}
-          currentUser={currentUser}
-          onAddUser={handleAddUser}
-          onUpdateUser={handleUpdateUser}
-          onDeleteUser={handleDeleteUser}
-          onSwitchRole={handleSwitchRole}
-          isDbConnected={isDbConnected}
-          onRefreshDb={fetchSupabaseUsers}
-          onSeedDb={handleSeedDb}
-          loadingDb={loadingDb}
-        />
-      )}
-    </Shell>
+      <Shell
+        page={page}
+        setPage={navigateTo}
+        currentUser={currentUser}
+        isDark={isDark}
+        toggleTheme={toggleTheme}
+        isDbConnected={isDbConnected}
+      >
+        {page === "dashboard" && (
+          <Dashboard
+            isDark={isDark}
+            onOpenInspection={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
+          />
+        )}
+        {page === "inspections" && (
+          <InspectionsList
+            onOpen={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
+            onNew={() => navigateTo("new-inspection")}
+          />
+        )}
+        {page === "new-inspection" && (
+          <NewInspection onFinish={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }} />
+        )}
+        {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
+        {page === "products" && <Products onOpen={() => { }} />}
+        {page === "rules" && <Rules />}
+        {page === "reports" && <Reports />}
+        {page === "settings" && (
+          <SettingsPage
+            users={users}
+            currentUser={currentUser}
+            onAddUser={handleAddUser}
+            onUpdateUser={handleUpdateUser}
+            onDeleteUser={handleDeleteUser}
+            onSwitchRole={handleSwitchRole}
+            isDbConnected={isDbConnected}
+            onRefreshDb={fetchSupabaseUsers}
+            onSeedDb={handleSeedDb}
+            loadingDb={loadingDb}
+          />
+        )}
+      </Shell>
     </ErrorBoundary>
   );
 }
