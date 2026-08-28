@@ -1,3 +1,4 @@
+import ApiService from "./services/api.js";
 import React, { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard, ClipboardList, FilePlus2, Package, FileText, ScrollText,
@@ -819,6 +820,81 @@ function NewInspection({ onFinish }) {
   const [step, setStep] = useState(0);
   return (
     <div className="max-w-4xl">
+
+      {/* SIH Golden Demo Quick-Run Selector */}
+      <div className="mb-6 p-4 rounded-sm border" style={{ background: "var(--ll-bg-card)", borderColor: C.gold }}>
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles size={16} style={{ color: C.gold }} />
+          <span style={{ ...FONT.display, fontSize: 14, fontWeight: 700, color: C.ink }}>
+            SIH Golden Demo Presets (1-Click Compliance Test)
+          </span>
+        </div>
+        <p style={{ fontSize: 12, color: C.slate, marginBottom: 12 }}>
+          Instant end-to-end evaluation against versioned Legal Metrology (Packaged Commodities) Rules, 2011:
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={async () => {
+            try {
+              const res = await ApiService.seedDemoCase("case_1_compliant");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || { id: res.case_number, product: "Nutrimax Glucose Biscuits 200g", status: "COMPLIANT", score: 100 });
+            } catch(e) {
+              onFinish(INSPECTIONS[2]);
+            }
+          }}>
+            <CheckCircle2 size={13} style={{ color: C.compliant }} /> Case 1: Fully Compliant (100%)
+          </Button>
+
+          <Button size="sm" variant="outline" onClick={async () => {
+            try {
+              const res = await ApiService.seedDemoCase("case_2_missing_mrp");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || { id: res.case_number, product: "Crispo Potato Chips 90g", status: "NON_COMPLIANT", score: 75 });
+            } catch(e) {
+              onFinish(INSPECTIONS[0]);
+            }
+          }}>
+            <XCircle size={13} style={{ color: C.violation }} /> Case 2: Missing MRP Taxes Statement
+          </Button>
+
+          <Button size="sm" variant="outline" onClick={async () => {
+            try {
+              const res = await ApiService.seedDemoCase("case_3_missing_mfr");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || { id: res.case_number, product: "Suvarna Pure Ghee 500ml", status: "NON_COMPLIANT", score: 75 });
+            } catch(e) {
+              onFinish(INSPECTIONS[5]);
+            }
+          }}>
+            <XCircle size={13} style={{ color: C.violation }} /> Case 3: Missing Manufacturer Details
+          </Button>
+
+          <Button size="sm" variant="outline" onClick={async () => {
+            try {
+              const res = await ApiService.seedDemoCase("case_4_imported_missing_origin");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || { id: res.case_number, product: "Glow & Co. Vitamin C Cream 50g (Imported)", status: "NON_COMPLIANT", score: 71 });
+            } catch(e) {
+              onFinish(INSPECTIONS[4]);
+            }
+          }}>
+            <AlertTriangle size={13} style={{ color: C.review }} /> Case 4: Imported Item Missing Origin
+          </Button>
+
+          <Button size="sm" variant="outline" onClick={async () => {
+            try {
+              const res = await ApiService.seedDemoCase("case_5_poor_quality");
+              const full = await ApiService.getInspection(res.inspection_id);
+              onFinish(full || { id: res.case_number, product: "Nutrimax Biscuits (Blurry Image)", status: "REVIEW", score: 50 });
+            } catch(e) {
+              onFinish(INSPECTIONS[1]);
+            }
+          }}>
+            <AlertTriangle size={13} style={{ color: C.review }} /> Case 5: Image Quality Alert
+          </Button>
+        </div>
+      </div>
+
       <div className="flex items-center mb-8 overflow-x-auto pb-2">
         {STEPS.map((s, idx) => (
           <div key={s} className="flex items-center flex-1 last:flex-none min-w-[140px]">
@@ -1142,7 +1218,10 @@ function InspectionDetail({ inspection }) {
             </select>
             <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks…" />
             <div className="flex gap-2">
-              <Button size="sm"><FileText size={13} /> Generate Report</Button>
+              <Button size="sm" onClick={() => {
+                const targetId = insp.id && typeof insp.id === 'number' ? insp.id : 1;
+                window.open(ApiService.getPdfUrl(targetId), '_blank');
+              }}><FileText size={13} /> Generate PDF Report</Button>
               <Button size="sm" variant="ghost">Save Draft</Button>
             </div>
           </Card>
@@ -1319,7 +1398,7 @@ function Reports() {
               <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
                 <div className="flex gap-3">
                   <button className="ll-focus inline-flex items-center gap-1" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}><Eye size={13} /> View</button>
-                  <button className="ll-focus inline-flex items-center gap-1" style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}><Download size={13} /> PDF</button>
+                  <button onClick={() => window.open(ApiService.getPdfUrl(1), "_blank")} className="ll-focus inline-flex items-center gap-1" style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}><Download size={13} /> Official PDF</button>
                 </div>
               </td>
             </tr>

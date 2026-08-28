@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.db
+*.sqlite3
+backend/mitramet.db
+backend/uploads/inspections/
+backend/uploads/reports/
+.pytest_cache/
+
+# Node / Vite
+node_modules/
+.DS_Store
+*.local
+.env
+backend/.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

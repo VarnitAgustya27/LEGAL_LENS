@@ -1,0 +1,234 @@
+{
+  "version": "2026.1",
+  "effective_date": "2026-01-01",
+  "jurisdiction": "India",
+  "act": "The Legal Metrology Act, 2009",
+  "rules": "The Legal Metrology (Packaged Commodities) Rules, 2011 and Amendments",
+  "rule_list": [
+    {
+      "code": "PCR-MRP-001",
+      "name": "Maximum Retail Price (MRP) Declaration",
+      "field": "mrp",
+      "statutory_reference": "Rule 6(1)(e) of PCR, 2011",
+      "category_applicability": [
+        "ALL"
+      ],
+      "is_mandatory": true,
+      "severity": "HIGH",
+      "validation_type": "FORMAT_AND_VALUE",
+      "description": "Retail sale price must be declared in Indian currency format with explicit inclusion of all taxes statement.",
+      "expected_terms": [
+        "MRP",
+        "Maximum Retail Price",
+        "Rs.",
+        "\u20b9"
+      ],
+      "required_tax_qualifier": [
+        "inclusive of all taxes",
+        "incl. of all taxes",
+        "incl of taxes",
+        "inclusive of taxes"
+      ],
+      "regex_pattern": "(?:MRP|Max\\.?\\s*Retail\\s*Price|Rs\\.?|\u20b9)\\s*[:\\s]*(\\d+(?:\\.\\d{1,2})?)"
+    },
+    {
+      "code": "PCR-NQ-002",
+      "name": "Net Quantity Declaration",
+      "field": "net_quantity",
+      "statutory_reference": "Rule 6(1)(c), Rule 11, 12, 13 of PCR, 2011",
+      "category_applicability": [
+        "ALL"
+      ],
+      "is_mandatory": true,
+      "severity": "HIGH",
+      "validation_type": "STANDARD_UNIT",
+      "description": "Net quantity must be declared in standard SI metric units (g, kg, ml, l, cm, m, N, U). Non-standard units (lbs, oz) are non-compliant as primary declaration.",
+      "expected_terms": [
+        "Net Qty",
+        "Net Quantity",
+        "Net Wt",
+        "Net Weight",
+        "Net Vol",
+        "Net Volume",
+        "Contents"
+      ],
+      "allowed_units": [
+        "g",
+        "gm",
+        "gms",
+        "gram",
+        "grams",
+        "kg",
+        "kilogram",
+        "kilograms",
+        "ml",
+        "milli-litre",
+        "l",
+        "lt",
+        "ltr",
+        "liter",
+        "litre",
+        "litres",
+        "m",
+        "meter",
+        "cm",
+        "units",
+        "pieces",
+        "pcs",
+        "N",
+        "U"
+      ],
+      "regex_pattern": "(?:Net\\s*(?:Qty|Quantity|Wt|Weight|Vol|Volume|Contents)?\\s*[:\\s]*)?(\\d+(?:\\.\\d+)?)\\s*(g|gm|gms|gram|grams|kg|ml|l|lt|ltr|liter|litre|litres|m|cm|units|pcs|pieces|N|U)\\b"
+    },
+    {
+      "code": "PCR-MFR-003",
+      "name": "Manufacturer / Packer / Importer Name & Address",
+      "field": "manufacturer",
+      "statutory_reference": "Rule 6(1)(a) of PCR, 2011",
+      "category_applicability": [
+        "ALL"
+      ],
+      "is_mandatory": true,
+      "severity": "HIGH",
+      "validation_type": "PRESENCE_AND_ADDRESS",
+      "description": "Name and complete address of the manufacturer, packer, or importer must be clearly declared.",
+      "expected_terms": [
+        "Mfg by",
+        "Manufactured by",
+        "Packed by",
+        "Marketed by",
+        "Imported by",
+        "Manufacturer",
+        "Packer",
+        "Producer"
+      ],
+      "min_address_words": 3
+    },
+    {
+      "code": "PCR-COO-004",
+      "name": "Country of Origin (Mandatory for Imports / E-Com)",
+      "field": "country_of_origin",
+      "statutory_reference": "Rule 6(1)(f), Rule 6(10) of PCR, 2011 & E-Commerce Rules",
+      "category_applicability": [
+        "IMPORTED",
+        "E_COMMERCE",
+        "COSMETICS",
+        "ALL"
+      ],
+      "is_mandatory_when_imported": true,
+      "is_mandatory_when_domestic": false,
+      "severity": "HIGH",
+      "validation_type": "PRESENCE",
+      "description": "Country of origin must be prominently declared on imported packaged commodities.",
+      "expected_terms": [
+        "Country of Origin",
+        "Made in",
+        "Product of",
+        "Manufactured in",
+        "Origin"
+      ]
+    },
+    {
+      "code": "PCR-MD-005",
+      "name": "Month and Year of Manufacture / Packing / Import",
+      "field": "mfg_date",
+      "statutory_reference": "Rule 6(1)(d) of PCR, 2011",
+      "category_applicability": [
+        "ALL"
+      ],
+      "is_mandatory": true,
+      "severity": "MEDIUM",
+      "validation_type": "DATE_FORMAT",
+      "description": "The month and year in which the commodity was manufactured, packed, or imported must be stated.",
+      "expected_terms": [
+        "Mfg Date",
+        "MFD",
+        "Date of Mfg",
+        "Mfg.",
+        "Packed",
+        "PKD",
+        "Date of Pkg",
+        "Month & Year of Mfg"
+      ],
+      "regex_pattern": "(?:MFD|Mfg|Packed|PKD|Date)?\\s*[:\\s]*(\\d{1,2}[\\/\\.-]\\d{2,4}|[A-Za-z]{3,9}\\s*20\\d{2})"
+    },
+    {
+      "code": "PCR-BB-006",
+      "name": "Best Before / Expiry Date",
+      "field": "best_before",
+      "statutory_reference": "Rule 6(1)(d) of PCR, 2011 & FSSAI / Drugs & Cosmetics Act",
+      "category_applicability": [
+        "Packaged Food",
+        "Cosmetics",
+        "Personal Care",
+        "Beverages"
+      ],
+      "is_mandatory": true,
+      "severity": "HIGH",
+      "validation_type": "PRESENCE_AND_FORMAT",
+      "description": "Best before date or expiry date is mandatory for perishable food, drinks, and cosmetics.",
+      "expected_terms": [
+        "Best Before",
+        "Expiry Date",
+        "Exp Date",
+        "EXP",
+        "Use by",
+        "Best within"
+      ],
+      "regex_pattern": "(?:EXP|Expiry|Best\\s*Before|Use\\s*by)\\s*[:\\s]*(\\d{1,2}[\\/\\.-]\\d{2,4}|[A-Za-z]{3,9}\\s*20\\d{2}|\\d+\\s*months?)"
+    },
+    {
+      "code": "PCR-CC-007",
+      "name": "Consumer Care Helpline & Contact Details",
+      "field": "consumer_care",
+      "statutory_reference": "Rule 6(1)(da) of PCR, 2011",
+      "category_applicability": [
+        "ALL"
+      ],
+      "is_mandatory": true,
+      "severity": "MEDIUM",
+      "validation_type": "CONTACT_DETAILS",
+      "description": "Name, address, phone/helpline number, and email address of consumer care executive must be given.",
+      "expected_terms": [
+        "Customer Care",
+        "Consumer Care",
+        "Help Line",
+        "Helpline",
+        "Toll Free",
+        "Contact us",
+        "Feedback",
+        "In case of complaints"
+      ],
+      "required_components": [
+        "phone_or_email"
+      ]
+    },
+    {
+      "code": "PCR-USP-008",
+      "name": "Unit Sale Price Declaration",
+      "field": "unit_sale_price",
+      "statutory_reference": "Rule 6(11) of PCR, 2011 (2022 Amendment)",
+      "category_applicability": [
+        "Packaged Food",
+        "Cosmetics",
+        "Household Chemicals",
+        "Personal Care"
+      ],
+      "is_mandatory": false,
+      "severity": "LOW",
+      "validation_type": "PRICE_PER_UNIT",
+      "description": "Unit sale price declaration (price per g, kg, ml, liter, or unit) for retail packages.",
+      "expected_terms": [
+        "Unit Sale Price",
+        "USP",
+        "Price per unit",
+        "per g",
+        "per kg",
+        "per ml",
+        "per L",
+        "per unit"
+      ],
+      "regex_pattern": "(?:USP|Unit\\s*Sale\\s*Price|Price\\s*per\\s*(?:g|kg|ml|l|ltr|unit))\\s*[:\\s]*(?:\u20b9|Rs\\.?)?\\s*(\\d+(?:\\.\\d{1,2})?)"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+from app.reports.pdf_generator import InspectionReportGenerator
