@@ -402,7 +402,7 @@ const PIPELINE_STAGES = [
 
 function Login({ onLogin, users, isDark, toggleTheme }) {
   const [officerId, setOfficerId] = useState("");
-  const [password, setPassword] = useState("password123");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [signingIn, setSigningIn] = useState(false);
@@ -411,7 +411,6 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
 
   const handleBadgeClick = (badge) => {
     setOfficerId(badge);
-    if (!password) setPassword("password123");
     setError("");
   };
 
@@ -2437,6 +2436,30 @@ function AddUserModal({ onClose, onAdd }) {
     pass: "",
   });
   const [error, setError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const handlePhoneChange = (val) => {
+    setFormData((prev) => ({ ...prev, phone: val }));
+    const rawDigits = val.replace(/\D/g, "");
+    if (!val.trim()) {
+      setPhoneError("");
+    } else if (rawDigits.length > 10 && !(rawDigits.length === 12 && rawDigits.startsWith("91"))) {
+      setPhoneError(`Exceeds 10 digits (${rawDigits.length} digits entered)`);
+    } else if (rawDigits.length === 10 || (rawDigits.length === 12 && rawDigits.startsWith("91"))) {
+      setPhoneError("");
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    if (formData.phone.trim()) {
+      const phoneVal = validateMobileNumber(formData.phone);
+      if (!phoneVal.valid) {
+        setPhoneError(phoneVal.error);
+      } else {
+        setPhoneError("");
+      }
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -2450,7 +2473,7 @@ function AddUserModal({ onClose, onAdd }) {
     }
     const phoneVal = validateMobileNumber(formData.phone);
     if (!phoneVal.valid) {
-      setError(phoneVal.error);
+      setPhoneError(phoneVal.error);
       return;
     }
     if (!formData.pass || formData.pass.length < 4) {
@@ -2570,18 +2593,29 @@ function AddUserModal({ onClose, onAdd }) {
                 />
               </Field>
 
-              <Field label="Contact Mobile (10 Digits)" required={true}>
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: C.charcoal }}>
+                  Contact Mobile (10 Digits) <span className="text-red-500">*</span>
+                </label>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    borderColor: phoneError ? "#EF4444" : undefined,
+                    boxShadow: phoneError ? "0 0 0 1px #EF4444" : undefined,
+                  }}
                   placeholder="e.g. 9812345678"
                   value={formData.phone}
-                  onChange={(e) => {
-                    setFormData({ ...formData, phone: e.target.value });
-                    setError("");
-                  }}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  onBlur={handlePhoneBlur}
                   required
                 />
-              </Field>
+                {phoneError && (
+                  <div className="mt-1 text-[11px] text-red-500 font-medium flex items-center gap-1">
+                    <AlertTriangle size={12} className="flex-shrink-0" />
+                    <span>{phoneError}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <Field label="Login Password" required={true}>
@@ -2635,6 +2669,30 @@ function EditUserModal({ user, onClose, onSave }) {
     pass: "",
   });
   const [error, setError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const handlePhoneChange = (val) => {
+    setFormData((prev) => ({ ...prev, phone: val }));
+    const rawDigits = val.replace(/\D/g, "");
+    if (!val.trim()) {
+      setPhoneError("");
+    } else if (rawDigits.length > 10 && !(rawDigits.length === 12 && rawDigits.startsWith("91"))) {
+      setPhoneError(`Exceeds 10 digits (${rawDigits.length} digits entered)`);
+    } else if (rawDigits.length === 10 || (rawDigits.length === 12 && rawDigits.startsWith("91"))) {
+      setPhoneError("");
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    if (formData.phone.trim()) {
+      const phoneVal = validateMobileNumber(formData.phone);
+      if (!phoneVal.valid) {
+        setPhoneError(phoneVal.error);
+      } else {
+        setPhoneError("");
+      }
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -2648,7 +2706,7 @@ function EditUserModal({ user, onClose, onSave }) {
     }
     const phoneVal = validateMobileNumber(formData.phone);
     if (!phoneVal.valid) {
-      setError(phoneVal.error);
+      setPhoneError(phoneVal.error);
       return;
     }
 
@@ -2753,18 +2811,29 @@ function EditUserModal({ user, onClose, onSave }) {
                 />
               </Field>
 
-              <Field label="Contact Mobile (10 Digits)" required={true}>
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: C.charcoal }}>
+                  Contact Mobile (10 Digits) <span className="text-red-500">*</span>
+                </label>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    borderColor: phoneError ? "#EF4444" : undefined,
+                    boxShadow: phoneError ? "0 0 0 1px #EF4444" : undefined,
+                  }}
                   placeholder="e.g. 9812345678"
                   value={formData.phone}
-                  onChange={(e) => {
-                    setFormData({ ...formData, phone: e.target.value });
-                    setError("");
-                  }}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  onBlur={handlePhoneBlur}
                   required
                 />
-              </Field>
+                {phoneError && (
+                  <div className="mt-1 text-[11px] text-red-500 font-medium flex items-center gap-1">
+                    <AlertTriangle size={12} className="flex-shrink-0" />
+                    <span>{phoneError}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <Field label="New Login Password">
