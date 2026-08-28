@@ -7,7 +7,8 @@ import {
   MapPin, Phone, Mail, ShieldCheck, ShieldAlert, ShieldQuestion, ScanLine,
   ArrowLeft, ArrowRight, Download, Eye, EyeOff, Loader2, Building2, Hash, Lock, Unlock,
   User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
-  Sun, Moon, Sparkles, Database, Scale, Layers, Award, Zap, Check, ArrowUpRight
+  Sun, Moon, Sparkles, Database, Scale, Layers, Award, Zap, Check, ArrowUpRight,
+  Link2, Globe
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -1298,32 +1299,265 @@ function InspectionsList({ onOpen, onNew }) {
 
 const STEPS = ["Upload Images", "Metadata", "Review", "Processing"];
 
-function Dropzone({ label, required }) {
-  const [fileName, setFileName] = useState(null);
-  const ref = useRef(null);
+function evaluateImageQuality(file, callback) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const previewUrl = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+      const totalPixels = width * height;
+      let quality = "HIGH";
+      let qualityLabel = "Sharpness: High ✓";
+      let qualityBadge = "text-emerald-400 bg-emerald-500/15 border-emerald-500/30";
+
+      if (width < 800 || height < 600 || totalPixels < 500000) {
+        quality = "LOW";
+        qualityLabel = "⚠️ Low Res / OCR Alert";
+        qualityBadge = "text-amber-400 bg-amber-500/15 border-amber-500/30";
+      } else if (width < 1400 || height < 1000) {
+        quality = "MODERATE";
+        qualityLabel = "Sharpness: Good ✓";
+        qualityBadge = "text-cyan-400 bg-cyan-500/15 border-cyan-500/30";
+      }
+
+      callback({
+        file,
+        previewUrl,
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+        width,
+        height,
+        quality,
+        qualityLabel,
+        qualityBadge,
+      });
+    };
+    img.src = previewUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemove, heightClass = "h-48" }) {
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFile = (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    evaluateImageQuality(file, (data) => {
+      onImageChange(data);
+    });
+  };
+
   return (
-    <div>
-      <input ref={ref} type="file" className="hidden" onChange={(e) => setFileName(e.target.files?.[0]?.name || null)} />
-      <button
-        type="button"
-        onClick={() => ref.current?.click()}
-        className="ll-focus w-full h-32 border-2 border-dashed rounded-sm flex flex-col items-center justify-center gap-2 transition-colors"
-        style={{ borderColor: fileName ? "var(--ll-compliant)" : "var(--ll-color-line)", background: fileName ? "var(--ll-compliant-bg)" : "var(--ll-bg-paper-deep)" }}
+    <div className="relative flex flex-col">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0])}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0])}
+      />
+
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          if (e.dataTransfer.files?.[0]) {
+            handleFile(e.dataTransfer.files[0]);
+          }
+        }}
+        className={`w-full ${heightClass} border-2 rounded-xl flex flex-col items-center justify-center p-3 transition-all relative overflow-hidden ${
+          isDragging
+            ? "border-amber-400 bg-amber-400/10 scale-[1.01]"
+            : imageData
+            ? "border-emerald-500/40 bg-slate-900/40"
+            : "border-dashed border-slate-700/60 hover:border-slate-500 bg-slate-800/20"
+        }`}
+        style={{
+          background: imageData ? "var(--ll-bg-card)" : "var(--ll-bg-paper-deep)",
+          borderColor: isDragging ? "var(--ll-color-gold)" : imageData ? "var(--ll-compliant)" : "var(--ll-color-line)",
+        }}
       >
-        {fileName ? <CheckCircle2 size={20} style={{ color: "var(--ll-compliant)" }} /> : <Camera size={20} style={{ color: C.slate }} />}
-        <span style={{ fontSize: 12, fontWeight: 600, color: fileName ? "var(--ll-compliant)" : "var(--ll-color-charcoal)" }}>{label}{required && <span style={{ color: "var(--ll-violation)" }}> *</span>}</span>
-        <span style={{ fontSize: 10.5, color: C.slate, maxWidth: 180, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {fileName || "Click to upload or capture"}
-        </span>
-      </button>
+        {imageData ? (
+          <div className="w-full h-full flex flex-col justify-between relative group">
+            {/* Image Preview & Overlay */}
+            <div className="relative flex-1 w-full rounded-lg overflow-hidden flex items-center justify-center bg-black/20">
+              <img
+                src={imageData.previewUrl}
+                alt={label}
+                className="max-h-full max-w-full object-contain"
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-2.5 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md"
+                >
+                  <UploadCloud size={13} /> Replace
+                </button>
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="px-2.5 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md"
+                  title="Capture with camera"
+                >
+                  <Camera size={13} /> Camera
+                </button>
+              </div>
+            </div>
+
+            {/* Quality & Resolution Bar */}
+            <div className="mt-2 flex items-center justify-between text-[11px] font-mono">
+              <div className="flex items-center gap-1.5 truncate max-w-[65%]">
+                <span className="font-semibold" style={{ color: "var(--ll-color-ink)" }}>{label}</span>
+                <span className="text-slate-400 truncate">({imageData.width}×{imageData.height}px)</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded border text-[10px] font-semibold whitespace-nowrap ${imageData.qualityBadge}`}>
+                {imageData.qualityLabel}
+              </span>
+            </div>
+
+            {/* Remove Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove?.();
+              }}
+              className="absolute top-1 right-1 p-1 rounded-full bg-slate-900/80 hover:bg-red-600 text-white transition-colors shadow"
+              title="Remove image"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-center p-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ background: "var(--ll-bg-card)", border: "1px solid var(--ll-color-line)" }}>
+              <Camera size={19} style={{ color: "var(--ll-color-gold)" }} />
+            </div>
+
+            <div className="text-xs font-bold mb-1" style={{ color: "var(--ll-color-ink)" }}>
+              {label} {required && <span className="text-red-500 font-bold">*</span>}
+            </div>
+
+            <p className="text-[11.5px] text-slate-400 mb-3 max-w-md leading-normal px-2">
+              {sublabel || "Drop image here or select upload method"}
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
+                style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
+              >
+                <UploadCloud size={13} /> Browse
+              </button>
+
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
+                style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
+                title="Open mobile / tablet camera directly"
+              >
+                <Camera size={13} /> Camera
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 function NewInspection({ onFinish }) {
   const [step, setStep] = useState(0);
+  const [images, setImages] = useState({
+    front: null,
+    back: null,
+    ecommerce: null,
+  });
+  const [ecomUrl, setEcomUrl] = useState("");
+  const [extraAngles, setExtraAngles] = useState([]); // [{ id: 'side', label: 'Side Panel' }]
+  const [stepError, setStepError] = useState("");
+
+  // Global Clipboard Paste (Ctrl + V) Handler for images
+  useEffect(() => {
+    const handlePaste = (e) => {
+      if (step !== 0) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            evaluateImageQuality(file, (data) => {
+              setImages((prev) => {
+                if (!prev.front) return { ...prev, front: data };
+                if (!prev.back) return { ...prev, back: data };
+                if (!prev.ecommerce) return { ...prev, ecommerce: data };
+                return { ...prev, front: data };
+              });
+              setStepError("");
+            });
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [step]);
+
+  const addExtraAngle = () => {
+    const angleTypes = ["Side / Flap Panel", "Top Seal / Cap", "Bottom Panel", "Nutrition / Barcode Flap"];
+    const nextIdx = extraAngles.length;
+    const label = angleTypes[nextIdx % angleTypes.length];
+    const newId = `extra_${Date.now()}`;
+    setExtraAngles((prev) => [...prev, { id: newId, label, data: null }]);
+  };
+
+  const removeExtraAngle = (id) => {
+    setExtraAngles((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const updateExtraAngle = (id, data) => {
+    setExtraAngles((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, data } : a))
+    );
+  };
+
+  const handleContinueFromImages = () => {
+    // Front and Back are mandatory or at least 1 image uploaded for test flexibility
+    if (!images.front && !images.back) {
+      setStepError("Please upload at least the Front (PDP) or Back panel image to proceed.");
+      return;
+    }
+    setStepError("");
+    setStep(1);
+  };
   return (
-    <div className="max-w-4xl">
+    <div className="w-full max-w-5xl">
 
       {/* SIH Golden Demo Presets (1-Click Compliance Test) */}
       <div className="mb-6 p-4 rounded-sm border" style={{ background: "var(--ll-bg-card)", borderColor: C.gold }}>
@@ -1416,18 +1650,164 @@ function NewInspection({ onFinish }) {
 
       {step === 0 && (
         <Card>
-          <SectionLabel eyebrow="STEP 1" title="Upload Product Images" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <Dropzone label="Front" required />
-            <Dropzone label="Back" required />
-            <Dropzone label="Side" />
-            <Dropzone label="Additional" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-5 border-b" style={{ borderColor: C.line }}>
+            <SectionLabel eyebrow="STEP 1" title="Upload Product Images" />
+            <div className="flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line, color: C.slate }}>
+              <Zap size={13} style={{ color: C.gold }} />
+              <span>Tip: Press <strong className="text-amber-400 font-bold">Ctrl + V</strong> to paste screenshots directly</span>
+            </div>
           </div>
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: C.line }}>
-            <Dropzone label="E-commerce listing screenshot (optional)" />
+
+          {stepError && (
+            <div className="mb-5 p-3 rounded bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
+              <AlertTriangle size={14} className="flex-shrink-0" />
+              <span>{stepError}</span>
+            </div>
+          )}
+
+          {/* ── PRIMARY 2 TILES: FRONT (PDP) & BACK (MANDATORY DECLARATIONS) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <Dropzone
+              label="Front Panel (Principal Display Panel)"
+              sublabel="Rule 6(1): MRP, Net Quantity & Commodity Name"
+              required={true}
+              imageData={images.front}
+              onImageChange={(data) => {
+                setImages((prev) => ({ ...prev, front: data }));
+                setStepError("");
+              }}
+              onRemove={() => setImages((prev) => ({ ...prev, front: null }))}
+              heightClass="h-60 sm:h-64"
+            />
+
+            <Dropzone
+              label="Back Panel (Mandatory Declarations)"
+              sublabel="Rule 6(1): Manufacturer Address, Origin, Consumer Care"
+              required={true}
+              imageData={images.back}
+              onImageChange={(data) => {
+                setImages((prev) => ({ ...prev, back: data }));
+                setStepError("");
+              }}
+              onRemove={() => setImages((prev) => ({ ...prev, back: null }))}
+              heightClass="h-60 sm:h-64"
+            />
           </div>
-          <div className="flex justify-end mt-6">
-            <Button onClick={() => setStep(1)}>Continue <ArrowRight size={15} /></Button>
+
+          {/* ── EXPANDABLE EXTRA ANGLES (SIDE / FLAP / CAP / BARCODE) ── */}
+          {extraAngles.length > 0 && (
+            <div className="mb-5 p-4 rounded-xl border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold font-mono tracking-wide uppercase" style={{ color: C.gold }}>
+                  Supplementary Packaging Angles ({extraAngles.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={addExtraAngle}
+                  className="ll-focus text-xs font-semibold text-amber-500 hover:text-amber-400 flex items-center gap-1"
+                >
+                  <Plus size={13} /> Add Another Angle
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {extraAngles.map((angle) => (
+                  <Dropzone
+                    key={angle.id}
+                    label={angle.label}
+                    sublabel="Batch No, Mfg date, Expiry, or Barcode"
+                    required={false}
+                    imageData={angle.data}
+                    onImageChange={(data) => updateExtraAngle(angle.id, data)}
+                    onRemove={() => removeExtraAngle(angle.id)}
+                    heightClass="h-44"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── ADD EXTRA ANGLE BUTTON (IF NONE OR EXPANDABLE) ── */}
+          {extraAngles.length === 0 && (
+            <div className="mb-5">
+              <button
+                type="button"
+                onClick={addExtraAngle}
+                className="ll-focus w-full py-3 px-4 rounded-xl border border-solid shadow-sm flex items-center justify-center gap-2 text-xs font-semibold transition-all duration-200 hover:border-[#E5B842] hover:bg-amber-500/10 hover:shadow-[0_0_12px_rgba(229,184,66,0.15)] group cursor-pointer"
+                style={{
+                  background: "var(--ll-bg-paper-deep)",
+                  borderColor: "var(--ll-color-line)",
+                  color: "var(--ll-color-ink)",
+                }}
+              >
+                <Plus size={14} className="text-amber-500 group-hover:scale-125 transition-transform" />
+                <span>+ Add Extra Angle (Side Panel, Top Seal, Expiry / Batch Stamp)</span>
+              </button>
+            </div>
+          )}
+
+          {/* ── E-COMMERCE DIGITAL COMPLIANCE (URL & SCREENSHOT) ── */}
+          <div className="pt-4 border-t" style={{ borderColor: C.line }}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <span className="text-xs font-bold font-mono tracking-wide uppercase" style={{ color: C.gold }}>
+                  E-Commerce Digital Compliance (Optional)
+                </span>
+                <p className="text-[11.5px] text-slate-400 mt-0.5">
+                  Rule 49 PCR 2011 • Verification for marketplace listings (Amazon, Blinkit, Flipkart, Zepto)
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+              {/* Product E-Listing URL input */}
+              <div className="lg:col-span-6 flex flex-col justify-center p-5 rounded-xl border space-y-2 min-h-[176px]" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
+                <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: C.charcoal }}>
+                  <Globe size={14} style={{ color: C.gold }} />
+                  <span className="font-bold">Product E-Listing URL</span>
+                </label>
+                <div className="relative">
+                  <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    style={{ ...inputStyle, paddingLeft: 34, height: 42 }}
+                    placeholder="enter product e-listing"
+                    value={ecomUrl}
+                    onChange={(e) => setEcomUrl(e.target.value)}
+                  />
+                </div>
+                <span className="text-[11px] text-slate-400 leading-relaxed">
+                  Paste Amazon, Flipkart, or Blinkit product page URL for automated online mandatory declaration parsing.
+                </span>
+              </div>
+
+              {/* OR Divider */}
+              <div className="lg:col-span-1 flex items-center justify-center font-mono text-xs font-bold text-slate-400">
+                <span className="px-2 py-1 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>OR</span>
+              </div>
+
+              {/* Screenshot Dropzone */}
+              <div className="lg:col-span-5 flex flex-col justify-center">
+                <Dropzone
+                  label="Listing Screenshot"
+                  sublabel="Upload file or Press Ctrl + V to paste"
+                  required={false}
+                  imageData={images.ecommerce}
+                  onImageChange={(data) => setImages((prev) => ({ ...prev, ecommerce: data }))}
+                  onRemove={() => setImages((prev) => ({ ...prev, ecommerce: null }))}
+                  heightClass="h-44 sm:h-48"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center mt-6 pt-4 border-t" style={{ borderColor: C.line }}>
+            <div className="text-xs text-slate-400 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-emerald-500" />
+              <span>Pre-OCR Quality verification active</span>
+            </div>
+            <Button onClick={handleContinueFromImages}>
+              Continue to Metadata <ArrowRight size={15} />
+            </Button>
           </div>
         </Card>
       )}
