@@ -1014,46 +1014,735 @@ function Reports({ onOpenInspection }) {
 
 /* ============================== SETTINGS PAGE ============================== */
 
-function SettingsPage({ users, currentUser, isDbConnected, onRefreshDb, onSeedDb, loadingDb }) {
+function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser, onSwitchRole, isDbConnected, onRefreshDb, onSeedDb, loadingDb }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const isAdmin = currentUser?.role === "Admin";
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (u.badge && u.badge.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (u.jurisdiction && u.jurisdiction.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  const roleColors = {
+    Admin: { text: C.violation, bg: C.violationBg, border: C.violationBd },
+    "Enforcement Officer": { text: C.ink, bg: "var(--ll-bg-paper-deep)", border: C.line },
+    Reviewer: { text: C.review, bg: C.reviewBg, border: C.reviewBd },
+  };
+
+  const counts = {
+    total: users.length,
+    admins: users.filter((u) => u.role === "Admin").length,
+    officers: users.filter((u) => u.role === "Enforcement Officer").length,
+    reviewers: users.filter((u) => u.role === "Reviewer").length,
+  };
+
   return (
     <div className="space-y-6">
-      <Card>
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-          <div>
-            <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.12em", color: C.gold, fontWeight: 600 }}>SYSTEM USERS</div>
-            <h2 style={{ ...FONT.display, fontSize: 20, color: C.ink, fontWeight: 600 }}>Enforcement Directorate Personnel</h2>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          className="fixed bottom-6 right-6 z-50 ll-rise flex items-center gap-3 px-4 py-3 rounded border shadow-lg"
+          style={{ background: "var(--ll-bg-sidebar)", color: "#fff", borderColor: C.gold }}
+        >
+          <CheckCircle2 size={18} style={{ color: "#C7A75A" }} />
+          <span style={{ fontSize: 13, fontWeight: 500 }}>{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="ml-2 text-slate-300 hover:text-white">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Database Connection & Role Status Banner */}
+      <Card className="border-l-4" style={{ borderLeftColor: isAdmin ? "var(--ll-compliant)" : "var(--ll-review)" }}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div
+              className="w-10 h-10 rounded flex items-center justify-center flex-shrink-0"
+              style={{ background: isAdmin ? "var(--ll-compliant-bg)" : "var(--ll-review-bg)" }}
+            >
+              {isAdmin ? (
+                <ShieldCheck size={22} style={{ color: "var(--ll-compliant)" }} />
+              ) : (
+                <ShieldAlert size={22} style={{ color: "var(--ll-review)" }} />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 style={{ ...FONT.display, fontSize: 16, fontWeight: 700, color: C.ink }}>
+                  {isAdmin ? "Administrator Authority Active" : "Restricted Officer View — Read Only"}
+                </h3>
+                <span
+                  className="px-2 py-0.5 rounded text-[10.5px] font-bold uppercase tracking-wider border"
+                  style={{
+                    background: isAdmin ? "var(--ll-compliant-bg)" : "var(--ll-review-bg)",
+                    color: isAdmin ? "var(--ll-compliant)" : "var(--ll-review)",
+                    borderColor: isAdmin ? "var(--ll-compliant-bd)" : "var(--ll-review-bd)",
+                  }}
+                >
+                  {currentUser?.role}
+                </span>
+
+                {/* Supabase status badge */}
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border"
+                  style={{
+                    background: isDbConnected ? "rgba(34,197,94,0.12)" : "rgba(234,179,8,0.12)",
+                    color: isDbConnected ? "#22C55E" : "#EAB308",
+                    borderColor: isDbConnected ? "rgba(34,197,94,0.3)" : "rgba(234,179,8,0.3)"
+                  }}
+                >
+                  <Database size={11} />
+                  {isDbConnected ? "Supabase Live DB" : "Local / Offline Mode"}
+                </span>
+              </div>
+              <p style={{ fontSize: 12.5, color: C.slate, marginTop: 3, maxWidth: 620, lineHeight: 1.4 }}>
+                {isAdmin ? (
+                  <>
+                    You are logged in with <strong>Administrator credentials</strong> ({currentUser?.name}). You have full authority to provision, modify roles, update jurisdictions, and deactivate accounts.
+                  </>
+                ) : (
+                  <>
+                    Officer management is restricted to <strong>System Administrators</strong> under Legal Metrology IT Governance. You can inspect active personnel in read-only mode.
+                  </>
+                )}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border font-semibold ${isDbConnected ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-slate-100 text-slate-700 border-slate-300"}`}>
-              {isDbConnected ? "? Supabase Connected" : "? Local Engine Active"}
-            </span>
+
+          {/* Quick Actions & Role Switcher */}
+          <div className="flex flex-col gap-2 items-end">
+            <div className="p-2 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
+              <div style={{ ...FONT.mono, fontSize: 10, color: C.slate, fontWeight: 600, letterSpacing: "0.08em", marginBottom: 4 }}>
+                SIMULATE ROLE (DEMO)
+              </div>
+              <div className="flex gap-1.5">
+                {["Admin", "Enforcement Officer", "Reviewer"].map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => {
+                      onSwitchRole(r);
+                      showToast(`Switched active session to ${r}`);
+                    }}
+                    className={`ll-focus px-2 py-0.5 text-xs font-semibold rounded transition-all ${
+                      currentUser?.role === r ? "shadow-sm font-bold" : "opacity-75 hover:opacity-100"
+                    }`}
+                    style={{
+                      background: currentUser?.role === r ? C.ink : "var(--ll-bg-card)",
+                      color: currentUser?.role === r ? "var(--ll-button-primary-color)" : C.charcoal,
+                      border: `1px solid ${currentUser?.role === r ? C.ink : C.line}`,
+                    }}
+                  >
+                    {r === "Admin" ? "★ Admin" : r}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {isDbConnected && (
-              <Button size="sm" variant="ghost" onClick={onRefreshDb} disabled={loadingDb}>
-                <RefreshCw size={12} className={loadingDb ? "animate-spin" : ""} /> Sync
-              </Button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={onRefreshDb}
+                  disabled={loadingDb}
+                  className="ll-focus inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded border hover:bg-slate-700/10 text-slate-400"
+                  style={{ borderColor: C.line }}
+                >
+                  <RefreshCw size={11} className={loadingDb ? "animate-spin" : ""} /> Refresh DB
+                </button>
+                {users.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={onSeedDb}
+                    disabled={loadingDb}
+                    className="ll-focus inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-amber-500/20 text-amber-500 border border-amber-500/40 hover:bg-amber-500/30 font-semibold"
+                  >
+                    <Plus size={11} /> Seed Sample Officers
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
-        <table className="w-full" style={{ fontSize: 12.5 }}>
-          <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-              {["NAME", "ROLE", "BADGE ID", "EMAIL", "STATUS"].map((h) => (
-                <th key={h} className="text-left font-semibold px-4 py-2 border-b" style={{ borderColor: C.line }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="ll-tr">
-                <td className="px-4 py-2.5 border-b font-medium" style={{ borderColor: C.line }}>{u.name}</td>
-                <td className="px-4 py-2.5 border-b" style={{ borderColor: C.line }}><span className="text-xs font-semibold">{u.role}</span></td>
-                <td className="px-4 py-2.5 border-b font-mono text-xs" style={{ borderColor: C.line }}>{u.badge}</td>
-                <td className="px-4 py-2.5 border-b text-xs text-slate-500" style={{ borderColor: C.line }}>{u.email}</td>
-                <td className="px-4 py-2.5 border-b text-xs text-green-700 font-bold" style={{ borderColor: C.line }}>ACTIVE</td>
+      </Card>
+
+      {/* Metric Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          ["Total Accounts", counts.total, Users, C.ink],
+          ["Active Admins", counts.admins, Shield, C.violation],
+          ["Enforcement Officers", counts.officers, UserCheck, C.compliant],
+          ["Reviewers", counts.reviewers, User, C.gold],
+        ].map(([label, val, Icon, col]) => (
+          <Card key={label} padded={false}>
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <div style={{ fontSize: 11, color: C.slate, fontWeight: 600, letterSpacing: "0.03em" }}>{label.toUpperCase()}</div>
+                <div style={{ ...FONT.display, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 3 }}>{val}</div>
+              </div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(199,167,90,0.15)" }}>
+                <Icon size={16} style={{ color: col }} />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Directory Table Card */}
+      <Card padded={false}>
+        <div className="p-5 border-b flex flex-wrap items-center justify-between gap-4" style={{ borderColor: C.line }}>
+          <div>
+            <SectionLabel eyebrow="PERSONNEL & ACCESS" title="Legal Metrology Officers & Accounts" />
+            <p style={{ fontSize: 12, color: C.slate, marginTop: -8 }}>
+              {isAdmin
+                ? "Provision new enforcement officers, assign divisions, or modify access levels."
+                : "Directory of authorized Legal Metrology inspection and appellate staff."}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+              <input
+                placeholder="Search name, badge, email…"
+                className="ll-focus"
+                style={{ ...inputStyle, paddingLeft: 30, width: 220, fontSize: 12.5 }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <select
+              className="ll-focus"
+              style={{ ...inputStyle, width: 160, fontSize: 12.5 }}
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              <option value="ALL">All Roles</option>
+              <option value="Admin">Admin Only</option>
+              <option value="Enforcement Officer">Enforcement Officers</option>
+              <option value="Reviewer">Reviewers</option>
+            </select>
+
+            {isAdmin ? (
+              <Button onClick={() => setShowAddModal(true)}>
+                <UserPlus size={15} /> Add Officer
+              </Button>
+            ) : (
+              <div className="relative group">
+                <Button disabled={true} variant="ghost" className="cursor-not-allowed">
+                  <Lock size={14} /> Add Officer
+                </Button>
+                <div className="absolute right-0 top-full mt-1 hidden group-hover:block z-20 bg-slate-900 text-white text-[11px] py-1 px-2 rounded whitespace-nowrap shadow-md">
+                  Admin authorization required to add accounts
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full" style={{ fontSize: 12.5 }}>
+            <thead>
+              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+                {["OFFICER & BADGE", "ROLE", "EMAIL & JURISDICTION", "PHONE", "STATUS", "ACTIONS"].map((h) => (
+                  <th key={h} className="text-left font-semibold px-5 py-3 border-b" style={{ borderColor: C.line, background: "var(--ll-table-head-bg)" }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredUsers.map((u) => {
+                const rStyle = roleColors[u.role] || roleColors["Enforcement Officer"];
+                const isSelf = u.email === currentUser?.email;
+                return (
+                  <tr key={u.email} className="ll-tr">
+                    <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4" }}
+                        >
+                          {u.initials || (u.name ? u.name.slice(0, 2).toUpperCase() : "OF")}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: C.ink }}>
+                            {u.name} {isSelf && <span className="text-[10px] text-amber-500 bg-amber-500/15 border border-amber-500/30 px-1 py-0.2 rounded ml-1 font-bold">YOU</span>}
+                          </div>
+                          <div style={{ ...FONT.mono, fontSize: 11, color: C.gold }}>{u.badge || "LMD-DL-xxxx"}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                      <span
+                        className="inline-block px-2.5 py-0.5 rounded border"
+                        style={{
+                          color: rStyle.text,
+                          background: rStyle.bg,
+                          borderColor: rStyle.border,
+                          fontWeight: 700,
+                          fontSize: 11,
+                        }}
+                      >
+                        {u.role}
+                      </span>
+                    </td>
+
+                    <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                      <div style={{ color: C.charcoal }}>{u.email}</div>
+                      <div style={{ fontSize: 11, color: C.slate }}>{u.jurisdiction || "Division HQ"}</div>
+                    </td>
+
+                    <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.slate }}>
+                      {u.phone || "—"}
+                    </td>
+
+                    <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                      <span
+                        className="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded border"
+                        style={{
+                          background: u.active ? "var(--ll-compliant-bg)" : "var(--ll-bg-paper-deep)",
+                          color: u.active ? "var(--ll-compliant)" : C.slate,
+                          borderColor: u.active ? "var(--ll-compliant-bd)" : C.line,
+                        }}
+                      >
+                        {u.active ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                        {u.active ? "ACTIVE" : "DISABLED"}
+                      </span>
+                    </td>
+
+                    <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                      {isAdmin ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditingUser(u)}
+                            className="ll-focus inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded border hover:bg-slate-700/20 transition-colors"
+                            style={{ borderColor: C.line, color: C.ink }}
+                            title="Edit Officer Account"
+                          >
+                            <Edit size={12} style={{ color: C.gold }} /> Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onUpdateUser(u.email, { active: !u.active });
+                              showToast(`Status updated for ${u.name} (${!u.active ? "Active" : "Disabled"})`);
+                            }}
+                            className="ll-focus inline-flex items-center p-1 rounded border hover:bg-slate-700/20 transition-colors"
+                            style={{ borderColor: C.line, color: u.active ? C.review : C.compliant }}
+                            title={u.active ? "Deactivate Account" : "Activate Account"}
+                          >
+                            {u.active ? <UserX size={13} /> : <UserCheck size={13} />}
+                          </button>
+
+                          {!isSelf && (
+                            <button
+                              type="button"
+                              onClick={() => setDeletingUser(u)}
+                              className="ll-focus inline-flex items-center p-1 rounded border border-red-500/40 hover:bg-red-500/20 text-red-400 transition-colors"
+                              title="Delete Account"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-slate-400 font-medium">
+                          <Lock size={12} /> Read-Only
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-slate-500">
+                    No officer accounts found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* ADD USER MODAL (ADMIN ONLY) */}
+      {showAddModal && (
+        <AddUserModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={(newUser) => {
+            onAddUser(newUser);
+            setShowAddModal(false);
+            showToast(`Officer account ${newUser.name} created successfully.`);
+          }}
+        />
+      )}
+
+      {/* EDIT USER MODAL (ADMIN ONLY) */}
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSave={(updated) => {
+            onUpdateUser(editingUser.email, updated);
+            setEditingUser(null);
+            showToast(`Profile for ${updated.name} updated.`);
+          }}
+        />
+      )}
+
+      {/* DELETE CONFIRMATION MODAL (ADMIN ONLY) */}
+      {deletingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "var(--ll-modal-overlay)" }} onClick={() => setDeletingUser(null)}>
+          <Card className="ll-rise max-w-md w-full" padded={false}>
+            <div className="p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-3 text-red-500 mb-3">
+                <ShieldAlert size={24} />
+                <h3 style={{ ...FONT.display, fontSize: 18, fontWeight: 700 }}>Confirm Account Revocation</h3>
+              </div>
+              <p style={{ fontSize: 13, color: C.charcoal, lineHeight: 1.5 }}>
+                Are you sure you want to delete the officer profile for <strong>{deletingUser.name}</strong> ({deletingUser.email})?
+                This will remove their inspection access rights permanently.
+              </p>
+              <div className="flex justify-end gap-2.5 mt-6">
+                <Button variant="ghost" size="sm" onClick={() => setDeletingUser(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => {
+                    onDeleteUser(deletingUser.email);
+                    setDeletingUser(null);
+                    showToast(`Officer account for ${deletingUser.name} deleted.`);
+                  }}
+                >
+                  <Trash2 size={13} /> Confirm Delete
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================== ADD USER MODAL ============================== */
+
+function AddUserModal({ onClose, onAdd }) {
+  const [formData, setFormData] = useState({
+    name: "",
+    badge: `LMD-DL-${Math.floor(1000 + Math.random() * 9000)}`,
+    role: "Enforcement Officer",
+    email: "",
+    jurisdiction: "Delhi Central Division",
+    phone: "+91 98",
+    active: true,
+  });
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      setError("Please enter the officer's full name.");
+      return;
+    }
+    if (!formData.email.trim() || !formData.email.includes("@")) {
+      setError("Please enter a valid official email address.");
+      return;
+    }
+    const initials = formData.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+    onAdd({
+      ...formData,
+      id: `USR-${Date.now().toString().slice(-4)}`,
+      initials: initials || "OF",
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "var(--ll-modal-overlay)" }} onClick={onClose}>
+      <Card className="ll-rise max-w-lg w-full" padded={false}>
+        <div className="p-6 overflow-y-auto max-h-[90vh] ll-scroll" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-start justify-between pb-4 mb-4 border-b" style={{ borderColor: C.line }}>
+            <div>
+              <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.1em" }}>PROVISION ACCOUNT</div>
+              <h3 style={{ ...FONT.display, fontSize: 20, fontWeight: 700, color: C.ink }}>Add New Officer</h3>
+            </div>
+            <button onClick={onClose} className="ll-focus p-1 text-slate-400 hover:text-slate-200">
+              <X size={18} />
+            </button>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
+              <AlertTriangle size={14} /> {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Full Name" required={true}>
+                <input
+                  style={inputStyle}
+                  placeholder="e.g. Vikram Sharma"
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (!formData.email && e.target.value) {
+                      const emailPrefix = e.target.value.toLowerCase().replace(/\s+/g, ".");
+                      setFormData((prev) => ({ ...prev, name: e.target.value, email: `${emailPrefix}@lm.gov.in` }));
+                    }
+                  }}
+                  required
+                />
+              </Field>
+
+              <Field label="Badge / Officer ID" required={true}>
+                <input
+                  style={inputStyle}
+                  value={formData.badge}
+                  onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                  placeholder="e.g. LMD-DL-0521"
+                  required
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Role & Authority" required={true}>
+                <select
+                  style={inputStyle}
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                >
+                  <option value="Enforcement Officer">Enforcement Officer</option>
+                  <option value="Reviewer">Reviewer</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </Field>
+
+              <Field label="Status">
+                <select
+                  style={inputStyle}
+                  value={formData.active ? "true" : "false"}
+                  onChange={(e) => setFormData({ ...formData, active: e.target.value === "true" })}
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Disabled / Suspended</option>
+                </select>
+              </Field>
+            </div>
+
+            <Field label="Official Email" required={true}>
+              <div className="relative">
+                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  style={{ ...inputStyle, paddingLeft: 32 }}
+                  type="email"
+                  placeholder="v.sharma@lm.gov.in"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Jurisdiction / Division">
+                <input
+                  style={inputStyle}
+                  placeholder="e.g. West Delhi Division"
+                  value={formData.jurisdiction}
+                  onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
+                />
+              </Field>
+
+              <Field label="Contact Phone">
+                <input
+                  style={inputStyle}
+                  placeholder="+91 98123 45678"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="p-3 rounded border text-xs text-slate-400 flex items-start gap-2" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
+              <Key size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
+              <span>
+                A temporary single-use activation credential will be automatically generated and linked to this official badge ID.
+              </span>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-4 border-t" style={{ borderColor: C.line }}>
+              <Button variant="ghost" type="button" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                <UserPlus size={15} /> Create Account
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ============================== EDIT USER MODAL ============================== */
+
+function EditUserModal({ user, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    name: user.name,
+    badge: user.badge || "LMD-DL-xxxx",
+    role: user.role,
+    email: user.email,
+    jurisdiction: user.jurisdiction || "Delhi Division",
+    phone: user.phone || "+91 ",
+    active: user.active,
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const initials = formData.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+    onSave({
+      ...formData,
+      initials: initials || user.initials || "OF",
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "var(--ll-modal-overlay)" }} onClick={onClose}>
+      <Card className="ll-rise max-w-lg w-full" padded={false}>
+        <div className="p-6 overflow-y-auto max-h-[90vh] ll-scroll" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-start justify-between pb-4 mb-4 border-b" style={{ borderColor: C.line }}>
+            <div>
+              <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.1em" }}>MODIFICATION</div>
+              <h3 style={{ ...FONT.display, fontSize: 20, fontWeight: 700, color: C.ink }}>Edit Officer Profile</h3>
+            </div>
+            <button onClick={onClose} className="ll-focus p-1 text-slate-400 hover:text-slate-200">
+              <X size={18} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Full Name" required={true}>
+                <input
+                  style={inputStyle}
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </Field>
+
+              <Field label="Badge / Officer ID" required={true}>
+                <input
+                  style={inputStyle}
+                  value={formData.badge}
+                  onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                  required
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Role & Authority" required={true}>
+                <select
+                  style={inputStyle}
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                >
+                  <option value="Enforcement Officer">Enforcement Officer</option>
+                  <option value="Reviewer">Reviewer</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </Field>
+
+              <Field label="Account Status">
+                <select
+                  style={inputStyle}
+                  value={formData.active ? "true" : "false"}
+                  onChange={(e) => setFormData({ ...formData, active: e.target.value === "true" })}
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Disabled / Suspended</option>
+                </select>
+              </Field>
+            </div>
+
+            <Field label="Official Email" required={true}>
+              <input
+                style={inputStyle}
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Jurisdiction / Division">
+                <input
+                  style={inputStyle}
+                  value={formData.jurisdiction}
+                  onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
+                />
+              </Field>
+
+              <Field label="Contact Phone">
+                <input
+                  style={inputStyle}
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-4 border-t" style={{ borderColor: C.line }}>
+              <Button variant="ghost" type="button" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </div>
       </Card>
     </div>
   );
@@ -1062,28 +1751,50 @@ function SettingsPage({ users, currentUser, isDbConnected, onRefreshDb, onSeedDb
 /* ============================== ROOT APP ============================== */
 
 export default function App() {
-  const [page, setPage] = useState("dashboard");
-  const [selectedInspection, setSelectedInspection] = useState(null);
+  const [page, setPage] = useState("login");
+  const [selectedInspection, setSelectedInspection] = useState(INSPECTIONS[0]);
   const [users, setUsers] = useState(INITIAL_USERS);
-  const [currentUser, setCurrentUser] = useState(INITIAL_USERS[1]);
+  const [currentUser, setCurrentUser] = useState(INITIAL_USERS[0]); // Default to Admin Poonam Desai
   const [loadingDb, setLoadingDb] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
-  
-  const [theme, setTheme] = useState(() => localStorage.getItem("legallens_theme") || "light");
+
+  // Theme state: dark / light
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("Legal-Lens_theme") || "light";
+  });
+
   const isDark = theme === "dark";
 
-  // Fetch users from Supabase if configured
+  const toggleTheme = () => {
+    const next = isDark ? "light" : "dark";
+    setTheme(next);
+    localStorage.setItem("Legal-Lens_theme", next);
+  };
+
+  // Fetch users from Supabase on mount if configured
   const fetchSupabaseUsers = async () => {
     if (!isSupabaseConfigured() || !supabase) return;
     try {
       setLoadingDb(true);
-      const { data, error } = await supabase.from("officer_users").select("*").order("created_at", { ascending: false });
-      if (!error && data && data.length > 0) {
+      const { data, error } = await supabase
+        .from("officer_users")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.warn("Supabase fetch error, fallback to local:", error.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
         setUsers(data);
         setIsDbConnected(true);
+        // Sync current user if present
+        const currentFound = data.find((u) => u.email === currentUser.email) || data[0];
+        if (currentFound) setCurrentUser(currentFound);
       }
     } catch (err) {
-      console.warn("Supabase fetch notice:", err);
+      console.warn("Supabase connection error:", err);
     } finally {
       setLoadingDb(false);
     }
@@ -1093,28 +1804,141 @@ export default function App() {
     fetchSupabaseUsers();
   }, []);
 
-  const toggleTheme = () => {
-    const next = isDark ? "light" : "dark";
-    setTheme(next);
-    localStorage.setItem("legallens_theme", next);
+  // Add User Handler (optimistic + Supabase persistence)
+  const handleAddUser = async (newUser) => {
+    setUsers((prev) => [newUser, ...prev]);
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase.from("officer_users").insert([
+          {
+            custom_id: newUser.id,
+            name: newUser.name,
+            badge: newUser.badge,
+            role: newUser.role,
+            email: newUser.email,
+            jurisdiction: newUser.jurisdiction,
+            phone: newUser.phone,
+            active: newUser.active,
+            initials: newUser.initials,
+          },
+        ]);
+        if (error) console.error("Supabase insert error:", error);
+      } catch (err) {
+        console.error("Supabase insert exception:", err);
+      }
+    }
+  };
+
+  // Update User Handler (optimistic + Supabase persistence)
+  const handleUpdateUser = async (targetEmail, updatedFields) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.email === targetEmail ? { ...u, ...updatedFields } : u))
+    );
+    if (currentUser?.email === targetEmail) {
+      setCurrentUser((prev) => ({ ...prev, ...updatedFields }));
+    }
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase
+          .from("officer_users")
+          .update(updatedFields)
+          .eq("email", targetEmail);
+        if (error) console.error("Supabase update error:", error);
+      } catch (err) {
+        console.error("Supabase update exception:", err);
+      }
+    }
+  };
+
+  // Delete User Handler (optimistic + Supabase persistence)
+  const handleDeleteUser = async (targetEmail) => {
+    setUsers((prev) => prev.filter((u) => u.email !== targetEmail));
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase
+          .from("officer_users")
+          .delete()
+          .eq("email", targetEmail);
+        if (error) console.error("Supabase delete error:", error);
+      } catch (err) {
+        console.error("Supabase delete exception:", err);
+      }
+    }
+  };
+
+  // Helper to seed initial mock users to Supabase if empty
+  const handleSeedDb = async () => {
+    if (!isSupabaseConfigured() || !supabase) return;
+    try {
+      setLoadingDb(true);
+      const rows = INITIAL_USERS.map((u) => ({
+        custom_id: u.id,
+        name: u.name,
+        badge: u.badge,
+        role: u.role,
+        email: u.email,
+        jurisdiction: u.jurisdiction,
+        phone: u.phone,
+        active: u.active,
+        initials: u.initials,
+      }));
+      const { error } = await supabase.from("officer_users").upsert(rows, { onConflict: "email" });
+      if (error) throw error;
+      await fetchSupabaseUsers();
+    } catch (err) {
+      console.error("Seed error:", err);
+    } finally {
+      setLoadingDb(false);
+    }
+  };
+
+  const handleSwitchRole = (newRole) => {
+    const found = users.find((u) => u.role === newRole) || {
+      id: "DEMO",
+      name: newRole === "Admin" ? "Poonam Desai" : newRole === "Reviewer" ? "Sanjay Iyer" : "Rangan Bhaskaran",
+      role: newRole,
+      email: `${newRole.toLowerCase().replace(" ", ".")}@lm.gov.in`,
+      badge: newRole === "Admin" ? "LMD-HQ-001" : "LMD-DL-0412",
+      jurisdiction: "Delhi Division",
+      active: true,
+      initials: newRole === "Admin" ? "PD" : "RB",
+    };
+    setCurrentUser(found);
   };
 
   if (page === "login") {
     return (
       <div className={`ll-root min-h-screen ${isDark ? "dark" : ""}`}>
         <GlobalStyle />
-        <Login users={users} isDark={isDark} toggleTheme={toggleTheme} onLogin={(u) => { setCurrentUser(u); setPage("dashboard"); }} />
+        <Login
+          users={users}
+          isDark={isDark}
+          toggleTheme={toggleTheme}
+          onLogin={(user) => {
+            setCurrentUser(user);
+            setPage("dashboard");
+          }}
+        />
       </div>
     );
   }
 
   return (
-    <Shell page={page} setPage={setPage} currentUser={currentUser} isDark={isDark} toggleTheme={toggleTheme}>
+    <Shell
+      page={page}
+      setPage={setPage}
+      currentUser={currentUser}
+      isDark={isDark}
+      toggleTheme={toggleTheme}
+      isDbConnected={isDbConnected}
+    >
       {page === "dashboard" && (
         <Dashboard
           isDark={isDark}
           onOpenInspection={(i) => { setSelectedInspection(i); setPage("inspection-detail"); }}
-          onNewInspection={() => setPage("new-inspection")}
         />
       )}
       {page === "inspections" && (
@@ -1126,17 +1950,24 @@ export default function App() {
       {page === "new-inspection" && (
         <NewInspection onFinish={(i) => { setSelectedInspection(i); setPage("inspection-detail"); }} />
       )}
-      {page === "inspection-detail" && (
-        <InspectionDetail
-          inspection={selectedInspection}
-          onRefresh={(updated) => setSelectedInspection(updated)}
+      {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
+      {page === "products" && <Products onOpen={() => { }} />}
+      {page === "rules" && <Rules />}
+      {page === "reports" && <Reports />}
+      {page === "settings" && (
+        <SettingsPage
+          users={users}
+          currentUser={currentUser}
+          onAddUser={handleAddUser}
+          onUpdateUser={handleUpdateUser}
+          onDeleteUser={handleDeleteUser}
+          onSwitchRole={handleSwitchRole}
+          isDbConnected={isDbConnected}
+          onRefreshDb={fetchSupabaseUsers}
+          onSeedDb={handleSeedDb}
+          loadingDb={loadingDb}
         />
       )}
-      {page === "rules" && <Rules />}
-      {page === "reports" && (
-        <Reports onOpenInspection={(i) => { setSelectedInspection(i); setPage("inspection-detail"); }} />
-      )}
-      {page === "settings" && <SettingsPage users={users} currentUser={currentUser} isDbConnected={isDbConnected} onRefreshDb={fetchSupabaseUsers} loadingDb={loadingDb} />}
     </Shell>
   );
 }
