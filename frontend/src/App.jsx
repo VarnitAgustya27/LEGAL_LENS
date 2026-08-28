@@ -5,7 +5,7 @@ import {
   Settings, Users, LogOut, Search, UploadCloud, Camera, ChevronRight, ChevronLeft,
   ChevronDown, CheckCircle2, XCircle, AlertTriangle, ZoomIn, X, Filter, Calendar,
   MapPin, Phone, Mail, ShieldCheck, ShieldAlert, ShieldQuestion, ScanLine,
-  ArrowLeft, ArrowRight, Download, Eye, Loader2, Building2, Hash, Lock, Unlock,
+  ArrowLeft, ArrowRight, Download, Eye, EyeOff, Loader2, Building2, Hash, Lock, Unlock,
   User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
   Sun, Moon, Sparkles, Database
 } from "lucide-react";
@@ -378,6 +378,20 @@ const INITIAL_USERS = [
   { id: "USR-005", name: "Karan Vohra", role: "Reviewer", email: "k.vohra@lm.gov.in", badge: "LMD-REV-014", jurisdiction: "Special Compliance Unit", active: false, phone: "+91 98321 09876", initials: "KV" },
 ];
 
+const OFFICER_PUBLIC_COLUMNS = "id, custom_id, name, badge, role, email, jurisdiction, phone, active, initials, created_at";
+const LOCAL_DEMO_PASSWORD = "password123";
+
+function publicOfficerProfile(row) {
+  if (!row) return null;
+  const { pass, password, ...rest } = row;
+  return rest;
+}
+
+function passwordsMatch(stored, entered) {
+  if (stored == null || entered == null) return false;
+  return String(stored) === String(entered);
+}
+
 const PIPELINE_STAGES = [
   "Image preprocessing", "Text region detection", "OCR extraction",
   "Declaration structuring", "Product classification", "Applicable rule retrieval",
@@ -387,19 +401,78 @@ const PIPELINE_STAGES = [
 /* ============================== LOGIN ============================== */
 
 function Login({ onLogin, users, isDark, toggleTheme }) {
-  const [officerId, setOfficerId] = useState("LMD-DL-2705");
+  const [officerId, setOfficerId] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
 
-  // Find user dynamically by badge or fallback to first active user
-  const matchedUser = users.find((u) => u.badge?.toLowerCase() === officerId?.trim().toLowerCase()) ||
-                      users.find((u) => u.active) ||
-                      users[0];
+  const matchedUser = users.find((u) => u.badge?.toLowerCase() === officerId?.trim().toLowerCase());
 
   const handleBadgeClick = (badge) => {
     setOfficerId(badge);
+    setError("");
   };
 
-  const handleSignIn = () => {
-    onLogin(matchedUser);
+  const handleSignIn = async (e) => {
+    e?.preventDefault?.();
+    const badge = officerId.trim();
+    if (!badge) {
+      setError("Enter your officer badge ID.");
+      return;
+    }
+    if (!password) {
+      setError("Enter your security key / password.");
+      return;
+    }
+
+    setSigningIn(true);
+    setError("");
+
+    try {
+      if (isSupabaseConfigured() && supabase) {
+        const { data, error: queryError } = await supabase
+          .from("officer_users")
+          .select(`${OFFICER_PUBLIC_COLUMNS}, pass`)
+          .ilike("badge", badge)
+          .maybeSingle();
+
+        if (queryError) {
+          setError(queryError.message || "Could not verify credentials against the officer registry.");
+          return;
+        }
+        if (!data) {
+          setError("Invalid badge ID or password.");
+          return;
+        }
+        if (!passwordsMatch(data.pass, password)) {
+          setError("Invalid badge ID or password.");
+          return;
+        }
+        if (data.active === false) {
+          setError("This officer account is disabled. Contact an administrator.");
+          return;
+        }
+
+        onLogin(publicOfficerProfile(data));
+        return;
+      }
+
+      const localUser = users.find((u) => u.badge?.toLowerCase() === badge.toLowerCase());
+      if (!localUser || !passwordsMatch(localUser.pass || LOCAL_DEMO_PASSWORD, password)) {
+        setError("Invalid badge ID or password.");
+        return;
+      }
+      if (localUser.active === false) {
+        setError("This officer account is disabled. Contact an administrator.");
+        return;
+      }
+      onLogin(publicOfficerProfile(localUser));
+    } catch (err) {
+      setError(err?.message || "Sign-in failed. Please try again.");
+    } finally {
+      setSigningIn(false);
+    }
   };
 
   return (
@@ -466,15 +539,17 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: C.gold, fontWeight: 600 }}>OFFICER SIGN-IN</div>
           <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 600, color: C.ink, marginTop: 4, marginBottom: 20 }}>Access the inspection console</h2>
 
+          <form onSubmit={handleSignIn}>
           <Field label="Officer ID / Badge" required={true}>
             <div className="relative">
               <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input
                 className="ll-focus"
+                autoComplete="username"
                 style={{ ...inputStyle, paddingLeft: 34, fontWeight: 600 }}
                 value={officerId}
-                placeholder="Enter badge e.g. LMD-DL-2705"
-                onChange={(e) => setOfficerId(e.target.value)}
+                placeholder="Enter badge e.g. LMD-DL-0412"
+                onChange={(e) => { setOfficerId(e.target.value); setError(""); }}
               />
             </div>
           </Field>
@@ -482,9 +557,33 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
           <Field label="Security Key / Password" required={true}>
             <div className="relative">
               <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input type="password" className="ll-focus" style={{ ...inputStyle, paddingLeft: 34 }} defaultValue="password123" />
+              <input
+                type={showPassword ? "text" : "password"}
+                className="ll-focus"
+                autoComplete="current-password"
+                style={{ ...inputStyle, paddingLeft: 34, paddingRight: 36 }}
+                value={password}
+                placeholder="Enter assigned password"
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
+              />
+              <button
+                type="button"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 ll-focus p-0.5"
+                style={{ color: C.slate, background: "transparent", border: "none" }}
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
             </div>
           </Field>
+
+          {error && (
+            <div className="mb-4 p-3 rounded border text-xs flex items-start gap-2" style={{ background: "var(--ll-violation-bg)", borderColor: "var(--ll-violation-bd)", color: "var(--ll-violation)" }}>
+              <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
 
           {/* Matched User Card (Auto-detected from Badge) */}
           {matchedUser && (
@@ -502,9 +601,12 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
             </div>
           )}
 
-          <Button className="w-full mt-1" onClick={handleSignIn}>
-            Sign in as {matchedUser?.name || "Enforcement Officer"} <ArrowRight size={15} />
+          <Button className="w-full mt-1" type="submit" disabled={signingIn}>
+            {signingIn ? <Loader2 size={15} className="animate-spin" /> : null}
+            {signingIn ? "Verifying…" : `Sign in${matchedUser?.name ? ` as ${matchedUser.name}` : ""}`}
+            {!signingIn && <ArrowRight size={15} />}
           </Button>
+          </form>
 
           {/* High-Contrast Quick Start Badge Selector */}
           <div className="mt-5 p-3.5 rounded border" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
@@ -1953,6 +2055,7 @@ function AddUserModal({ onClose, onAdd }) {
     jurisdiction: "Delhi Central Division",
     phone: "+91 98",
     active: true,
+    pass: "",
   });
   const [error, setError] = useState("");
 
@@ -1964,6 +2067,10 @@ function AddUserModal({ onClose, onAdd }) {
     }
     if (!formData.email.trim() || !formData.email.includes("@")) {
       setError("Please enter a valid official email address.");
+      return;
+    }
+    if (!formData.pass || formData.pass.length < 4) {
+      setError("Set a login password of at least 4 characters.");
       return;
     }
     const initials = formData.name
@@ -2088,10 +2195,25 @@ function AddUserModal({ onClose, onAdd }) {
               </Field>
             </div>
 
+            <Field label="Login Password" required={true}>
+              <div className="relative">
+                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  style={{ ...inputStyle, paddingLeft: 32 }}
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Password stored in officer_users.pass"
+                  value={formData.pass}
+                  onChange={(e) => setFormData({ ...formData, pass: e.target.value })}
+                  required
+                />
+              </div>
+            </Field>
+
             <div className="p-3 rounded border text-xs text-slate-400 flex items-start gap-2" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
               <Key size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
               <span>
-                A temporary single-use activation credential will be automatically generated and linked to this official badge ID.
+                This password is saved to the officer’s <strong>pass</strong> column and is required at sign-in together with the badge ID.
               </span>
             </div>
 
@@ -2121,6 +2243,7 @@ function EditUserModal({ user, onClose, onSave }) {
     jurisdiction: user.jurisdiction || "Delhi Division",
     phone: user.phone || "+91 ",
     active: user.active,
+    pass: "",
   });
 
   const handleSubmit = (e) => {
@@ -2132,10 +2255,12 @@ function EditUserModal({ user, onClose, onSave }) {
       .slice(0, 2)
       .toUpperCase();
 
-    onSave({
+    const payload = {
       ...formData,
       initials: initials || user.initials || "OF",
-    });
+    };
+    if (!payload.pass) delete payload.pass;
+    onSave(payload);
   };
 
   return (
@@ -2226,6 +2351,20 @@ function EditUserModal({ user, onClose, onSave }) {
               </Field>
             </div>
 
+            <Field label="New Login Password">
+              <div className="relative">
+                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  style={{ ...inputStyle, paddingLeft: 32 }}
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Leave blank to keep the current password"
+                  value={formData.pass}
+                  onChange={(e) => setFormData({ ...formData, pass: e.target.value })}
+                />
+              </div>
+            </Field>
+
             <div className="flex justify-end gap-2.5 pt-4 border-t" style={{ borderColor: C.line }}>
               <Button variant="ghost" type="button" onClick={onClose}>
                 Cancel
@@ -2294,7 +2433,7 @@ export default function App() {
       setLoadingDb(true);
       const { data, error } = await supabase
         .from("officer_users")
-        .select("*")
+        .select(OFFICER_PUBLIC_COLUMNS)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -2303,10 +2442,10 @@ export default function App() {
       }
 
       if (data && data.length > 0) {
-        setUsers(data);
+        const publicUsers = data.map(publicOfficerProfile);
+        setUsers(publicUsers);
         setIsDbConnected(true);
-        // Sync current user if present
-        const currentFound = data.find((u) => u.email === currentUser.email) || data[0];
+        const currentFound = publicUsers.find((u) => u.email === currentUser.email);
         if (currentFound) setCurrentUser(currentFound);
       }
     } catch (err) {
@@ -2322,7 +2461,8 @@ export default function App() {
 
   // Add User Handler (optimistic + Supabase persistence)
   const handleAddUser = async (newUser) => {
-    setUsers((prev) => [newUser, ...prev]);
+    const publicUser = publicOfficerProfile(newUser);
+    setUsers((prev) => [publicUser, ...prev]);
 
     if (isSupabaseConfigured() && supabase) {
       try {
@@ -2337,6 +2477,7 @@ export default function App() {
             phone: newUser.phone,
             active: newUser.active,
             initials: newUser.initials,
+            pass: newUser.pass,
           },
         ]);
         if (error) console.error("Supabase insert error:", error);
@@ -2348,18 +2489,21 @@ export default function App() {
 
   // Update User Handler (optimistic + Supabase persistence)
   const handleUpdateUser = async (targetEmail, updatedFields) => {
+    const { pass, password, ...safeFields } = updatedFields;
     setUsers((prev) =>
-      prev.map((u) => (u.email === targetEmail ? { ...u, ...updatedFields } : u))
+      prev.map((u) => (u.email === targetEmail ? { ...u, ...safeFields } : u))
     );
     if (currentUser?.email === targetEmail) {
-      setCurrentUser((prev) => ({ ...prev, ...updatedFields }));
+      setCurrentUser((prev) => ({ ...prev, ...safeFields }));
     }
 
     if (isSupabaseConfigured() && supabase) {
       try {
+        const dbFields = { ...safeFields };
+        if (typeof pass === "string" && pass.length > 0) dbFields.pass = pass;
         const { error } = await supabase
           .from("officer_users")
-          .update(updatedFields)
+          .update(dbFields)
           .eq("email", targetEmail);
         if (error) console.error("Supabase update error:", error);
       } catch (err) {
@@ -2434,8 +2578,9 @@ export default function App() {
           isDark={isDark}
           toggleTheme={toggleTheme}
           onLogin={(user) => {
-            setCurrentUser(user);
-            localStorage.setItem("legallens_current_user", JSON.stringify(user));
+            const sessionUser = publicOfficerProfile(user);
+            setCurrentUser(sessionUser);
+            localStorage.setItem("legallens_current_user", JSON.stringify(sessionUser));
             navigateTo("dashboard");
           }}
         />
