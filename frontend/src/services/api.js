@@ -2,7 +2,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 class ApiService {
   static getHeaders() {
-    const token = localStorage.getItem('mitramet_token');
+    const token = localStorage.getItem('legallens_token');
     return {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -19,7 +19,7 @@ class ApiService {
       });
       if (!res.ok) throw new Error('Login failed');
       const data = await res.json();
-      localStorage.setItem('mitramet_token', data.access_token);
+      localStorage.setItem('legallens_token', data.access_token);
       return data;
     } catch (e) {
       console.warn('Backend login fallback to demo session:', e);
@@ -89,7 +89,7 @@ class ApiService {
     for (const f of files) {
       formData.append('files', f);
     }
-    const token = localStorage.getItem('mitramet_token');
+    const token = localStorage.getItem('legallens_token');
     const res = await fetch(`${API_BASE}/inspections/${inspectionId}/images`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},

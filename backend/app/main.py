@@ -50,7 +50,7 @@ app.include_router(demo_router, prefix=settings.API_V1_STR)
 @app.get("/")
 def root():
     return {
-        "service": "MitraMet API",
+        "service": "Legal-Lens API",
         "status": "ONLINE",
         "version": "1.0.0",
         "legal_act": "The Legal Metrology (Packaged Commodities) Rules, 2011",

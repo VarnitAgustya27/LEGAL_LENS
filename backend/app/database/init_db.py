@@ -18,7 +18,7 @@ def init_database():
         if db.query(User).count() == 0:
             users = [
                 User(
-                    email="inspector@mitramet.gov.in",
+                    email="inspector@legallens.gov.in",
                     full_name="R. Bhaskaran",
                     hashed_password=get_password_hash("inspector123"),
                     role="INSPECTOR",
@@ -26,7 +26,7 @@ def init_database():
                     department="Delhi Legal Metrology Enforcement"
                 ),
                 User(
-                    email="admin@mitramet.gov.in",
+                    email="admin@legallens.gov.in",
                     full_name="Department Administrator",
                     hashed_password=get_password_hash("admin123"),
                     role="ADMIN",
@@ -34,7 +34,7 @@ def init_database():
                     department="Ministry of Consumer Affairs"
                 ),
                 User(
-                    email="reviewer@mitramet.gov.in",
+                    email="reviewer@legallens.gov.in",
                     full_name="A. Mehta (Senior Reviewer)",
                     hashed_password=get_password_hash("reviewer123"),
                     role="REVIEWER",

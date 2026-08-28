@@ -7,7 +7,7 @@ client = TestClient(app)
 def test_root_endpoint():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json()["service"] == "MitraMet API"
+    assert response.json()["service"] == "Legal-Lens API"
 
 def test_rules_endpoint():
     response = client.get("/api/rules")
