@@ -2400,6 +2400,29 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
   );
 }
 
+/* ============================== PHONE VALIDATION HELPER ============================== */
+
+function validateMobileNumber(phoneStr) {
+  if (!phoneStr || !phoneStr.trim()) {
+    return { valid: false, error: "Please enter a 10-digit mobile number." };
+  }
+  const digits = phoneStr.replace(/\D/g, "");
+  let tenDigits = "";
+  if (digits.length === 10) {
+    tenDigits = digits;
+  } else if (digits.length === 12 && digits.startsWith("91")) {
+    tenDigits = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith("0")) {
+    tenDigits = digits.slice(1);
+  } else {
+    return {
+      valid: false,
+      error: `Mobile number must contain exactly 10 digits (currently ${digits.length} digit${digits.length === 1 ? "" : "s"}).`,
+    };
+  }
+  return { valid: true, formatted: `+91 ${tenDigits.slice(0, 5)} ${tenDigits.slice(5)}`, raw: tenDigits };
+}
+
 /* ============================== ADD USER MODAL ============================== */
 
 function AddUserModal({ onClose, onAdd }) {
@@ -2409,7 +2432,7 @@ function AddUserModal({ onClose, onAdd }) {
     role: "Enforcement Officer",
     email: "",
     jurisdiction: "Delhi Central Division",
-    phone: "+91 98",
+    phone: "",
     active: true,
     pass: "",
   });
@@ -2425,6 +2448,11 @@ function AddUserModal({ onClose, onAdd }) {
       setError("Please enter a valid official email address.");
       return;
     }
+    const phoneVal = validateMobileNumber(formData.phone);
+    if (!phoneVal.valid) {
+      setError(phoneVal.error);
+      return;
+    }
     if (!formData.pass || formData.pass.length < 4) {
       setError("Set a login password of at least 4 characters.");
       return;
@@ -2438,6 +2466,7 @@ function AddUserModal({ onClose, onAdd }) {
 
     onAdd({
       ...formData,
+      phone: phoneVal.formatted,
       id: `USR-${Date.now().toString().slice(-4)}`,
       initials: initials || "OF",
     });
@@ -2541,12 +2570,16 @@ function AddUserModal({ onClose, onAdd }) {
                 />
               </Field>
 
-              <Field label="Contact Phone">
+              <Field label="Contact Mobile (10 Digits)" required={true}>
                 <input
                   style={inputStyle}
-                  placeholder="+91 98123 45678"
+                  placeholder="e.g. 9812345678"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: e.target.value });
+                    setError("");
+                  }}
+                  required
                 />
               </Field>
             </div>
@@ -2597,13 +2630,28 @@ function EditUserModal({ user, onClose, onSave }) {
     role: user.role,
     email: user.email,
     jurisdiction: user.jurisdiction || "Delhi Division",
-    phone: user.phone || "+91 ",
+    phone: user.phone || "",
     active: user.active,
     pass: "",
   });
+  const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+      setError("Please enter the officer's full name.");
+      return;
+    }
+    if (!formData.email.trim() || !formData.email.includes("@")) {
+      setError("Please enter a valid official email address.");
+      return;
+    }
+    const phoneVal = validateMobileNumber(formData.phone);
+    if (!phoneVal.valid) {
+      setError(phoneVal.error);
+      return;
+    }
+
     const initials = formData.name
       .split(" ")
       .map((n) => n[0])
@@ -2613,6 +2661,7 @@ function EditUserModal({ user, onClose, onSave }) {
 
     const payload = {
       ...formData,
+      phone: phoneVal.formatted,
       initials: initials || user.initials || "OF",
     };
     if (!payload.pass) delete payload.pass;
@@ -2632,6 +2681,12 @@ function EditUserModal({ user, onClose, onSave }) {
               <X size={18} />
             </button>
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
+              <AlertTriangle size={14} /> {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -2698,11 +2753,16 @@ function EditUserModal({ user, onClose, onSave }) {
                 />
               </Field>
 
-              <Field label="Contact Phone">
+              <Field label="Contact Mobile (10 Digits)" required={true}>
                 <input
                   style={inputStyle}
+                  placeholder="e.g. 9812345678"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: e.target.value });
+                    setError("");
+                  }}
+                  required
                 />
               </Field>
             </div>
