@@ -1746,11 +1746,7 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
             </button>
           </div>
         ) : (
-          <div
-            className="flex flex-col items-center justify-center text-center p-3"
-            onClick={() => fileInputRef.current?.click()}
-            style={{ cursor: "pointer" }}
-          >
+          <div className="flex flex-col items-center justify-center text-center p-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ background: "var(--ll-bg-card)", border: "1px solid var(--ll-color-line)" }}>
               <Camera size={19} style={{ color: "var(--ll-color-gold)" }} />
             </div>
@@ -1759,7 +1755,7 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
               {label} {required && <span className="text-red-500 font-bold">*</span>}
             </div>
 
-            <p className="text-[11.5px] text-slate-400 mb-3 max-w-md leading-normal px-2" style={{ cursor: "pointer" }}>
+            <p className="text-[11.5px] text-slate-400 mb-3 max-w-md leading-normal px-2">
               {sublabel || "Drop image here or select upload method"}
             </p>
 
@@ -1769,7 +1765,6 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                 onClick={() => fileInputRef.current?.click()}
                 className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
-                onClick={(e) => e.stopPropagation()}
               >
                 <UploadCloud size={13} /> Browse
               </button>
@@ -1780,7 +1775,6 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                 className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
                 title="Open mobile / tablet camera directly"
-                onClick={(e) => e.stopPropagation()}
               >
                 <Camera size={13} /> Camera
               </button>
