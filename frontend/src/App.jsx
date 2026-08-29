@@ -1199,7 +1199,7 @@ const PAGE_TITLES = {
   settings: ["ADMINISTRATION", "Users & Settings"],
 };
 
-function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, toggleTheme, isDbConnected, children }) {
+function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, toggleTheme, isDbConnected, onSignOut, children }) {
   const [eyebrow, title] = PAGE_TITLES[page] || ["", ""];
   const [profileOpen, setProfileOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState(null);
@@ -1222,7 +1222,11 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
     setProfileOpen(false);
     localStorage.removeItem("legallens_active_page");
     localStorage.removeItem("legallens_current_user");
-    setPage("login");
+    if (onSignOut) {
+      onSignOut();
+    } else {
+      setPage("login");
+    }
   };
 
   useEffect(() => {
@@ -3803,13 +3807,15 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem("legallens_current_user");
-      return saved ? JSON.parse(saved) : INITIAL_USERS[0];
+      return saved ? JSON.parse(saved) : null;
     } catch {
-      return INITIAL_USERS[0];
+      return null;
     }
   });
 
   const [page, setPage] = useState(() => {
+    const savedUser = localStorage.getItem("legallens_current_user");
+    if (!savedUser) return "login";
     return localStorage.getItem("legallens_active_page") || "dashboard";
   });
 
@@ -4043,7 +4049,7 @@ export default function App() {
     setCurrentUser(found);
   };
 
-  if (page === "login") {
+  if (page === "login" || !currentUser) {
     return (
       <div className={`ll-root min-h-screen ${isDark ? "dark" : ""}`}>
         <GlobalStyle />
@@ -4073,6 +4079,10 @@ export default function App() {
         isDark={isDark}
         toggleTheme={toggleTheme}
         isDbConnected={isDbConnected}
+        onSignOut={() => {
+          setCurrentUser(null);
+          navigateTo("login");
+        }}
       >
         {page === "dashboard" && (
           <Dashboard
