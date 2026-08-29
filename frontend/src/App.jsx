@@ -3053,59 +3053,6 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
             </div>
           </div>
 
-          {/* Quick Actions & Role Switcher */}
-          <div className="flex flex-col gap-2 items-end">
-            <div className="p-2 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
-              <div style={{ ...FONT.mono, fontSize: 10, color: C.slate, fontWeight: 600, letterSpacing: "0.08em", marginBottom: 4 }}>
-                SIMULATE ROLE (DEMO)
-              </div>
-              <div className="flex gap-1.5">
-                {["Admin", "Enforcement Officer", "Reviewer"].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => {
-                      onSwitchRole(r);
-                      showToast(`Switched active session to ${r}`);
-                    }}
-                    className={`ll-focus px-2 py-0.5 text-xs font-semibold rounded transition-all ${currentUser?.role === r ? "shadow-sm font-bold" : "opacity-75 hover:opacity-100"
-                      }`}
-                    style={{
-                      background: currentUser?.role === r ? C.ink : "var(--ll-bg-card)",
-                      color: currentUser?.role === r ? "var(--ll-button-primary-color)" : C.charcoal,
-                      border: `1px solid ${currentUser?.role === r ? C.ink : C.line}`,
-                    }}
-                  >
-                    {r === "Admin" ? "★ Admin" : r}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {isDbConnected && (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={onRefreshDb}
-                  disabled={loadingDb}
-                  className="ll-focus inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded border hover:bg-slate-700/10 text-slate-400"
-                  style={{ borderColor: C.line }}
-                >
-                  <RefreshCw size={11} className={loadingDb ? "animate-spin" : ""} /> Refresh DB
-                </button>
-                {users.length === 0 && (
-                  <button
-                    type="button"
-                    onClick={onSeedDb}
-                    disabled={loadingDb}
-                    className="ll-focus inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-amber-500/20 text-amber-500 border border-amber-500/40 hover:bg-amber-500/30 font-semibold"
-                  >
-                    <Plus size={11} /> Seed Sample Officers
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </Card>
 
