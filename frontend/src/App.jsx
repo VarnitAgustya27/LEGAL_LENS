@@ -809,13 +809,13 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
                     onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   />
                   <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-200 transition-colors"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-200 transition-colors"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <Eye size={15} /> : <EyeOff size={15} />}
+                </button>
                 </div>
               </Field>
 
