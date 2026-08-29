@@ -961,8 +961,10 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
 
 function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
   const [zoom, setZoom] = useState(1);
+  const [minZoom, setMinZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [maxPan, setMaxPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const imgRef = useRef(null);
@@ -974,9 +976,14 @@ function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
     img.onload = () => {
       imgRef.current = img;
       setImageLoaded(true);
+      // Reset pan limits when image loads
+      setMaxPan({
+        x: Math.max(0, img.naturalWidth * zoom - 260) / 2,
+        y: Math.max(0, img.naturalHeight * zoom - 260) / 2,
+      });
     };
     img.src = imageSrc;
-  }, [imageSrc]);
+  }, [imageSrc, zoom]);
 
   const handlePointerDown = (e) => {
     setIsDragging(true);
@@ -999,6 +1006,18 @@ function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
 
   const handleRotate = () => {
     setRotation((prev) => (prev + 90) % 360);
+    // Recalculate pan limits after rotation
+    setMaxPan({
+      x: Math.max(0, imgRef.current?.naturalWidth * zoom - 260) / 2 || 0,
+      y: Math.max(0, imgRef.current?.naturalHeight * zoom - 260) / 2 || 0,
+    });
+  };
+
+  const handleZoomLimit = (newZoom) => {
+    const img = imgRef.current;
+    if (!img) return newZoom;
+    const max = 3;
+    return Math.min(max, Math.max(1, newZoom));
   };
 
   const handleReset = () => {
@@ -1009,6 +1028,7 @@ function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
 
   const handleCropAndSave = () => {
     if (!imgRef.current) return;
+    const img = imgRef.current;
     const canvas = document.createElement("canvas");
     const size = 400;
     canvas.width = size;
@@ -1024,7 +1044,6 @@ function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
     ctx.translate(size / 2, size / 2);
     ctx.rotate((rotation * Math.PI) / 180);
 
-    const img = imgRef.current;
     const viewportSize = 260;
     const baseScale = Math.max(viewportSize / img.naturalWidth, viewportSize / img.naturalHeight);
     const finalScale = (baseScale * zoom) * (size / viewportSize);
@@ -1035,13 +1054,14 @@ function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
     const rad = (-rotation * Math.PI) / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
-    const rotPanX = (pan.x * cos - pan.y * sin) * (size / viewportSize);
-    const rotPanY = (pan.x * sin + pan.y * cos) * (size / viewportSize);
+    const panX = pan.x * (size / viewportSize);
+    const panY = pan.y * (size / viewportSize);
 
-    ctx.drawImage(img, -renderW / 2 + rotPanX, -renderH / 2 + rotPanY, renderW, renderH);
+    ctx.drawImage(img, -renderW / 2 + panX, -renderH / 2 + panY, renderW, renderH);
     ctx.restore();
 
-    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    // Convert to data URL with higher quality for profile picture
+    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.96);
     onSave(croppedDataUrl);
   };
 
