@@ -70,12 +70,20 @@ class ImageQualityAssessment:
             return image_path
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        
+        # Adaptive CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
-        denoised = cv2.bilateralFilter(enhanced, 9, 75, 75)
+        
+        # Bilateral filter to smooth texture while preserving sharp text edges
+        denoised = cv2.bilateralFilter(enhanced, 7, 60, 60)
+        
+        # Morphological closing to connect disconnected inkjet dots (dot-matrix expiry/MRP stamps)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        morphed = cv2.morphologyEx(denoised, cv2.MORPH_CLOSE, kernel)
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        cv2.imwrite(output_path, denoised)
+        cv2.imwrite(output_path, morphed)
         return output_path
 
     @staticmethod

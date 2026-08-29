@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const API_BASE = '/api';
 
 class ApiService {
   static getHeaders() {
@@ -96,6 +96,22 @@ class ApiService {
       body: formData
     });
     if (!res.ok) throw new Error('Image upload failed');
+    return await res.json();
+  }
+
+  static async directScan({ files, productName, category, location }) {
+    const formData = new FormData();
+    formData.append('product_name', productName || 'Packaged Commodity');
+    formData.append('category', category || 'Packaged Food');
+    formData.append('location', location || 'New Delhi, Delhi');
+    for (const f of files) {
+      formData.append('files', f);
+    }
+    const res = await fetch(`${API_BASE}/inspections/direct-scan`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('Direct OCR scan failed');
     return await res.json();
   }
 

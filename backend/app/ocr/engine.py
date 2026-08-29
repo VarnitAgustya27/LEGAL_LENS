@@ -3,51 +3,85 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-root_dir = Path(__file__).resolve().parent.parent.parent.parent
-ocr_test_dir = root_dir / "ocr-test"
-if str(ocr_test_dir) not in sys.path:
-    sys.path.insert(0, str(ocr_test_dir))
-
 try:
-    from ocr_web_service import OCRWebServiceClient, OCRProcessResult
+    import easyocr
+    _easyocr_available = True
 except ImportError:
-    OCRWebServiceClient = None
-    OCRProcessResult = None
+    _easyocr_available = False
 
 class OCREngine:
-    def __init__(self, use_web_service: bool = True):
-        self.engine_type = "HYBRID_OCR"
-        self.use_web_service = use_web_service
-        self.web_client = OCRWebServiceClient() if OCRWebServiceClient else None
+    _reader = None
+
+    def __init__(self, languages: List[str] = None, gpu: bool = False):
+        self.engine_type = "EASYOCR_HYBRID"
+        self.languages = languages or ["en"]
+        self.gpu = gpu
+
+    @classmethod
+    def get_reader(cls, languages: List[str] = None, gpu: bool = False):
+        if cls._reader is None and _easyocr_available:
+            try:
+                cls._reader = easyocr.Reader(languages or ["en"], gpu=gpu, verbose=False)
+            except Exception as e:
+                print(f"[OCREngine] Error initializing EasyOCR reader: {e}")
+                cls._reader = None
+        return cls._reader
 
     def extract_text(self, image_path: str, image_id: str = "img_01") -> List[Dict[str, Any]]:
         results = []
-        try:
-            import pytesseract
-            from PIL import Image
-            img = Image.open(image_path)
-            data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
-            w, h = img.size
-            for i in range(len(data['text'])):
-                txt = data['text'][i].strip()
-                conf = float(data['conf'][i])
-                if txt and conf > 30:
-                    x, y, bw, bh = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
-                    ymin = int((y / h) * 1000)
-                    xmin = int((x / w) * 1000)
-                    ymax = int(((y + bh) / h) * 1000)
-                    xmax = int(((x + bw) / w) * 1000)
-                    results.append({
-                        "text": txt,
-                        "confidence": round(conf / 100.0, 2),
-                        "bbox": [ymin, xmin, ymax, xmax],
-                        "image_id": image_id
-                    })
-        except Exception:
-            pass
 
+        # 1. Primary: High-Accuracy Deep Learning EasyOCR Engine with Multi-Pass Packaging Enhancements
+        if _easyocr_available and os.path.exists(image_path):
+            try:
+                from PIL import Image
+                import cv2
+                from app.cv.preprocessor import ImageQualityAssessment
+
+                with Image.open(image_path) as img:
+                    w, h = img.size
+
+                reader = self.get_reader(self.languages, self.gpu)
+                if reader:
+                    # Pass 1: Raw image
+                    ocr_out_1 = reader.readtext(image_path)
+
+                    # Pass 2: Enhanced CLAHE + Morphological Dot-Matrix connecting
+                    prep_path = image_path.replace(".png", "_prep.png").replace(".jpg", "_prep.jpg").replace(".jpeg", "_prep.jpeg")
+                    ImageQualityAssessment.preprocess_for_ocr(image_path, prep_path)
+                    ocr_out_2 = reader.readtext(prep_path) if os.path.exists(prep_path) else []
+
+                    # Combine and deduplicate detections
+                    seen_texts = set()
+                    for item in (ocr_out_1 + ocr_out_2):
+                        poly_pts, text, conf = item
+                        txt = str(text).strip()
+                        if not txt or conf < 0.20 or txt.lower() in seen_texts:
+                            continue
+                        seen_texts.add(txt.lower())
+
+                        xs = [pt[0] for pt in poly_pts]
+                        ys = [pt[1] for pt in poly_pts]
+                        min_x, max_x = max(0, min(xs)), min(w, max(xs))
+                        min_y, max_y = max(0, min(ys)), min(h, max(ys))
+
+                        ymin = int((min_y / max(1, h)) * 1000)
+                        xmin = int((min_x / max(1, w)) * 1000)
+                        ymax = int((max_y / max(1, h)) * 1000)
+                        xmax = int((max_x / max(1, w)) * 1000)
+
+                        results.append({
+                            "text": txt,
+                            "confidence": round(float(conf), 2),
+                            "bbox": [ymin, xmin, ymax, xmax],
+                            "image_id": image_id
+                        })
+            except Exception as e:
+                print(f"[OCREngine] EasyOCR execution exception on {image_path}: {e}")
+
+        # 2. Fallback: Contextual Golden Preset Detections (for synthetic demo cases)
         if len(results) < 3:
             results = self._generate_contextual_detections(image_path, image_id)
+
         return results
 
     def _generate_contextual_detections(self, image_path: str, image_id: str) -> List[Dict[str, Any]]:

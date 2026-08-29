@@ -21,6 +21,13 @@ node_modules/
 .env
 backend/.env
 
+# Uploads & Temp Data
+backend/uploads/
+uploads/
+ocr-test/
+dist/
+frontend/dist/
+
 # Logs
 *.log
 npm-debug.log*

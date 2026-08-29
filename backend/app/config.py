@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     SUPABASE_ANON_KEY: str = "sb_publishable_YUcFQBnkkTH1_HNSvRZ9ug_yOIkCl_3"
     SUPABASE_SERVICE_ROLE_KEY: str = ""
 
+    # Google Gemini Vision API (Free tier from Google AI Studio)
+    GEMINI_API_KEY: str = ""
+
     @field_validator("CORS_ORIGINS", mode="before")
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str) and not v.startswith("["):

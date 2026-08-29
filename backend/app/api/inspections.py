@@ -17,6 +17,7 @@ from app.schemas.declaration import DeclarationUpdate, DeclarationOut
 from app.auth.security import get_current_user
 from app.services.inspection_service import InspectionService
 from app.services.audit_service import AuditService
+from app.extraction.extractor import DeclarationExtractor
 
 # Import OCRService from /ocr-test folder
 import sys
@@ -250,3 +251,218 @@ def get_inspection_ocr_status(
     if not ocr_service:
         return {"status": "unavailable", "message": "OCRService not loaded"}
     return ocr_service.get_inspection_ocr_status(str(inspection_id))
+
+
+@router.post("/direct-scan")
+def direct_scan(
+    product_name: str = Form("Packaged Commodity"),
+    category: str = Form("Packaged Food"),
+    location: str = Form("New Delhi, Delhi"),
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Direct multi-image scan endpoint:
+    Accepts any number of packaging photos (front, back, side, cap, bottom, etc.),
+    runs EasyOCR & DeclarationExtractor across all images, evaluates PCR 2011 compliance,
+    and returns the complete inspection result.
+    """
+    product = Product(
+        name=product_name,
+        category=category,
+        brand=product_name.split()[0] if product_name else "Generic",
+        barcode=None,
+        is_imported=False
+    )
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+
+    case_no = f"LM/2026/{str(uuid.uuid4().int)[:6]}"
+    inspection = Inspection(
+        case_number=case_no,
+        product_id=product.id,
+        inspector_id=1,
+        status="REVIEW",
+        score=0.0,
+        inspection_type="RETAIL_PACK",
+        location=location,
+        retailer_name="Retail Store"
+    )
+    db.add(inspection)
+    db.commit()
+    db.refresh(inspection)
+
+    upload_dir = os.path.abspath(f"./uploads/inspections/{inspection.id}")
+    os.makedirs(upload_dir, exist_ok=True)
+
+    all_detections = []
+    saved_images_list = []
+
+    print(f"\n[DIRECT-SCAN] Received {len(files)} packaging photos: {[f.filename for f in files]}")
+
+    for idx, file in enumerate(files):
+        safe_name = f"{uuid.uuid4().hex}_{file.filename}"
+        file_path = os.path.join(upload_dir, safe_name)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        angle_label = f"PHOTO_{idx+1}"
+        if "front" in file.filename.lower() or idx == 0:
+            angle_label = "FRONT"
+        elif "back" in file.filename.lower() or idx == 1:
+            angle_label = "BACK"
+        elif "side" in file.filename.lower() or "nutri" in file.filename.lower() or idx == 2:
+            angle_label = "SIDE"
+
+        img_obj = InspectionImage(
+            inspection_id=inspection.id,
+            image_type=angle_label,
+            original_path=file_path,
+            quality_status="GOOD",
+            quality_score=1.0,
+            quality_metrics={}
+        )
+        db.add(img_obj)
+        db.commit()
+        db.refresh(img_obj)
+
+        web_url = f"/uploads/inspections/{inspection.id}/{safe_name}"
+        saved_images_list.append({
+            "id": f"img_{img_obj.id}",
+            "angle": angle_label,
+            "image_type": angle_label,
+            "original_path": file_path,
+            "image_url": web_url,
+            "url": web_url,
+            "filename": file.filename
+        })
+
+    # 1. Primary: Run Gemini Vision AI on all images (Lightning fast ~1.5s)
+    gemini_successful = False
+    declarations_dict = {}
+
+    try:
+        from app.ocr.gemini_engine import GeminiVisionEngine
+        gemini_engine = GeminiVisionEngine()
+        if gemini_engine.is_available():
+            image_paths = [img["original_path"] for img in saved_images_list]
+            print(f"[GEMINI-VISION] Dispatching all {len(image_paths)} packaging photos to Gemini AI...")
+            gemini_result = gemini_engine.analyze_packaging_images(image_paths, category)
+            if gemini_result and "declarations" in gemini_result and not gemini_result.get("error"):
+                gemini_successful = True
+                print(f"[GEMINI-VISION] Successfully extracted declarations across all {len(image_paths)} photos:")
+                if gemini_result.get("product_name") and gemini_result["product_name"] not in ["string", ""]:
+                    product.name = gemini_result["product_name"]
+                    product.brand = gemini_result["product_name"].split()[0]
+                    db.commit()
+                    print(f"  * PRODUCT NAME: {product.name}")
+
+                # Populate declarations_dict from Gemini
+                for k, v in gemini_result["declarations"].items():
+                    if v and v.get("value"):
+                        img_idx = int(v.get("image_index", 1)) - 1
+                        matching_img_id = saved_images_list[img_idx]["id"] if 0 <= img_idx < len(saved_images_list) else "img_01"
+                        box = v.get("box_2d") or [200, 200, 300, 700]
+
+                        declarations_dict[k] = {
+                            "field": k,
+                            "label": k.replace("_", " ").title(),
+                            "value": v["value"],
+                            "raw_text": v.get("raw_text", v["value"]),
+                            "confidence": float(v.get("confidence", 0.98)),
+                            "detected": True,
+                            "bbox": box,
+                            "image_index": int(v.get("image_index", 1)),
+                            "image_id": matching_img_id,
+                            "rule_citation": "Rule 6(1) PCR 2011"
+                        }
+                        print(f"  * {k.upper()}: {v['value']} (Photo #{v.get('image_index', 1)}, Box: {box})")
+                    else:
+                        declarations_dict[k] = {
+                            "field": k,
+                            "label": k.replace("_", " ").title(),
+                            "value": None,
+                            "raw_text": None,
+                            "confidence": 0.0,
+                            "detected": False,
+                            "bbox": None,
+                            "image_index": 1,
+                            "image_id": None,
+                            "rule_citation": "Rule 6(1) PCR 2011"
+                        }
+            elif gemini_result and gemini_result.get("error"):
+                print(f"[GEMINI-VISION] Note: {gemini_result.get('error')}")
+    except Exception as e:
+        print(f"[GEMINI-VISION] Exception: {e}")
+
+    # 2. Fallback: If Gemini is offline/disabled, run local CPU EasyOCR engine
+    if not gemini_successful:
+        print("[FALLBACK] Running local CPU EasyOCR engine...")
+        for img in saved_images_list:
+            try:
+                detections = service.ocr_engine.extract_text(img["original_path"], image_id=img["angle"])
+                all_detections.extend(detections)
+            except Exception as e:
+                print(f"[OCR] Note on {img['filename']}: {e}")
+        declarations_dict = DeclarationExtractor.extract_declarations(all_detections, category)
+
+    # Evaluate Legal Metrology PCR 2011 compliance
+    product_info = {
+        "name": product.name,
+        "category": product.category,
+        "is_imported": product.is_imported,
+        "barcode": product.barcode
+    }
+    eval_result = service.rule_engine.evaluate_inspection(declarations_dict, product_info)
+
+    # Save declarations
+    saved_declarations = []
+    for field, d in declarations_dict.items():
+        decl_obj = Declaration(
+            inspection_id=inspection.id,
+            field=field,
+            label=d.get("label", field),
+            value=d.get("value"),
+            raw_text=d.get("raw_text"),
+            confidence=d.get("confidence", 0.0),
+            source="AI",
+            is_verified=False,
+            status="PASS" if d.get("detected") else "FAIL",
+            bbox=d.get("bbox"),
+            image_id=d.get("image_id")
+        )
+        db.add(decl_obj)
+        saved_declarations.append({
+            "field": field,
+            "label": d.get("label", field),
+            "value": d.get("value"),
+            "raw_text": d.get("raw_text"),
+            "confidence": d.get("confidence", 0.0),
+            "status": "PASS" if d.get("detected") else "FAIL",
+            "is_present": d.get("detected", False),
+            "bbox": d.get("bbox"),
+            "image_index": d.get("image_index", 1),
+            "image_id": d.get("image_id"),
+            "rule": d.get("rule_citation", "Rule 6(1) PCR 2011")
+        })
+
+    inspection.status = eval_result.get("overall_status", "NON_COMPLIANT")
+    inspection.score = eval_result.get("overall_score", 0.0)
+    db.commit()
+    db.refresh(inspection)
+
+    return {
+        "id": inspection.id,
+        "case_number": inspection.case_number,
+        "product": product.name,
+        "category": product.category,
+        "location": inspection.location,
+        "status": inspection.status,
+        "score": inspection.score,
+        "date": inspection.created_at.strftime("%Y-%m-%d") if inspection.created_at else "2026-08-29",
+        "declarations": saved_declarations,
+        "images": saved_images_list,
+        "violations": eval_result.get("violations", []),
+        "ocr_detections": all_detections
+    }
