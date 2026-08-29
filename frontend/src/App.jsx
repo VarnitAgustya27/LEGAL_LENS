@@ -1669,7 +1669,12 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
 
-      <div
+<div
+        onClick={() => {
+          if (!imageData) {
+            fileInputRef.current?.click();
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setIsDragging(true);
@@ -1686,11 +1691,12 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
           ? "border-amber-400 bg-amber-400/10 scale-[1.01]"
           : imageData
             ? "border-emerald-500/40 bg-slate-900/40"
-            : "border-dashed border-slate-700/60 hover:border-slate-500 bg-slate-800/20"
+            : "border-dashed border-slate-700/60 hover:border-slate-500 bg-slate-800/20 cursor-pointer"
           }`}
         style={{
           background: imageData ? "var(--ll-bg-card)" : "var(--ll-bg-paper-deep)",
           borderColor: isDragging ? "var(--ll-color-gold)" : imageData ? "var(--ll-compliant)" : "var(--ll-color-line)",
+          cursor: imageData ? "default" : "pointer"
         }}
       >
         {imageData ? (
@@ -1762,7 +1768,10 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
                 className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
               >
@@ -1771,7 +1780,10 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
 
               <button
                 type="button"
-                onClick={() => cameraInputRef.current?.click()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  cameraInputRef.current?.click();
+                }}
                 className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
                 title="Open mobile / tablet camera directly"
