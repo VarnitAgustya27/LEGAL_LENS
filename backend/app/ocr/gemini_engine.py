@@ -59,28 +59,28 @@ For every statutory declaration:
 4. "confidence": Confidence score from 0.0 to 1.0.
 
 Statutory Declarations to extract:
-- "product_name": Full product name and brand (usually on Front PDP photo)
-- "net_quantity": Declared weight/volume (e.g. "400 g")
-- "mrp": Maximum retail price with tax statement (e.g. "Rs. 310.00")
-- "unit_sale_price": Unit sale price if declared (e.g. "Rs. 0.77 / g")
-- "manufacturer": Full manufacturer name and address with PIN code
-- "country_of_origin": Country of origin (e.g. "India")
-- "consumer_care": Consumer care phone and email
-- "mfg_date": Manufacturing / packaging / batch date (e.g. "09/04/2026")
-- "best_before": Best before period or use by date (e.g. "08/01/2027")
+- "product_name": Full product name and brand as printed on the package
+- "net_quantity": Total declared weight/volume (e.g. "400 g", "1 kg", "500 ml")
+- "mrp": Maximum retail price with tax statement (e.g. "Rs. 310.00", "₹50.00")
+- "unit_sale_price": Unit sale price if declared (e.g. "Rs. 0.77 / g", "₹0.10/ml")
+- "manufacturer": Full manufacturer/packer/importer name and complete postal address with PIN code
+- "country_of_origin": Country of origin (e.g. "India", "Made in USA")
+- "consumer_care": Consumer care phone number and email address
+- "mfg_date": Manufacturing / packaging / batch date
+- "best_before": Best before period or use by / expiry date
 
 Return ONLY valid JSON matching this structure:
 {{
-  "product_name": "string",
+  "product_name": "Extracted product name or null",
   "declarations": {{
-    "net_quantity": {{ "value": "string or null", "detected": true, "image_index": 4, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.99 }},
-    "mrp": {{ "value": "string or null", "detected": true, "image_index": 4, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
-    "unit_sale_price": {{ "value": "string or null", "detected": true, "image_index": 4, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
-    "mfg_date": {{ "value": "string or null", "detected": true, "image_index": 4, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
-    "best_before": {{ "value": "string or null", "detected": true, "image_index": 4, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
-    "manufacturer": {{ "value": "string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
-    "consumer_care": {{ "value": "string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
-    "country_of_origin": {{ "value": "string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.99 }}
+    "net_quantity": {{ "value": "Extracted string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.99 }},
+    "mrp": {{ "value": "Extracted string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
+    "unit_sale_price": {{ "value": "Extracted string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
+    "mfg_date": {{ "value": "Extracted string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
+    "best_before": {{ "value": "Extracted string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
+    "manufacturer": {{ "value": "Extracted string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
+    "consumer_care": {{ "value": "Extracted string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.98 }},
+    "country_of_origin": {{ "value": "Extracted string or null", "detected": true, "image_index": 1, "box_2d": [ymin, xmin, ymax, xmax], "confidence": 0.99 }}
   }}
 }}
 """

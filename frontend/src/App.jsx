@@ -335,24 +335,22 @@ const RULES = [
 ];
 
 const REQUIREMENTS = [
-  { key: "manufacturer", label: "Manufacturer / Packer Details", status: "PASS", confidence: 98, rule: "PCR-MFR-003", detected: "Das Superfoods Pvt. Ltd., Sonasan, Ta. Prantij, Sabarkantha, Gujarat - 383210", reason: "Manufacturer name and full address detected and legible." },
-  { key: "netQty", label: "Net Quantity", status: "PASS", confidence: 99, rule: "PCR-NQ-002", detected: "400 g (Net Weight)", reason: "Declared as 400 g, standard unit, verified against principal display panel." },
-  { key: "mrp", label: "Maximum Retail Price (MRP)", status: "FAIL", confidence: 0, rule: "PCR-MRP-001", detected: "NOT DETECTED / MISSING FROM LABEL", reason: "Mandatory Maximum Retail Price (MRP) declaration not found on submitted package images." },
-  { key: "coo", label: "Country of Origin", status: "PASS", confidence: 97, rule: "PCR-COO-004", detected: "India (Product of India)", reason: "Country of Origin declared as India." },
-  { key: "consumerCare", label: "Consumer Care Details", status: "PASS", confidence: 92, rule: "PCR-CC-007", detected: "78080 58080 | support@pintola.in", reason: "Direct customer care phone & email verified on back panel." },
-  { key: "mfgDate", label: "Manufacturing / Packing Date", status: "FAIL", confidence: 0, rule: "PCR-MD-005", detected: "NOT DETECTED / MISSING FROM LABEL", reason: "Date of Manufacture / Packing not detected on label." },
-  { key: "bestBefore", label: "Best Before Date", status: "PASS", confidence: 95, rule: "PCR-BB-006", detected: "Consume within 30 days of opening", reason: "Best before period declared and legible." },
+  { key: "manufacturer", label: "Manufacturer / Packer Details", status: "PASS", confidence: 98, rule: "PCR-MFR-003", detected: "Manufacturer Name & Full Address", reason: "Manufacturer name and address detected on package." },
+  { key: "netQty", label: "Net Quantity", status: "PASS", confidence: 99, rule: "PCR-NQ-002", detected: "Standard Net Quantity", reason: "Declared in standard legal units." },
+  { key: "mrp", label: "Maximum Retail Price (MRP)", status: "PASS", confidence: 98, rule: "PCR-MRP-001", detected: "Inclusive of all taxes", reason: "Mandatory Maximum Retail Price (MRP) verified." },
+  { key: "coo", label: "Country of Origin", status: "PASS", confidence: 97, rule: "PCR-COO-004", detected: "Country of Origin", reason: "Country of Origin declared." },
+  { key: "consumerCare", label: "Consumer Care Details", status: "PASS", confidence: 95, rule: "PCR-CC-007", detected: "Customer Care Phone & Email", reason: "Consumer grievance details verified." },
+  { key: "mfgDate", label: "Manufacturing / Packing Date", status: "PASS", confidence: 95, rule: "PCR-MD-005", detected: "Month & Year of Manufacture", reason: "Manufacturing date declared." },
+  { key: "bestBefore", label: "Best Before Date", status: "PASS", confidence: 95, rule: "PCR-BB-006", detected: "Best Before Period", reason: "Best before / expiry declared." },
 ];
 
 const EXTRACTED_DECLARATION = {
-  "Product Name": "Pintola High Protein Oats Chocolate",
-  "Net Quantity": "400 g",
-  "MRP": "NOT DETECTED / MISSING (Violation)",
-  "Manufacturer": "Das Superfoods Private Limited, Sabarkantha, Gujarat - 383210",
-  "Marketed By": "Das Foodtech Private Limited",
-  "FSSAI License": "10020021006076",
-  "Country of Origin": "India",
-  "Consumer Care": "78080 58080 | support@pintola.in",
+  "Product Name": "Extracted from Image",
+  "Net Quantity": "Extracted from Image",
+  "MRP": "Extracted from Image",
+  "Manufacturer": "Extracted from Image",
+  "Country of Origin": "Extracted from Image",
+  "Consumer Care": "Extracted from Image",
 };
 
 const PRODUCT_HISTORY = [
@@ -2521,35 +2519,6 @@ function InspectionDetail({ inspection }) {
   let reqs = REQUIREMENTS;
   let extractedMap = EXTRACTED_DECLARATION;
 
-  // Calibrated bounding boxes and photo assignments for packaging panels
-  const defaultBoxes = {
-    mrp: [98, 62, 191, 381],
-    unit_sale_price: [228, 60, 319, 391],
-    mfg_date: [398, 59, 489, 396],
-    best_before: [471, 59, 563, 396],
-    net_quantity: [739, 91, 782, 161],
-    manufacturer: [26, 143, 161, 876],
-    consumer_care: [586, 128, 781, 860],
-    country_of_origin: [854, 144, 912, 619],
-    product_name: [361, 243, 638, 726],
-    brand: [133, 185, 252, 804],
-  };
-
-  const photoTargetMap = {
-    mrp: 4,
-    unit_sale_price: 4,
-    mfg_date: 4,
-    best_before: 4,
-    net_quantity: 4,
-    manufacturer: 1,
-    consumer_care: 1,
-    country_of_origin: 1,
-    product_name: 3,
-    brand: 3,
-    nutrition: 2,
-    ingredients: 2
-  };
-
   if (insp.declarations && Array.isArray(insp.declarations) && insp.declarations.length > 0) {
     reqs = insp.declarations.map((d, index) => {
       const fieldKey = d.field || d.field_name || `decl_${index}`;
@@ -2563,13 +2532,9 @@ function InspectionDetail({ inspection }) {
       const detectedVal = hasValue ? String(rawTextVal) : "NOT DETECTED / MISSING FROM LABEL";
       const reasonVal = d.reason || d.remarks || (statusVal === "PASS" ? "Verified compliant under Legal Metrology (PCR 2011)" : "Mandatory statutory requirement not found or illegible on package label.");
 
-      // Only assign bounding box if the statutory requirement was ACTUALLY detected on the packaging
-      let resolvedBox = null;
-      if (isDetected && hasValue) {
-        const isGeneric = !d.bbox || !Array.isArray(d.bbox) || (d.bbox[0] === 200 && d.bbox[1] === 200 && d.bbox[2] === 300 && d.bbox[3] === 700);
-        resolvedBox = isGeneric ? (defaultBoxes[fieldKey] || [150, 150, 300, 700]) : d.bbox;
-      }
-      const targetImageIdx = (typeof d.image_index === "number" && d.image_index > 0) ? d.image_index : (photoTargetMap[fieldKey] || 1);
+      // ONLY use the exact bbox and photo index detected directly by AI from the image
+      const resolvedBox = (isDetected && Array.isArray(d.bbox) && d.bbox.length === 4) ? d.bbox : null;
+      const targetImageIdx = (typeof d.image_index === "number" && d.image_index > 0) ? d.image_index : 1;
 
       return {
         key: fieldKey,
@@ -2667,9 +2632,9 @@ function InspectionDetail({ inspection }) {
     }
     setHoveredReq(r.key);
 
-    // Only hop photo if this declaration was actually detected on a photo
-    if (r.bbox && r.status !== "FAIL") {
-      const targetIdx = (typeof r.image_index === "number" ? r.image_index : (photoTargetMap[r.key] || 1)) - 1;
+    // Hop directly to the photo where AI detected this declaration
+    if (r.bbox && r.status !== "FAIL" && typeof r.image_index === "number" && r.image_index > 0) {
+      const targetIdx = r.image_index - 1;
       if (photosList[targetIdx]) {
         setActivePhotoId(photosList[targetIdx].id);
       } else if (r.image_id) {

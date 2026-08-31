@@ -359,11 +359,10 @@ def direct_scan(
                     print(f"  * PRODUCT NAME: {product.name}")
 
                 # Populate declarations_dict from Gemini
-                for k, v in gemini_result["declarations"].items():
-                    if v and v.get("value"):
-                        img_idx = int(v.get("image_index", 1)) - 1
-                        matching_img_id = saved_images_list[img_idx]["id"] if 0 <= img_idx < len(saved_images_list) else "img_01"
-                        box = v.get("box_2d") or [200, 200, 300, 700]
+                        raw_box = v.get("box_2d")
+                        box = raw_box if (isinstance(raw_box, list) and len(raw_box) == 4) else None
+                        img_idx = max(0, min(int(v.get("image_index", 1)) - 1, max(0, len(saved_images_list) - 1)))
+                        matching_img_id = saved_images_list[img_idx]["id"] if saved_images_list else "img_01"
 
                         declarations_dict[k] = {
                             "field": k,
