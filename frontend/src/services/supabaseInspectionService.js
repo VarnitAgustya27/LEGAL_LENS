@@ -99,3 +99,61 @@ export async function fetchInspections({ status = 'ALL', category = '', search =
   }
   return { data, error };
 }
+
+/**
+ * Fetch a single inspection's full data (all columns including JSONB) by case_number.
+ * Returns { data: FullRow, error }
+ */
+export async function fetchInspectionByCase(caseNumber) {
+  if (!isSupabaseConfigured() || !supabase) {
+    return { data: null, error: new Error('Supabase not configured') };
+  }
+
+  const { data, error } = await supabase
+    .from('inspections')
+    .select('*')
+    .eq('case_number', caseNumber)
+    .single();
+
+  if (error) {
+    console.error('[SupabaseInspectionService] Full fetch failed:', error.message);
+  }
+  return { data, error };
+}
+
+/**
+ * Normalise a full Supabase inspections row into the shape InspectionDetail expects.
+ * (Supabase uses snake_case; InspectionDetail reads camelCase/mixed fields from directScan)
+ */
+export function mapSupabaseRowToInspection(row) {
+  if (!row) return null;
+  return {
+    // Identity
+    case_number:    row.case_number,
+    id:             row.case_number,
+    // Product
+    product:        row.product_name,
+    product_name:   row.product_name,
+    category:       row.category,
+    manufacturer:   row.manufacturer,
+    location:       row.location,
+    // Status / Score
+    status:         row.status,
+    score:          row.score,
+    // Inspector
+    inspector_name: row.inspector_name,
+    inspector:      row.inspector_name,
+    inspector_badge: row.inspector_badge,
+    // Dates
+    date:           row.created_at ? String(row.created_at).slice(0, 10) : null,
+    created_at:     row.created_at,
+    // Full JSONB payloads — these are what InspectionDetail renders
+    declarations:   Array.isArray(row.declarations)   ? row.declarations   : [],
+    violations:     Array.isArray(row.violations)     ? row.violations     : [],
+    images:         Array.isArray(row.images)         ? row.images         : [],
+    ocr_detections: Array.isArray(row.ocr_detections) ? row.ocr_detections : [],
+    // Extras
+    notes:          row.notes,
+    is_demo:        row.is_demo,
+  };
+}

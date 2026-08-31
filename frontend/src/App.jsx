@@ -1,5 +1,5 @@
 import ApiService from "./services/api.js";
-import { saveInspection, fetchInspections } from "./services/supabaseInspectionService.js";
+import { saveInspection, fetchInspections, fetchInspectionByCase, mapSupabaseRowToInspection } from "./services/supabaseInspectionService.js";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -1711,7 +1711,29 @@ function InspectionsList({ onOpen, onNew }) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [rows, setRows]                   = useState(null);   // null = loading
   const [fetchError, setFetchError]       = useState(null);
+  const [openingId, setOpeningId]         = useState(null); // case_number being opened
   const shouldReduceMotion = useReducedMotion();
+
+  // Fetch full inspection data from Supabase then navigate to detail
+  const handleOpenLive = async (row) => {
+    if (!row?.case_number) return;
+    setOpeningId(row.case_number);
+    try {
+      const { data, error } = await fetchInspectionByCase(row.case_number);
+      if (data && !error) {
+        const full = mapSupabaseRowToInspection(data);
+        onOpen?.(full);
+      } else {
+        // Fallback: open with whatever partial data we have
+        onOpen?.(mapSupabaseRowToInspection(row));
+      }
+    } catch (err) {
+      console.warn('[InspectionsList] Full fetch failed, using partial data:', err);
+      onOpen?.(mapSupabaseRowToInspection(row));
+    } finally {
+      setOpeningId(null);
+    }
+  };
 
   // Debounce search so we don't fire a query on every keystroke
   useEffect(() => {
@@ -1866,8 +1888,8 @@ function InspectionsList({ onOpen, onNew }) {
               <tr
                 key={i.case_number}
                 className="ll-tr transition-colors duration-150"
-                style={{ cursor: i.is_demo ? "default" : "pointer" }}
-                onClick={() => !i.is_demo && i._raw && onOpen?.(i._raw)}
+                style={{ cursor: i.is_demo ? "default" : (openingId === i.case_number ? "wait" : "pointer") }}
+                onClick={() => !i.is_demo && openingId === null && handleOpenLive(i)}
               >
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
                   {i.case_number}
@@ -1904,11 +1926,14 @@ function InspectionsList({ onOpen, onNew }) {
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
                   {!i.is_demo && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); onOpen?.(i._raw || i); }}
-                      className="ll-focus px-2 py-1 rounded-sm border text-xs transition-all hover:opacity-80"
-                      style={{ borderColor: C.gold, color: C.gold, background: "transparent", fontSize: 11 }}
+                      onClick={(e) => { e.stopPropagation(); handleOpenLive(i); }}
+                      disabled={openingId === i.case_number}
+                      className="ll-focus px-2 py-1 rounded-sm border text-xs transition-all hover:opacity-80 flex items-center gap-1"
+                      style={{ borderColor: C.gold, color: C.gold, background: "transparent", fontSize: 11, opacity: openingId === i.case_number ? 0.6 : 1 }}
                     >
-                      View
+                      {openingId === i.case_number
+                        ? <><Loader2 size={10} className="animate-spin" /> Loading…</>
+                        : "View"}
                     </button>
                   )}
                 </td>
