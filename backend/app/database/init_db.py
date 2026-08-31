@@ -19,7 +19,7 @@ def init_database():
             users = [
                 User(
                     email="inspector@legallens.gov.in",
-                    full_name="R. Bhaskaran",
+                    full_name="Enforcement Officer",
                     hashed_password=get_password_hash("inspector123"),
                     role="INSPECTOR",
                     badge_number="LM-DL-842",

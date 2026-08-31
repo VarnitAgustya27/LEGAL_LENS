@@ -3,6 +3,11 @@ import json
 from typing import List, Dict, Any, Optional
 from PIL import Image
 
+try:
+    from app.config import settings
+except ImportError:
+    settings = None
+
 class GeminiVisionEngine:
     """
     Multimodal Vision AI Engine using Google GenAI SDK.
@@ -11,16 +16,19 @@ class GeminiVisionEngine:
     Supports automatic API key rotation/switching on rate limit or credit exhaustion.
     """
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        config_key = getattr(settings, "GEMINI_API_KEY", "") if settings else ""
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or config_key
 
     def is_available(self) -> bool:
-        return bool(self.api_key or os.environ.get("GEMINI_API_KEY"))
+        config_key = getattr(settings, "GEMINI_API_KEY", "") if settings else ""
+        return bool(self.api_key or os.environ.get("GEMINI_API_KEY") or config_key)
 
     def analyze_packaging_images(self, image_paths: List[str], product_category: str = "Packaged Food") -> Dict[str, Any]:
         """
         Runs Gemini Multimodal Vision analysis on all packaging photos simultaneously.
         """
-        api_key_source = self.api_key or os.environ.get("GEMINI_API_KEY")
+        config_key = getattr(settings, "GEMINI_API_KEY", "") if settings else ""
+        api_key_source = self.api_key or os.environ.get("GEMINI_API_KEY") or config_key
         if not api_key_source:
             return {"error": "GEMINI_API_KEY is not configured in backend environment."}
 

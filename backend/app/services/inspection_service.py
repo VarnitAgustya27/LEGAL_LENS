@@ -38,7 +38,7 @@ class InspectionService:
         all_detections = []
         overall_quality_scores = []
 
-        # Process each image
+        # Process each image quality
         for img in inspection.images:
             q_res = ImageQualityAssessment.assess_quality(img.original_path)
             img.quality_status = q_res.get("quality_status", "GOOD")
@@ -51,12 +51,69 @@ class InspectionService:
             ImageQualityAssessment.preprocess_for_ocr(img.original_path, preprocessed_path)
             img.preprocessed_path = preprocessed_path
 
-            # OCR
-            detections = self.ocr_engine.extract_text(img.original_path, image_id=f"img_{img.id}")
-            all_detections.extend(detections)
+        # Primary: Attempt Gemini Vision AI
+        gemini_successful = False
+        declarations_dict = {}
 
-        # Declaration Extraction
-        declarations_dict = DeclarationExtractor.extract_declarations(all_detections, product.category)
+        try:
+            from app.config import settings
+            from app.ocr.gemini_engine import GeminiVisionEngine
+            gemini_engine = GeminiVisionEngine(api_key=settings.GEMINI_API_KEY)
+            if gemini_engine.is_available() and inspection.images:
+                image_paths = [img.original_path for img in inspection.images]
+                print(f"\n==========================================================================")
+                print(f"[GEMINI-VISION] 🤖 Dispatching {len(image_paths)} photo(s) to Gemini Vision AI...")
+                print(f"==========================================================================")
+                gemini_result = gemini_engine.analyze_packaging_images(image_paths, product.category)
+                if isinstance(gemini_result, list):
+                    if len(gemini_result) > 0:
+                        dict_item = next((item for item in gemini_result if isinstance(item, dict) and "declarations" in item), None)
+                        gemini_result = dict_item if dict_item else (gemini_result[0] if isinstance(gemini_result[0], dict) else {})
+                    else:
+                        gemini_result = {}
+
+                if gemini_result and "declarations" in gemini_result and not gemini_result.get("error"):
+                    gemini_successful = True
+                    print(f"[GEMINI-VISION] Successfully extracted declarations for Case {inspection.case_number}:")
+                    for k, v in gemini_result["declarations"].items():
+                        if v and v.get("value"):
+                            raw_box = v.get("box_2d")
+                            box = raw_box if (isinstance(raw_box, list) and len(raw_box) == 4) else None
+                            img_idx = max(0, min(int(v.get("image_index", 1)) - 1, max(0, len(inspection.images) - 1)))
+                            matching_img_id = f"img_{inspection.images[img_idx].id}" if inspection.images else None
+
+                            declarations_dict[k] = {
+                                "field": k,
+                                "label": k.replace("_", " ").title(),
+                                "value": v["value"],
+                                "raw_text": v.get("raw_text", v["value"]),
+                                "confidence": float(v.get("confidence", 0.98)),
+                                "detected": True,
+                                "bbox": box,
+                                "image_id": matching_img_id
+                            }
+                            print(f"  * {k.upper()}: {v['value']}")
+                        else:
+                            declarations_dict[k] = {
+                                "field": k,
+                                "label": k.replace("_", " ").title(),
+                                "value": None,
+                                "raw_text": None,
+                                "confidence": 0.0,
+                                "detected": False,
+                                "bbox": None,
+                                "image_id": None
+                            }
+        except Exception as e:
+            print(f"[GEMINI-VISION] Note: {e}")
+
+        # Fallback to local CPU EasyOCR engine if Gemini not successful
+        if not gemini_successful:
+            print("[FALLBACK] Running local CPU EasyOCR engine...")
+            for img in inspection.images:
+                detections = self.ocr_engine.extract_text(img.original_path, image_id=f"img_{img.id}")
+                all_detections.extend(detections)
+            declarations_dict = DeclarationExtractor.extract_declarations(all_detections, product.category)
 
         # Clear existing declarations & violations
         db.query(Declaration).filter(Declaration.inspection_id == inspection.id).delete()
@@ -154,11 +211,19 @@ class InspectionService:
         if not inspection:
             raise ValueError("Inspection not found")
 
+        declarations_dict = {}
+        for d in inspection.declarations:
+            declarations_dict[d.field] = {
+                "detected": True if (d.value or d.raw_text) else False,
+                "value": d.value or "",
+                "raw_text": d.raw_text or d.value or "",
+                "confidence": d.confidence or 0.95,
+                "bbox": d.bbox,
+                "image_id": d.image_id
+            }
+
         eval_data = self.rule_engine.evaluate_inspection(
-            DeclarationExtractor.extract_declarations([
-                {"text": d.raw_text or d.value or "", "confidence": d.confidence, "bbox": d.bbox, "image_id": d.image_id}
-                for d in inspection.declarations
-            ], inspection.product.category),
+            declarations_dict,
             {"name": inspection.product.name, "category": inspection.product.category, "is_imported": inspection.product.is_imported}
         )
 
@@ -167,20 +232,49 @@ class InspectionService:
         os.makedirs(reports_dir, exist_ok=True)
         pdf_path = os.path.join(reports_dir, pdf_filename)
 
+        officer_name = generated_by
+        if (not officer_name or officer_name in ["Authorized Inspector", "Inspector"]) and inspection.inspector:
+            officer_name = inspection.inspector.full_name
+        if not officer_name or officer_name == "Authorized Inspector":
+            officer_name = "Enforcement Officer"
+
+        badge_no = getattr(inspection.inspector, "badge_number", "LM-DL-842") if inspection.inspector else "LM-DL-842"
+
+        evals = eval_data.get("evaluations", [])
+        eval_score = eval_data.get("score", 0.0)
+        if evals:
+            passed_c = sum(1 for e in evals if e.get("status") == "PASS")
+            eval_score = round((passed_c / len(evals)) * 100, 1)
+
+        inspection.score = eval_score
+        db.commit()
+
         report_payload = {
             "case_number": inspection.case_number,
             "product_name": inspection.product.name,
             "category": inspection.product.category,
             "is_imported": inspection.product.is_imported,
-            "score": inspection.score,
-            "status": inspection.status,
-            "inspector_name": generated_by,
+            "score": eval_score,
+            "status": eval_data.get("overall_status", inspection.status),
+            "inspector_name": officer_name,
+            "badge_number": badge_no,
             "created_at": inspection.created_at.strftime("%d %B %Y, %H:%M"),
-            "evaluations": eval_data.get("evaluations", []),
+            "evaluations": evals,
             "violations": eval_data.get("violations", [])
         }
 
         InspectionReportGenerator.generate_pdf(report_payload, pdf_path)
+
+        from app.utils.supabase_uploader import upload_pdf_to_supabase, save_report_to_supabase_db
+        pdf_url = upload_pdf_to_supabase(pdf_path, pdf_filename)
+        save_report_to_supabase_db({
+            "case_number": inspection.case_number,
+            "pdf_path": pdf_path,
+            "pdf_url": pdf_url,
+            "summary": report_payload,
+            "generated_by": officer_name,
+            "status": inspection.status
+        })
 
         report = Report(
             inspection_id=inspection.id,
@@ -200,7 +294,7 @@ class InspectionService:
             entity_type="Report",
             entity_id=str(report.id),
             user_name=generated_by,
-            details={"case_number": inspection.case_number, "pdf_path": pdf_path}
+            details={"case_number": inspection.case_number, "pdf_path": pdf_path, "pdf_url": pdf_url}
         )
 
         return report

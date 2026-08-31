@@ -58,15 +58,3 @@ create trigger on_inspections_update
   before update on public.inspections
   for each row execute procedure public.handle_updated_at();
 
--- ── Seed demo records ─────────────────────────────────────
-insert into public.inspections
-  (case_number, product_name, category, manufacturer, location, status, score, inspector_name, inspector_badge, is_demo)
-values
-  ('LM/2026/000482','Pintola High Protein Oats Chocolate 400g','Packaged Food','Das Superfoods Pvt. Ltd.','Sabarkantha, Gujarat','NON_COMPLIANT',42.0,'R. Bhaskaran','LMD-DL-0412',true),
-  ('LM/2026/000481','Silkessence Herbal Shampoo 340ml','Cosmetics','Silkessence Care Ltd.','Lajpat Nagar, Delhi','REVIEW',61.0,'A. Mehta','LMD-DL-0418',true),
-  ('LM/2026/000479','Suvarna Refined Sunflower Oil 1L','Packaged Food','Suvarna Agro Industries','Connaught Place, Delhi','COMPLIANT',95.0,'S. Iyer','LMD-REV-008',true),
-  ('LM/2026/000477','Zesto Orange Drink 500ml','Beverages','Zesto Beverages Pvt. Ltd.','Rohini, Delhi','COMPLIANT',92.0,'R. Bhaskaran','LMD-DL-0412',true),
-  ('LM/2026/000474','Glow & Co. Vitamin C Cream 50g','Cosmetics','Glow & Co. Cosmetics (Imported)','Nehru Place, Delhi','NON_COMPLIANT',38.0,'A. Mehta','LMD-DL-0418',true),
-  ('LM/2026/000470','Crispo Potato Wafers 90g','Packaged Food','Crispo Snacks Ltd.','Dwarka, Delhi','NON_COMPLIANT',35.0,'S. Iyer','LMD-REV-008',true),
-  ('LM/2026/000468','HomeShine Dish Wash Gel 500ml','Household Chemicals','HomeShine Chemicals Pvt. Ltd.','Pitampura, Delhi','COMPLIANT',91.0,'R. Bhaskaran','LMD-DL-0412',true)
-on conflict (case_number) do nothing;

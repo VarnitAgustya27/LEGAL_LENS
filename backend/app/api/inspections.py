@@ -112,6 +112,19 @@ def get_inspection(inspection_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Inspection not found")
     return inspection
 
+@router.get("/case/{case_number:path}", response_model=InspectionOut)
+def get_inspection_by_case(case_number: str, db: Session = Depends(get_db)):
+    cno_clean = case_number.strip()
+    inspection = db.query(Inspection).filter(Inspection.case_number == cno_clean).first()
+    if not inspection:
+        inspection = db.query(Inspection).filter(Inspection.case_number.ilike(f"%{cno_clean}%")).first()
+    if not inspection and cno_clean.isdigit():
+        inspection = db.query(Inspection).filter(Inspection.id == int(cno_clean)).first()
+
+    if not inspection:
+        raise HTTPException(status_code=404, detail=f"Inspection '{case_number}' not found")
+    return inspection
+
 @router.post("/{inspection_id}/images")
 def upload_inspection_images(
     inspection_id: int,
@@ -345,11 +358,14 @@ def direct_scan(
     declarations_dict = {}
 
     try:
+        from app.config import settings
         from app.ocr.gemini_engine import GeminiVisionEngine
-        gemini_engine = GeminiVisionEngine()
+        gemini_engine = GeminiVisionEngine(api_key=settings.GEMINI_API_KEY)
         if gemini_engine.is_available():
             image_paths = [img["original_path"] for img in saved_images_list]
-            print(f"[GEMINI-VISION] Dispatching all {len(image_paths)} packaging photos to Gemini AI...")
+            print(f"\n==========================================================================")
+            print(f"[GEMINI-VISION] 🤖 Dispatching {len(image_paths)} packaging photo(s) to Gemini Vision AI...")
+            print(f"==========================================================================")
             gemini_result = gemini_engine.analyze_packaging_images(image_paths, category)
             # Normalise list output to dict if Gemini wrapped it in a list
             if isinstance(gemini_result, list):

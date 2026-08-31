@@ -1,5 +1,5 @@
 import ApiService from "./services/api.js";
-import { saveInspection, fetchInspections, fetchInspectionByCase, mapSupabaseRowToInspection } from "./services/supabaseInspectionService.js";
+import { saveInspection, fetchInspections, fetchInspectionByCase, mapSupabaseRowToInspection, mapBackendInspectionToFrontend, fetchDashboardStats, fetchReportsFromSupabase } from "./services/supabaseInspectionService.js";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -187,11 +187,11 @@ function StatusBadge({ status, size = "sm" }) {
       initial={{ scale: 0.92, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="inline-flex items-center gap-1.5 rounded-sm border transition-colors shadow-2xs"
+      className="inline-flex items-center gap-1.5 rounded-sm border transition-colors shadow-2xs whitespace-nowrap"
       style={{ background: m.bg, borderColor: m.bd, color: m.color, padding: pad, fontSize: fs, fontWeight: 600, letterSpacing: "0.03em", ...FONT.body }}
     >
-      <m.Icon size={size === "sm" ? 12 : 14} strokeWidth={2.3} />
-      {m.label.toUpperCase()}
+      <m.Icon size={size === "sm" ? 12 : 14} strokeWidth={2.3} className="flex-shrink-0" />
+      <span>{m.label.toUpperCase()}</span>
     </motion.span>
   );
 }
@@ -328,9 +328,10 @@ const VIOLATIONS_BY_CATEGORY = [
 ];
 
 const TREND = [
-  { month: "Mar", inspections: 96 }, { month: "Apr", inspections: 121 },
-  { month: "May", inspections: 142 }, { month: "Jun", inspections: 158 },
-  { month: "Jul", inspections: 176 }, { month: "Aug", inspections: 203 },
+  { day: "Aug 25", inspections: 12 }, { day: "Aug 26", inspections: 18 },
+  { day: "Aug 27", inspections: 15 }, { day: "Aug 28", inspections: 24 },
+  { day: "Aug 29", inspections: 20 }, { day: "Aug 30", inspections: 28 },
+  { day: "Aug 31", inspections: 35 },
 ];
 
 const COMMON_VIOLATIONS = [
@@ -341,13 +342,13 @@ const COMMON_VIOLATIONS = [
 ];
 
 const INSPECTIONS = [
-  { id: "LM/2026/000482", product: "Pintola High Protein Oats Chocolate 400g", category: "Packaged Food", manufacturer: "Das Superfoods Pvt. Ltd.", status: "NON_COMPLIANT", inspector: "R. Bhaskaran", date: "2026-08-24", location: "Sabarkantha, Gujarat" },
+  { id: "LM/2026/000482", product: "Pintola High Protein Oats Chocolate 400g", category: "Packaged Food", manufacturer: "Das Superfoods Pvt. Ltd.", status: "NON_COMPLIANT", inspector: "Enforcement Officer", date: "2026-08-24", location: "Sabarkantha, Gujarat" },
   { id: "LM/2026/000481", product: "Silkessence Herbal Shampoo 340ml", category: "Cosmetics", manufacturer: "Silkessence Care Ltd.", status: "REVIEW", inspector: "A. Mehta", date: "2026-08-24", location: "Lajpat Nagar, Delhi" },
   { id: "LM/2026/000479", product: "Suvarna Refined Sunflower Oil 1L", category: "Packaged Food", manufacturer: "Suvarna Agro Industries", status: "COMPLIANT", inspector: "S. Iyer", date: "2026-08-23", location: "Connaught Place, Delhi" },
-  { id: "LM/2026/000477", product: "Zesto Orange Drink 500ml", category: "Beverages", manufacturer: "Zesto Beverages Pvt. Ltd.", status: "COMPLIANT", inspector: "R. Bhaskaran", date: "2026-08-22", location: "Rohini, Delhi" },
+  { id: "LM/2026/000477", product: "Zesto Orange Drink 500ml", category: "Beverages", manufacturer: "Zesto Beverages Pvt. Ltd.", status: "COMPLIANT", inspector: "A. Mehta", date: "2026-08-22", location: "Rohini, Delhi" },
   { id: "LM/2026/000474", product: "Glow & Co. Vitamin C Cream 50g", category: "Cosmetics", manufacturer: "Glow & Co. Cosmetics (Imported)", status: "NON_COMPLIANT", inspector: "A. Mehta", date: "2026-08-21", location: "Nehru Place, Delhi" },
   { id: "LM/2026/000470", product: "Crispo Potato Wafers 90g", category: "Packaged Food", manufacturer: "Crispo Snacks Ltd.", status: "NON_COMPLIANT", inspector: "S. Iyer", date: "2026-08-20", location: "Dwarka, Delhi" },
-  { id: "LM/2026/000468", product: "HomeShine Dish Wash Gel 500ml", category: "Household Chemicals", manufacturer: "HomeShine Chemicals Pvt. Ltd.", status: "COMPLIANT", inspector: "R. Bhaskaran", date: "2026-08-19", location: "Pitampura, Delhi" },
+  { id: "LM/2026/000468", product: "HomeShine Dish Wash Gel 500ml", category: "Household Chemicals", manufacturer: "HomeShine Chemicals Pvt. Ltd.", status: "COMPLIANT", inspector: "S. Iyer", date: "2026-08-19", location: "Pitampura, Delhi" },
 ];
 
 const RULES = [
@@ -398,7 +399,7 @@ const REPORTS = INSPECTIONS.map((i) => ({ ...i }));
 
 const INITIAL_USERS = [
   { id: "USR-001", name: "Poonam Desai", role: "Admin", email: "p.desai@lm.gov.in", badge: "LMD-HQ-001", jurisdiction: "National Directorate / HQ", active: true, phone: "+91 98112 34501", initials: "PD" },
-  { id: "USR-002", name: "Rangan Bhaskaran", role: "Enforcement Officer", email: "r.bhaskaran@lm.gov.in", badge: "LMD-DL-0412", jurisdiction: "Delhi North & Central", active: true, phone: "+91 98230 45612", initials: "RB" },
+  { id: "USR-002", name: "Enforcement Officer", role: "Enforcement Officer", email: "officer@lm.gov.in", badge: "LM-DL-842", jurisdiction: "Delhi North & Central", active: true, phone: "+91 98230 45612", initials: "EO" },
   { id: "USR-003", name: "Aditi Mehta", role: "Enforcement Officer", email: "a.mehta@lm.gov.in", badge: "LMD-DL-0418", jurisdiction: "Delhi South & East", active: true, phone: "+91 98765 43210", initials: "AM" },
   { id: "USR-004", name: "Sanjay Iyer", role: "Reviewer", email: "s.iyer@lm.gov.in", badge: "LMD-REV-008", jurisdiction: "Appellate & Review Cell", active: true, phone: "+91 99100 87654", initials: "SI" },
   { id: "USR-005", name: "Karan Vohra", role: "Reviewer", email: "k.vohra@lm.gov.in", badge: "LMD-REV-014", jurisdiction: "Special Compliance Unit", active: false, phone: "+91 98321 09876", initials: "KV" },
@@ -1549,7 +1550,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
 
 /* ============================== DASHBOARD ============================== */
 
-function StatCard({ label, value, Icon, color }) {
+function StatCard({ label, value, Icon, color, loading }) {
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -1559,14 +1560,18 @@ function StatCard({ label, value, Icon, color }) {
           <div style={{ ...FONT.body, fontSize: 11.5, color: C.slate, fontWeight: 600, letterSpacing: "0.03em" }}>
             {label.toUpperCase()}
           </div>
-          <motion.div
-            initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            style={{ ...FONT.display, fontSize: 32, fontWeight: 700, color: C.ink, marginTop: 6 }}
-          >
-            {value}
-          </motion.div>
+          {loading ? (
+            <div className="h-8 w-20 bg-slate-700/30 animate-pulse rounded mt-2" />
+          ) : (
+            <motion.div
+              initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              style={{ ...FONT.display, fontSize: 32, fontWeight: 700, color: C.ink, marginTop: 6 }}
+            >
+              {value}
+            </motion.div>
+          )}
         </div>
         <motion.div
           whileHover={shouldReduceMotion ? {} : { rotate: 8, scale: 1.12 }}
@@ -1587,6 +1592,49 @@ function StatCard({ label, value, Icon, color }) {
 
 function Dashboard({ onOpenInspection, isDark }) {
   const shouldReduceMotion = useReducedMotion();
+  const [dbData, setDbData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchDashboardStats()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (data && !error) {
+          setDbData(data);
+        } else {
+          setDbData({
+            stats: STATS,
+            violationsByCategory: VIOLATIONS_BY_CATEGORY,
+            trend: TREND,
+            commonViolations: COMMON_VIOLATIONS,
+            recentInspections: INSPECTIONS.slice(0, 5)
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("[Dashboard] Supabase stats fetch notice:", err);
+        if (!cancelled) {
+          setDbData({
+            stats: STATS,
+            violationsByCategory: VIOLATIONS_BY_CATEGORY,
+            trend: TREND,
+            commonViolations: COMMON_VIOLATIONS,
+            recentInspections: INSPECTIONS.slice(0, 5)
+          });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const stats = dbData?.stats;
+  const violationsByCategory = dbData?.violationsByCategory || [];
+  const trend = dbData?.trend || [];
+  const commonViolations = dbData?.commonViolations || [];
+  const recentInspections = dbData?.recentInspections || [];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -1616,42 +1664,54 @@ function Dashboard({ onOpenInspection, isDark }) {
       className="space-y-6"
     >
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Inspections" value={STATS.total.toLocaleString()} Icon={ClipboardList} color={C.ink} />
-        <StatCard label="Compliant" value={STATS.compliant} Icon={ShieldCheck} color={C.compliant} />
-        <StatCard label="Non-Compliant" value={STATS.nonCompliant} Icon={ShieldAlert} color={C.violation} />
-        <StatCard label="Requires Verification" value={STATS.review} Icon={ShieldQuestion} color={C.review} />
+        <StatCard label="Total Inspections" value={stats ? stats.total.toLocaleString() : ""} Icon={ClipboardList} color={C.ink} loading={loading} />
+        <StatCard label="Compliant" value={stats ? stats.compliant.toLocaleString() : ""} Icon={ShieldCheck} color={C.compliant} loading={loading} />
+        <StatCard label="Non-Compliant" value={stats ? stats.nonCompliant.toLocaleString() : ""} Icon={ShieldAlert} color={C.violation} loading={loading} />
+        <StatCard label="Requires Verification" value={stats ? stats.review.toLocaleString() : ""} Icon={ShieldQuestion} color={C.review} loading={loading} />
       </motion.div>
 
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <Card className="lg:col-span-3">
           <SectionLabel eyebrow="BY CATEGORY" title="Violations by Category" />
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={VIOLATIONS_BY_CATEGORY} margin={{ left: -18 }}>
-              <CartesianGrid vertical={false} stroke={isDark ? "#25354C" : "#DAD4C2"} />
-              <XAxis dataKey="category" tick={{ fontSize: 10.5, fill: isDark ? "#94A3B8" : "#5B6470" }} interval={0} angle={-12} textAnchor="end" height={50} />
-              <YAxis tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
-              <Tooltip
-                cursor={false}
-                contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 4, fontSize: 12, ...FONT.body }}
-              />
-              <Bar dataKey="violations" fill={isDark ? "#E5B842" : "#132238"} radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {loading ? (
+            <div className="h-[220px] w-full rounded flex items-center justify-center bg-slate-900/20 animate-pulse">
+              <Loader2 className="animate-spin text-slate-500" size={20} />
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={violationsByCategory} margin={{ left: -18 }}>
+                <CartesianGrid vertical={false} stroke={isDark ? "#25354C" : "#DAD4C2"} />
+                <XAxis dataKey="category" tick={{ fontSize: 10.5, fill: isDark ? "#94A3B8" : "#5B6470" }} interval={0} angle={-12} textAnchor="end" height={50} />
+                <YAxis tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
+                <Tooltip
+                  cursor={false}
+                  contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 4, fontSize: 12, ...FONT.body }}
+                />
+                <Bar dataKey="violations" fill={isDark ? "#E5B842" : "#132238"} radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </Card>
         <Card className="lg:col-span-2">
-          <SectionLabel eyebrow="MONTHLY" title="Inspection Trend" />
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={TREND} margin={{ left: -18 }}>
-              <CartesianGrid vertical={false} stroke={isDark ? "#25354C" : "#DAD4C2"} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
-              <YAxis tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
-              <Tooltip
-                cursor={{ stroke: isDark ? "#25354C" : "#DAD4C2", strokeWidth: 1 }}
-                contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 4, fontSize: 12, ...FONT.body }}
-              />
-              <Line type="monotone" dataKey="inspections" stroke={isDark ? "#E5B842" : "#96742E"} strokeWidth={2.5} dot={{ r: 3, fill: isDark ? "#E5B842" : "#96742E" }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <SectionLabel eyebrow="DAILY" title="Daily Inspection Trend" />
+          {loading ? (
+            <div className="h-[220px] w-full rounded flex items-center justify-center bg-slate-900/20 animate-pulse">
+              <Loader2 className="animate-spin text-slate-500" size={20} />
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={trend} margin={{ left: -18 }}>
+                <CartesianGrid vertical={false} stroke={isDark ? "#25354C" : "#DAD4C2"} />
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: isDark ? "#94A3B8" : "#5B6470" }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
+                <Tooltip
+                  cursor={{ stroke: isDark ? "#25354C" : "#DAD4C2", strokeWidth: 1 }}
+                  contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 4, fontSize: 12, ...FONT.body }}
+                />
+                <Line type="monotone" dataKey="inspections" stroke={isDark ? "#E5B842" : "#96742E"} strokeWidth={2.5} dot={{ r: 3, fill: isDark ? "#E5B842" : "#96742E" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </Card>
       </motion.div>
 
@@ -1669,14 +1729,38 @@ function Dashboard({ onOpenInspection, isDark }) {
               </tr>
             </thead>
             <tbody>
-              {INSPECTIONS.slice(0, 5).map((i) => (
-                <tr key={i.id} className="ll-tr">
-                  <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{i.id}</td>
-                  <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, maxWidth: 220 }}>{i.product}</td>
-                  <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
-                  <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.date}</td>
-                </tr>
-              ))}
+              {loading ? (
+                Array.from({ length: 5 }).map((_, idx) => (
+                  <tr key={`skel-${idx}`}>
+                    {Array.from({ length: 4 }).map((__, ci) => (
+                      <td key={ci} className="px-5 py-2.5 border-b" style={{ borderColor: C.line }}>
+                        <div className="h-3.5 bg-slate-700/30 animate-pulse rounded" style={{ width: ci === 1 ? "75%" : "50%" }} />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                recentInspections.map((i) => (
+                  <tr
+                    key={i.case_number || i.id}
+                    className="ll-tr cursor-pointer transition-colors duration-150"
+                    onClick={() => onOpenInspection?.(i)}
+                  >
+                    <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
+                      {i.case_number || i.id}
+                    </td>
+                    <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, maxWidth: 220 }}>
+                      {i.product_name || i.product}
+                    </td>
+                    <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line }}>
+                      <StatusBadge status={i.status} />
+                    </td>
+                    <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                      {i.created_at ? String(i.created_at).slice(0, 10) : (i.date || "—")}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </Card>
@@ -1685,15 +1769,27 @@ function Dashboard({ onOpenInspection, isDark }) {
           <Card>
             <SectionLabel eyebrow="RECURRING" title="Most Common Violations" />
             <div className="space-y-3">
-              {COMMON_VIOLATIONS.map((v) => (
-                <div key={v.rule} className="flex items-center justify-between pb-3 border-b" style={{ borderColor: C.line }}>
-                  <div className="min-w-0">
-                    <div style={{ ...FONT.mono, fontSize: 11, color: C.gold, fontWeight: 600 }}>{v.rule}</div>
-                    <div style={{ fontSize: 12.5, color: C.charcoal, marginTop: 1 }}>{v.desc}</div>
+              {loading ? (
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={idx} className="flex items-center justify-between pb-3 border-b" style={{ borderColor: C.line }}>
+                    <div className="space-y-1.5 flex-1 pr-4">
+                      <div className="h-3 w-20 bg-slate-700/30 animate-pulse rounded" />
+                      <div className="h-3 w-40 bg-slate-700/20 animate-pulse rounded" />
+                    </div>
+                    <div className="h-5 w-6 bg-slate-700/30 animate-pulse rounded" />
                   </div>
-                  <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink, flexShrink: 0, marginLeft: 12 }}>{v.count}</div>
-                </div>
-              ))}
+                ))
+              ) : (
+                commonViolations.map((v) => (
+                  <div key={v.rule} className="flex items-center justify-between pb-3 border-b" style={{ borderColor: C.line }}>
+                    <div className="min-w-0">
+                      <div style={{ ...FONT.mono, fontSize: 11, color: C.gold, fontWeight: 600 }}>{v.rule}</div>
+                      <div style={{ fontSize: 12.5, color: C.charcoal, marginTop: 1 }}>{v.desc}</div>
+                    </div>
+                    <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink, flexShrink: 0, marginLeft: 12 }}>{v.count}</div>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
         </motion.div>
@@ -1856,7 +1952,7 @@ function InspectionsList({ onOpen, onNew }) {
           <thead>
             <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
               {["CASE NO.", "PRODUCT", "CATEGORY", "MANUFACTURER", "STATUS", "INSPECTOR", "DATE", "SOURCE", ""].map((h) => (
-                <th key={h} className="text-left font-semibold px-4 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                <th key={h} className="text-left font-semibold px-4 py-3 border-t border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -1891,22 +1987,24 @@ function InspectionsList({ onOpen, onNew }) {
                 style={{ cursor: i.is_demo ? "default" : (openingId === i.case_number ? "wait" : "pointer") }}
                 onClick={() => !i.is_demo && openingId === null && handleOpenLive(i)}
               >
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
+                <td className="px-4 py-3 border-b whitespace-nowrap" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
                   {i.case_number}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500, minWidth: 140 }}>
                   {i.product_name}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-4 py-3 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {i.category}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
-                  {i.manufacturer || "—"}
+                <td className="px-4 py-3 border-b max-w-[260px]" style={{ borderColor: C.line, color: C.slate }}>
+                  <div className="line-clamp-2" title={i.manufacturer || ""}>
+                    {i.manufacturer || "—"}
+                  </div>
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
+                <td className="px-4 py-3 border-b whitespace-nowrap" style={{ borderColor: C.line }}>
                   <StatusBadge status={i.status} />
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-4 py-3 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {i.inspector_name || "—"}
                 </td>
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
@@ -2307,17 +2405,37 @@ function dataURItoBlob(dataURI) {
     });
 
     const fileObjects = [];
-    itemsToUpload.forEach(item => {
+    for (const item of itemsToUpload) {
       if (item.data.file) {
         fileObjects.push(item.data.file);
       } else if (item.data.previewUrl) {
-        const blob = dataURItoBlob(item.data.previewUrl);
-        if (blob) {
-          const file = new File([blob], `${item.angle.toLowerCase()}.jpg`, { type: "image/jpeg" });
+        if (item.data.previewUrl.startsWith("data:")) {
+          const blob = dataURItoBlob(item.data.previewUrl);
+          if (blob) {
+            const file = new File([blob], `${item.angle.toLowerCase()}.jpg`, { type: "image/jpeg" });
+            fileObjects.push(file);
+          }
+        } else {
+          try {
+            const res = await fetch(item.data.previewUrl);
+            const blob = await res.blob();
+            const file = new File([blob], `${item.angle.toLowerCase()}.jpg`, { type: blob.type || "image/jpeg" });
+            fileObjects.push(file);
+          } catch (e) {
+            console.warn("Failed to fetch image previewUrl into blob:", item.data.previewUrl, e);
+          }
+        }
+      } else if (typeof item.data === "string" && (item.data.startsWith("http") || item.data.startsWith("/"))) {
+        try {
+          const res = await fetch(item.data);
+          const blob = await res.blob();
+          const file = new File([blob], `${item.angle.toLowerCase()}.jpg`, { type: blob.type || "image/jpeg" });
           fileObjects.push(file);
+        } catch (e) {
+          console.warn("Failed to fetch image string into blob:", item.data, e);
         }
       }
-    });
+    }
 
     let newCaseData = {
       inspection_no: generatedCaseNo,
@@ -3658,36 +3776,184 @@ function Rules() {
 
 /* ============================== REPORTS ============================== */
 
-function Reports() {
+function Reports({ onOpenInspection }) {
+  const [reportsList, setReportsList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [openingCase, setOpeningCase] = useState(null);
+
+  const deduplicateReports = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    const seen = new Set();
+    const result = [];
+    for (const item of arr) {
+      const prodKey = (item.product_name || item.product || item.case_number || "").toString().trim().toLowerCase();
+      if (prodKey && !seen.has(prodKey)) {
+        seen.add(prodKey);
+        result.push(item);
+      }
+    }
+    return result;
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadReports = async () => {
+      try {
+        const apiData = await ApiService.getReports();
+        if (isMounted) {
+          setReportsList(Array.isArray(apiData) ? apiData : []);
+          setLoading(false);
+        }
+      } catch (e) {
+        if (isMounted) {
+          setReportsList([]);
+          setLoading(false);
+        }
+      }
+    };
+
+    loadReports();
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleViewInspection = async (r) => {
+    const cno = r.case_number || r.id;
+    if (!cno) return;
+    setOpeningCase(cno);
+    try {
+      // 1. Try Supabase query
+      const { data: supaData } = await fetchInspectionByCase(cno);
+      if (supaData && Array.isArray(supaData.declarations) && supaData.declarations.length > 0) {
+        onOpenInspection?.(mapSupabaseRowToInspection(supaData));
+        setOpeningCase(null);
+        return;
+      }
+
+      // 2. Try FastAPI Backend query by case number
+      const backendData = await ApiService.getInspectionByCase(cno);
+      if (backendData && Array.isArray(backendData.declarations) && backendData.declarations.length > 0) {
+        onOpenInspection?.(mapBackendInspectionToFrontend(backendData));
+        setOpeningCase(null);
+        return;
+      }
+
+      // 3. Try FastAPI Backend query by numeric ID
+      if (typeof r.id === "number") {
+        const idData = await ApiService.getInspection(r.id);
+        if (idData && Array.isArray(idData.declarations) && idData.declarations.length > 0) {
+          onOpenInspection?.(mapBackendInspectionToFrontend(idData));
+          setOpeningCase(null);
+          return;
+        }
+      }
+
+      // 4. Fallback to Supabase / Backend metadata if available
+      if (supaData) {
+        onOpenInspection?.(mapSupabaseRowToInspection(supaData));
+        setOpeningCase(null);
+        return;
+      }
+      if (backendData) {
+        onOpenInspection?.(mapBackendInspectionToFrontend(backendData));
+        setOpeningCase(null);
+        return;
+      }
+
+      // 5. Basic fallback
+      onOpenInspection?.({
+        id: cno,
+        case_number: cno,
+        product: r.product_name || r.product || "Packaged Commodity",
+        product_name: r.product_name || r.product || "Packaged Commodity",
+        status: r.status || "REVIEW",
+        score: r.score || 0.0,
+        inspector_name: r.inspector_name || r.inspector || "Enforcement Officer",
+        date: r.date || "2026-08-31",
+        declarations: [],
+        images: [],
+        violations: []
+      });
+    } catch (err) {
+      console.warn("View inspection fetch note:", err);
+    } finally {
+      setOpeningCase(null);
+    }
+  };
+
+  const handleDownloadPdf = (r) => {
+    const cno = r.case_number || r.id;
+    let url = r.pdf_url;
+    if (!url || url.includes('/undefined')) {
+      url = `/api/reports/case/${encodeURIComponent(cno)}/pdf`;
+    }
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.download = `Report_${(cno || 'inspection').replace(/\//g, '_')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
-    <Card padded={false} className="overflow-x-auto">
-      <div className="p-5 pb-0"><SectionLabel eyebrow="GENERATED" title="Inspection Reports" /></div>
-      <table className="w-full" style={{ fontSize: 12.5 }}>
-        <thead>
-          <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-            {["CASE NO.", "PRODUCT", "INSPECTOR", "DATE", "STATUS", ""].map((h) => (
-              <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {REPORTS.map((r) => (
-            <tr key={r.id} className="ll-tr">
-              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{r.id}</td>
-              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.product}</td>
-              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.inspector}</td>
-              <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.date}</td>
-              <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={r.status} /></td>
-              <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                <div className="flex gap-3">
-                  <button className="ll-focus inline-flex items-center gap-1" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}><Eye size={13} /> View</button>
-                  <button onClick={() => window.open(ApiService.getPdfUrl(1), "_blank")} className="ll-focus inline-flex items-center gap-1" style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}><Download size={13} /> Official PDF</button>
-                </div>
-              </td>
+    <Card padded={false} className="overflow-x-auto relative">
+      <div className="p-5 pb-0 flex items-center justify-between">
+        <SectionLabel eyebrow="GENERATED" title="Inspection Reports" />
+        <span className="text-xs font-mono text-slate-500">{reportsList.length} Unique Inspection Cases</span>
+      </div>
+
+      {loading ? (
+        <div className="p-8 text-center text-slate-400 flex items-center justify-center gap-2">
+          <Loader2 className="animate-spin" size={18} /> Loading Official PDF Reports...
+        </div>
+      ) : (
+        <table className="w-full" style={{ fontSize: 12.5 }}>
+          <thead>
+            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+              {["CASE NO.", "PRODUCT", "INSPECTOR", "DATE", "STATUS", ""].map((h) => (
+                <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {reportsList.map((r) => {
+              const cnoKey = r.case_number || r.id;
+              const isOpening = openingCase === cnoKey;
+
+              return (
+                <tr key={cnoKey} className="ll-tr">
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{cnoKey}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.product_name || r.product}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.inspector_name || r.inspector}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.date}</td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={r.status} /></td>
+                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleViewInspection(r)}
+                        disabled={isOpening}
+                        className="ll-focus inline-flex items-center gap-1 hover:underline cursor-pointer"
+                        style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}
+                      >
+                        {isOpening ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />}
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleDownloadPdf(r)}
+                        className="ll-focus inline-flex items-center gap-1 hover:underline cursor-pointer"
+                        style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}
+                      >
+                        <Download size={13} /> Official PDF
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
     </Card>
   );
 }
@@ -4859,13 +5125,13 @@ export default function App() {
   const handleSwitchRole = (newRole) => {
     const found = users.find((u) => u.role === newRole) || {
       id: "DEMO",
-      name: newRole === "Admin" ? "Poonam Desai" : newRole === "Reviewer" ? "Sanjay Iyer" : "Rangan Bhaskaran",
+      name: newRole === "Admin" ? "Poonam Desai" : newRole === "Reviewer" ? "Sanjay Iyer" : "Enforcement Officer",
       role: newRole,
       email: `${newRole.toLowerCase().replace(" ", ".")}@lm.gov.in`,
-      badge: newRole === "Admin" ? "LMD-HQ-001" : "LMD-DL-0412",
+      badge: newRole === "Admin" ? "LMD-HQ-001" : "LM-DL-842",
       jurisdiction: "Delhi Division",
       active: true,
-      initials: newRole === "Admin" ? "PD" : "RB",
+      initials: newRole === "Admin" ? "PD" : "EO",
     };
     setCurrentUser(found);
   };
@@ -4909,7 +5175,20 @@ export default function App() {
         {page === "dashboard" && (
           <Dashboard
             isDark={isDark}
-            onOpenInspection={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
+            onOpenInspection={async (i) => {
+              let fullObj = i;
+              if (i?.case_number) {
+                try {
+                  const { data } = await fetchInspectionByCase(i.case_number);
+                  if (data) fullObj = mapSupabaseRowToInspection(data);
+                } catch (e) {
+                  console.warn("Dashboard onOpenInspection fetch warning:", e);
+                }
+              }
+              setSelectedInspection(fullObj);
+              localStorage.setItem("legallens_current_inspection", JSON.stringify(fullObj));
+              navigateTo("inspection-detail");
+            }}
           />
         )}
         {page === "inspections" && (
@@ -4935,7 +5214,15 @@ export default function App() {
         {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
         {page === "products" && <Products onOpen={() => { }} />}
         {page === "rules" && <Rules />}
-        {page === "reports" && <Reports />}
+        {page === "reports" && (
+          <Reports
+            onOpenInspection={(i) => {
+              setSelectedInspection(i);
+              localStorage.setItem("legallens_current_inspection", JSON.stringify(i));
+              navigateTo("inspection-detail");
+            }}
+          />
+        )}
         {page === "settings" && (
           <SettingsPage
             users={users}

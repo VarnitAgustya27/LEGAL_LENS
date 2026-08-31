@@ -52,7 +52,7 @@ class ApiService {
       return data;
     } catch (e) {
       console.warn('Backend login fallback to demo session:', e);
-      return { access_token: 'mock-token', full_name: 'R. Bhaskaran', role: 'INSPECTOR' };
+      return { access_token: 'mock-token', full_name: 'Enforcement Officer', role: 'INSPECTOR' };
     }
   }
 
@@ -63,7 +63,7 @@ class ApiService {
       if (!res.ok) throw new Error('Auth check failed');
       return await res.json();
     } catch (e) {
-      return { full_name: 'R. Bhaskaran', role: 'INSPECTOR', badge_number: 'LM-DL-842' };
+      return { full_name: 'Enforcement Officer', role: 'INSPECTOR', badge_number: 'LM-DL-842' };
     }
   }
 
@@ -102,6 +102,19 @@ class ApiService {
       return await res.json();
     } catch (e) {
       console.warn('Inspection fetch fallback:', e);
+      return null;
+    }
+  }
+
+  static async getInspectionByCase(caseNumber) {
+    try {
+      const encoded = encodeURIComponent(caseNumber);
+      const res = await fetch(`${API_BASE}/inspections/case/${encoded}`, { headers: this.getHeaders() });
+      this.handleUnauthorized(res);
+      if (!res.ok) throw new Error('Failed to fetch inspection details by case');
+      return await res.json();
+    } catch (e) {
+      console.warn('Inspection fetch by case fallback:', e);
       return null;
     }
   }
@@ -211,6 +224,18 @@ class ApiService {
   // 4. Reports
   static getPdfUrl(inspectionId) {
     return `${API_BASE}/reports/${inspectionId}/pdf`;
+  }
+
+  static async getReports() {
+    try {
+      const res = await fetch(`${API_BASE}/reports`, { headers: this.getHeaders() });
+      this.handleUnauthorized(res);
+      if (!res.ok) throw new Error('Failed to fetch reports');
+      return await res.json();
+    } catch (e) {
+      console.warn('Reports fetch fallback:', e);
+      return null;
+    }
   }
 
   static async generateReport(inspectionId) {

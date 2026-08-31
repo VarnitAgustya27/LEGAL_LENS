@@ -65,7 +65,7 @@ class InspectionReportGenerator:
         # Header
         story.append(Paragraph("GOVERNMENT OF INDIA", subtitle_style))
         story.append(Paragraph("MINISTRY OF CONSUMER AFFAIRS, FOOD & PUBLIC DISTRIBUTION", subtitle_style))
-        story.append(Paragraph("LEGAL METROLOGY DIVISION ? ENFORCEMENT WING", subtitle_style))
+        story.append(Paragraph("LEGAL METROLOGY DIVISION • ENFORCEMENT WING", subtitle_style))
         story.append(Spacer(1, 4))
         story.append(Paragraph("PRELIMINARY COMPLIANCE INSPECTION REPORT", title_style))
         story.append(Paragraph("Packaged Commodities Rules (PCR), 2011 Compliance Screening", subtitle_style))
@@ -74,13 +74,20 @@ class InspectionReportGenerator:
 
         # Case Metadata Block
         case_no = inspection_data.get("case_number", "LM/2026/000000")
-        score = inspection_data.get("score", 0.0)
         status = inspection_data.get("status", "REVIEW")
         date_str = inspection_data.get("created_at", datetime.now().strftime("%d %B %Y, %H:%M"))
         inspector = inspection_data.get("inspector_name", "Authorized Enforcement Inspector")
         product = inspection_data.get("product_name", "Packaged Product")
         category = inspection_data.get("category", "Packaged Commodity")
         is_imported = "Yes" if inspection_data.get("is_imported") else "No (Domestic)"
+
+        evaluations = inspection_data.get("evaluations", [])
+        raw_score = inspection_data.get("score")
+        if (raw_score is None or float(raw_score) == 0.0) and evaluations:
+            passed_checks = sum(1 for e in evaluations if e.get("status") == "PASS")
+            score = round((passed_checks / max(1, len(evaluations))) * 100, 1)
+        else:
+            score = round(float(raw_score or 0.0), 1)
 
         status_color = colors.HexColor('#3A6B35') if status == 'COMPLIANT' else colors.HexColor('#9B2C2C') if status == 'NON_COMPLIANT' else colors.HexColor('#966A16')
 
@@ -102,14 +109,24 @@ class InspectionReportGenerator:
         story.append(t_meta)
         story.append(Spacer(1, 14))
 
+        # Header paragraph style for table
+        th_style = ParagraphStyle(
+            'TableHeader',
+            parent=styles['Normal'],
+            fontName='Helvetica-Bold',
+            fontSize=9,
+            leading=11,
+            textColor=colors.white
+        )
+
         # Declarations Summary Table
         story.append(Paragraph("1. MANDATORY DECLARATIONS AUDIT MATRIX", h2_style))
         decl_rows = [[
-            Paragraph("<b>Rule Reference</b>", body_style),
-            Paragraph("<b>Mandatory Declaration</b>", body_style),
-            Paragraph("<b>Extracted Value</b>", body_style),
-            Paragraph("<b>AI Conf.</b>", body_style),
-            Paragraph("<b>Status</b>", body_style)
+            Paragraph("Rule Reference", th_style),
+            Paragraph("Mandatory Declaration", th_style),
+            Paragraph("Extracted Value", th_style),
+            Paragraph("AI Conf.", th_style),
+            Paragraph("Status", th_style)
         ]]
 
         evals = inspection_data.get("evaluations", [])
@@ -178,11 +195,12 @@ class InspectionReportGenerator:
         story.append(Spacer(1, 18))
 
         # Sign-off Block & Disclaimer
+        badge_no = inspection_data.get("badge_number", "LM-DL-842")
         sign_block = [
-            [Paragraph("<b>Enforcement Inspector Signature:</b> ___________________", body_style),
-             Paragraph("<b>Verified Date:</b> ___________________", body_style)],
-            [Paragraph("<b>Badge / ID No:</b> ___________________", body_style),
-             Paragraph("<b>Official Seal:</b> [                              ]", body_style)]
+            [Paragraph(f"<b>Enforcement Officer Name:</b> {inspector}", body_style),
+             Paragraph(f"<b>Verified Date:</b> {str(date_str).split(',')[0]}", body_style)],
+            [Paragraph(f"<b>Inspector Signature:</b> <i>{inspector}</i>", body_style),
+             Paragraph(f"<b>Badge / ID No:</b> {badge_no}", body_style)]
         ]
         t_sign = Table(sign_block, colWidths=[3.5*inch, 3.5*inch])
         t_sign.setStyle(TableStyle([('PADDING', (0,0), (-1,-1), 6)]))
