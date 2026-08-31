@@ -401,7 +401,7 @@ const PIPELINE_STAGES = [
 
 /* ============================== LOGIN / HOMEPAGE ============================== */
 
-function Login({ onLogin, users, isDark, toggleTheme }) {
+function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
   const [officerId, setOfficerId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -900,41 +900,60 @@ function Login({ onLogin, users, isDark, toggleTheme }) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {users.map((u) => {
-                  const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
-                  const roleLabel = u.role === "Enforcement Officer" ? "Officer" : u.role;
-                  return (
-                    <button
-                      key={u.id || u.badge}
-                      type="button"
-                      onClick={() => handleBadgeClick(u.badge)}
-                      className="ll-focus text-xs font-mono px-2.5 py-2 rounded-md border cursor-pointer shadow-sm flex items-center justify-between gap-1.5 transition-all duration-200 hover:border-[#E5B842] hover:shadow-[0_0_12px_rgba(229,184,66,0.5)] hover:-translate-y-0.5"
+                {loadingDb ? (
+                  Array.from({ length: 4 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="animate-pulse h-[34px] rounded-md border flex items-center justify-between px-2.5"
                       style={{
-                        background: isSelected
-                          ? (isDark ? "#E5B842" : "#132238")
-                          : (isDark ? "#132034" : "#FFFFFF"),
-                        borderColor: isSelected
-                          ? (isDark ? "#E5B842" : "#132238")
-                          : (isDark ? "rgba(229,184,66,0.35)" : "rgba(19,34,56,0.2)"),
-                        color: isSelected
-                          ? (isDark ? "#090E17" : "#FFFFFF")
-                          : (isDark ? "#F1F5F9" : "#132238"),
-                        fontWeight: isSelected ? 700 : 600,
+                        background: isDark ? "rgba(19,32,52,0.4)" : "#EAE6D9",
+                        borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(19,34,56,0.1)",
                       }}
-                      title={`Sign in as ${u.name} (${u.role})`}
                     >
-                      <div className="flex items-center gap-1.5 min-w-0 flex-shrink-0">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0"
-                          style={{
-                            background: u.role === "Admin" ? "#EF4444" : u.role === "Reviewer" ? "#F59E0B" : "#10B981",
-                          }}
-                        />
-                        <span className="font-semibold whitespace-nowrap">{u.badge}</span>
+                      <div className="flex items-center gap-1.5 w-2/3">
+                        <div className="w-2 h-2 rounded-full bg-slate-500/50" />
+                        <div className="h-3 bg-slate-500/40 rounded w-16" />
                       </div>
-                      <span className="text-[10.5px] opacity-75 font-sans font-normal whitespace-nowrap flex-shrink-0">({roleLabel})</span>
-                    </button>
-                  );
-                })}
+                      <div className="h-2.5 bg-slate-500/30 rounded w-10" />
+                    </div>
+                  ))
+                ) : (
+                  users.map((u) => {
+                    const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
+                    const roleLabel = u.role === "Enforcement Officer" ? "Officer" : u.role;
+                    return (
+                      <button
+                        key={u.id || u.badge}
+                        type="button"
+                        onClick={() => handleBadgeClick(u.badge)}
+                        className="ll-focus text-xs font-mono px-2.5 py-2 rounded-md border cursor-pointer shadow-sm flex items-center justify-between gap-1.5 transition-all duration-200 hover:border-[#E5B842] hover:shadow-[0_0_12px_rgba(229,184,66,0.5)] hover:-translate-y-0.5"
+                        style={{
+                          background: isSelected
+                            ? (isDark ? "#E5B842" : "#132238")
+                            : (isDark ? "#132034" : "#FFFFFF"),
+                          borderColor: isSelected
+                            ? (isDark ? "#E5B842" : "#132238")
+                            : (isDark ? "rgba(229,184,66,0.35)" : "rgba(19,34,56,0.2)"),
+                          color: isSelected
+                            ? (isDark ? "#090E17" : "#FFFFFF")
+                            : (isDark ? "#F1F5F9" : "#132238"),
+                          fontWeight: isSelected ? 700 : 600,
+                        }}
+                        title={`Sign in as ${u.name} (${u.role})`}
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0 flex-shrink-0">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{
+                              background: u.role === "Admin" ? "#EF4444" : u.role === "Reviewer" ? "#F59E0B" : "#10B981",
+                            }}
+                          />
+                          <span className="font-semibold whitespace-nowrap">{u.badge}</span>
+                        </div>
+                        <span className="text-[10.5px] opacity-75 font-sans font-normal whitespace-nowrap flex-shrink-0">({roleLabel})</span>
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -1659,7 +1678,7 @@ function evaluateImageQuality(file, callback) {
   reader.readAsDataURL(file);
 }
 
-function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemove, heightClass = "h-48" }) {
+function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemove, heightClass = "h-48", showAddButtons = true }) {
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -4103,7 +4122,9 @@ export default function App() {
       return INSPECTIONS ? INSPECTIONS[0] : null;
     }
   });
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const [users, setUsers] = useState(() => {
+    return isSupabaseConfigured() ? [] : INITIAL_USERS;
+  });
   const [loadingDb, setLoadingDb] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
 
@@ -4328,6 +4349,7 @@ export default function App() {
           users={users}
           isDark={isDark}
           toggleTheme={toggleTheme}
+          loadingDb={loadingDb}
           onLogin={(user) => {
             const sessionUser = publicOfficerProfile(user);
             setCurrentUser(sessionUser);
