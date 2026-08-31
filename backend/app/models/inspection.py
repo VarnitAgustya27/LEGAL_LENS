@@ -34,3 +34,7 @@ class Inspection(Base):
     images = relationship("InspectionImage", back_populates="inspection", cascade="all, delete-orphan")
     declarations = relationship("Declaration", back_populates="inspection", cascade="all, delete-orphan")
     violations = relationship("Violation", back_populates="inspection", cascade="all, delete-orphan")
+
+    @property
+    def inspector_name(self) -> str:
+        return self.inspector.full_name if self.inspector else "Authorized Officer"

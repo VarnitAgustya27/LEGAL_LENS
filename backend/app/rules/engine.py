@@ -114,6 +114,11 @@ class RuleEngine:
             if code == "PCR-MRP-001":
                 has_tax_qualifier = bool(re.search(r"(?:inclusive|incl\.|all\s*taxes)", raw_text, re.IGNORECASE))
                 if not has_tax_qualifier:
+                    # Fallback: check if the tax statement was extracted into another declaration block (common OCR line-grouping behavior)
+                    combined_text = " ".join([str(d.get("raw_text") or "") + " " + str(d.get("value") or "") for d in declarations.values()])
+                    has_tax_qualifier = bool(re.search(r"(?:inclusive|incl\.|all\s*taxes)", combined_text, re.IGNORECASE))
+
+                if not has_tax_qualifier:
                     eval_res = {
                         "rule_code": code,
                         "field": field,
@@ -234,10 +239,15 @@ class RuleEngine:
                 passed_count += 1
 
         score = round((passed_count / max(1, total_applicable)) * 100, 1)
-        if failed_count == 0 and review_count == 0 and score >= 85:
-            overall_status = "COMPLIANT"
-        elif failed_count > 0:
+        # Threshold logic:
+        # - Less than 50% score (< 4/8) -> NON_COMPLIANT
+        # - 100% score (8/8 pass) -> COMPLIANT
+        # - Otherwise (4, 5, 6, 7 out of 8 pass) -> REVIEW (Verification Required)
+        pass_ratio = passed_count / max(1, total_applicable)
+        if pass_ratio < 0.50:
             overall_status = "NON_COMPLIANT"
+        elif passed_count == total_applicable:
+            overall_status = "COMPLIANT"
         else:
             overall_status = "REVIEW"
 

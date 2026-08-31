@@ -2005,9 +2005,9 @@ function NewInspection({ onFinish, currentUser }) {
 
   const [metadata, setMetadata] = useState({
     category: "Packaged Food",
-    productName: "Nutrimax Glucose Biscuits 200g",
-    barcode: "8901234567890",
-    manufacturer: "Nutrimax Foods Pvt. Ltd.",
+    productName: "",
+    barcode: "",
+    manufacturer: "",
     packageWidth: "150",
     packageHeight: "220",
     location: "Karol Bagh, Delhi",
@@ -2546,27 +2546,46 @@ function ProcessingScreen({ onDone, createdCase }) {
   const [doneCount, setDoneCount] = useState(0);
   const shouldReduceMotion = useReducedMotion();
 
+  // Stable refs so effects always call the latest values without re-triggering
+  const onDoneRef = React.useRef(onDone);
+  const createdCaseRef = React.useRef(createdCase);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
+  useEffect(() => { createdCaseRef.current = createdCase; }, [createdCase]);
+
+  const buildResult = (caseData) => {
+    const caseNumber = caseData?.inspection_no || caseData?.case_number || `LM/2026/${Math.floor(100000 + Math.random() * 900000)}`;
+    return {
+      ...caseData,
+      id: caseNumber,
+      product: caseData?.product || caseData?.product_name || "Packaged Commodity",
+      category: caseData?.category || "Packaged Food",
+      location: caseData?.location || "New Delhi, Delhi",
+      date: caseData?.date || new Date().toISOString().slice(0, 10),
+      status: caseData?.status || "REVIEW",
+      uploaded_images: caseData?.uploaded_images || {},
+      images: caseData?.images || [],
+      declarations: caseData?.declarations || []
+    };
+  };
+
   useEffect(() => {
+    // All stages complete — call onDone and stop (early return prevents the increment below)
     if (doneCount >= PIPELINE_STAGES.length) {
-      const caseNumber = createdCase?.inspection_no || createdCase?.case_number || `LM/2026/${Math.floor(100000 + Math.random() * 900000)}`;
-      const result = {
-        ...createdCase,
-        id: caseNumber,
-        product: createdCase?.product || createdCase?.product_name || "Packaged Commodity",
-        category: createdCase?.category || "Packaged Food",
-        location: createdCase?.location || "New Delhi, Delhi",
-        date: createdCase?.date || new Date().toISOString().slice(0, 10),
-        status: createdCase?.status || "REVIEW",
-        uploaded_images: createdCase?.uploaded_images || {},
-        images: createdCase?.images || [],
-        declarations: createdCase?.declarations || []
-      };
-      const t = setTimeout(() => onDone(result), 500);
+      const t = setTimeout(() => onDoneRef.current(buildResult(createdCaseRef.current)), 500);
       return () => clearTimeout(t);
     }
+    // Advance to next pipeline stage
     const t = setTimeout(() => setDoneCount((c) => c + 1), 550);
     return () => clearTimeout(t);
-  }, [doneCount, createdCase]);
+  }, [doneCount]);  // only doneCount drives this — refs are stable
+
+  // Hard-timeout safety net: if somehow stuck >30s, force navigate forward
+  useEffect(() => {
+    const safetyTimer = setTimeout(() => {
+      onDoneRef.current(buildResult(createdCaseRef.current));
+    }, 30_000);
+    return () => clearTimeout(safetyTimer);
+  }, []);
 
   const progressPercent = Math.round((doneCount / PIPELINE_STAGES.length) * 100);
 
@@ -2778,10 +2797,11 @@ function InspectionDetail({ inspection }) {
 
   // Derive real product name from extraction or backend
   const rawExtractedName = insp.declarations?.find(d => d.field === "product_name")?.value;
-  const productName = rawExtractedName
-    || insp.product_name
-    || (typeof insp.product === "object" ? insp.product?.name : insp.product)
-    || "Packaged Commodity";
+  const derivedProduct = typeof insp.product === "object" ? insp.product?.name : insp.product;
+  const productName = (derivedProduct && derivedProduct !== "Packaged Commodity" && derivedProduct !== "") ? derivedProduct
+    : ((rawExtractedName && rawExtractedName !== "Packaged Commodity" && rawExtractedName !== "") ? rawExtractedName
+    : ((insp.product_name && insp.product_name !== "Packaged Commodity" && insp.product_name !== "") ? insp.product_name
+    : "NA"));
 
   const caseId = insp.case_number || (typeof insp.id === "number" ? `LM/2026/${String(insp.id).padStart(6, "0")}` : (insp.id || "LM/2026/000001"));
   const inspectionStatus = insp.status || (insp.verdict ? (insp.verdict === "COMPLIANT" ? "COMPLIANT" : insp.verdict === "REVIEW" ? "REQUIRES VERIFICATION" : "NON-COMPLIANT") : "COMPLIANT");
@@ -2838,9 +2858,21 @@ function InspectionDetail({ inspection }) {
 
   const extractedMfr = insp.declarations?.find(d => d.field === "manufacturer")?.value;
   const manufacturerVal = extractedMfr || insp.manufacturer || (typeof insp.product === "object" && insp.product?.category) || "Registered Food Manufacturer";
-  const locationVal = insp.location || "Noida Central Hub";
+  const locationVal = insp.location || "NA";
   const dateVal = insp.created_at ? new Date(insp.created_at).toLocaleDateString("en-IN") : (insp.date || new Date().toLocaleDateString("en-IN"));
-  const inspectorVal = insp.inspector || "R. Bhaskaran";
+  
+  let currentUserFullName = "NA";
+  try {
+    const userStr = localStorage.getItem('legallens_current_user');
+    const parsedUser = userStr ? JSON.parse(userStr) : null;
+    if (parsedUser) {
+      currentUserFullName = parsedUser.full_name || parsedUser.name || "Authorized Officer";
+    }
+  } catch (e) {
+    console.warn("Failed to read user name from localStorage:", e);
+  }
+  
+  const inspectorVal = insp.inspector_name || insp.inspector || currentUserFullName || "NA";
 
   const canvasUploadRef = useRef(null);
   const [showBoxes, setShowBoxes] = useState(true);
@@ -2944,18 +2976,23 @@ function InspectionDetail({ inspection }) {
         onChange={handleAddNewPhotos}
       />
       <Card>
-        <div className="flex items-start justify-between flex-wrap gap-6">
-          <div>
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex-1 min-w-0">
             <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.08em" }}>{caseId}</div>
             <h2 style={{ ...FONT.display, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 2 }}>{productName}</h2>
             <div className="flex items-center gap-4 mt-3 flex-wrap" style={{ fontSize: 12.5, color: C.slate }}>
-              <span className="flex items-center gap-1.5"><Building2 size={13} /> {manufacturerVal}</span>
+              <span className="flex items-center gap-1.5 min-w-0 max-w-full">
+                <Building2 size={13} className="flex-shrink-0" />
+                <span className="truncate max-w-[320px] sm:max-w-[420px] md:max-w-[550px]" title={manufacturerVal}>{manufacturerVal}</span>
+              </span>
               <span className="flex items-center gap-1.5"><MapPin size={13} /> {locationVal}</span>
               <span className="flex items-center gap-1.5"><Calendar size={13} /> {dateVal}</span>
               <span className="flex items-center gap-1.5"><User size={13} /> {inspectorVal}</span>
             </div>
           </div>
-          <VerdictStamp status={inspectionStatus} caseNo={caseId} />
+          <div className="flex-shrink-0">
+            <VerdictStamp status={inspectionStatus} caseNo={caseId} />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t" style={{ borderColor: C.line }}>

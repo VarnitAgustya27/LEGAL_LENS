@@ -65,8 +65,23 @@ class InspectionService:
         # Rule Engine Evaluation
         eval_result = self.rule_engine.evaluate_inspection(declarations_dict, product_info)
 
+        # Create a mapping of field to evaluated status from rule engine evaluations
+        eval_status_map = {}
+        for ev in eval_result.get("evaluations", []):
+            f = ev.get("field")
+            if f:
+                current_status = eval_status_map.get(f, "PASS")
+                new_status = ev.get("status", "PASS")
+                if new_status == "FAIL" or current_status == "FAIL":
+                    eval_status_map[f] = "FAIL"
+                elif new_status in ["REVIEW", "WARNING"] or current_status in ["REVIEW", "WARNING"]:
+                    eval_status_map[f] = "REVIEW"
+                else:
+                    eval_status_map[f] = "PASS"
+
         # Save Declarations
         for field, d in declarations_dict.items():
+            evaluated_status = eval_status_map.get(field, "PASS" if d.get("detected") else "FAIL")
             decl_obj = Declaration(
                 inspection_id=inspection.id,
                 field=field,
@@ -76,7 +91,7 @@ class InspectionService:
                 confidence=d.get("confidence", 0.0),
                 source="AI",
                 is_verified=False,
-                status="PASS" if d.get("detected") else "FAIL",
+                status=evaluated_status,
                 bbox=d.get("bbox"),
                 image_id=d.get("image_id")
             )
@@ -108,6 +123,15 @@ class InspectionService:
         inspection.failed_checks = eval_result.get("failed_checks", 0)
         inspection.warning_checks = eval_result.get("warning_checks", 0)
         inspection.review_checks = eval_result.get("review_checks", 0)
+        
+        # Dynamic location update from manufacturer address
+        mfr_info = declarations_dict.get("manufacturer")
+        if mfr_info and mfr_info.get("value"):
+            from app.utils.location_extractor import extract_location_from_manufacturer
+            loc = extract_location_from_manufacturer(mfr_info["value"])
+            if loc:
+                inspection.location = loc
+                
         inspection.readability_score = round(sum(overall_quality_scores) / max(1, len(overall_quality_scores)) * 100, 1)
 
         db.commit()

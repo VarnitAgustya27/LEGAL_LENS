@@ -63,7 +63,7 @@ For every statutory declaration:
 Statutory Declarations to extract:
 - "product_name": Full product name and brand as printed on the package
 - "net_quantity": Total declared weight/volume (e.g. "400 g", "1 kg", "500 ml")
-- "mrp": Maximum retail price with tax statement (e.g. "Rs. 310.00", "₹50.00")
+- "mrp": Maximum retail price. IMPORTANT: You MUST include the mandatory tax statement suffix (e.g. "(Inclusive of all taxes)", "(Incl. of all taxes)", or "(incl. of taxes)") in the extracted value if it is printed on the package label near the price! Example values: "Rs. 310.00 (Incl. of all taxes)" or "₹120 (Inclusive of all taxes)".
 - "unit_sale_price": Unit sale price if declared (e.g. "Rs. 0.77 / g", "₹0.10/ml")
 - "manufacturer": Full manufacturer/packer/importer name and complete postal address with PIN code
 - "country_of_origin": Country of origin (e.g. "India", "Made in USA")

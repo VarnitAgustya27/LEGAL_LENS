@@ -83,6 +83,7 @@ class InspectionOut(BaseModel):
     review_checks: int
     created_at: datetime
     updated_at: datetime
+    inspector_name: Optional[str] = None
 
     product: ProductOut
     images: List[InspectionImageOut] = []

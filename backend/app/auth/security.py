@@ -51,7 +51,8 @@ def get_current_user(
                 if user:
                     return user
         except JWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+            # Invalid/mock token — fall through to header-based auth instead of rejecting immediately
+            pass
 
     # 2. Fallback to headers (for frontend Supabase authentication integration)
     if x_user_email:
@@ -79,3 +80,45 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+
+def get_optional_user(
+    token: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+    x_user_email: Optional[str] = Header(None),
+    x_user_badge: Optional[str] = Header(None),
+    x_user_name: Optional[str] = Header(None)
+) -> Optional[User]:
+    """Like get_current_user but returns None instead of raising 401.
+    Use this for endpoints that should work in demo/unauthenticated mode."""
+    # 1. Try JWT token
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            email: str = payload.get("sub")
+            if email is not None:
+                user = db.query(User).filter(User.email == email).first()
+                if user:
+                    return user
+        except JWTError:
+            pass  # Fall through
+
+    # 2. Try X-User-Email header
+    if x_user_email:
+        user = db.query(User).filter(User.email == x_user_email).first()
+        if not user:
+            user = User(
+                email=x_user_email,
+                full_name=x_user_name or "Officer",
+                hashed_password="",
+                role="INSPECTOR",
+                badge_number=x_user_badge,
+                department="Legal Metrology Department",
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+
+    # 3. Return None — no auth, allowed for demo endpoints
+    return None

@@ -14,7 +14,7 @@ from app.models.inspection_image import InspectionImage
 from app.models.declaration import Declaration
 from app.schemas.inspection import InspectionCreate, InspectionOut, InspectionReviewSubmit
 from app.schemas.declaration import DeclarationUpdate, DeclarationOut
-from app.auth.security import get_current_user
+from app.auth.security import get_current_user, get_optional_user
 from app.services.inspection_service import InspectionService
 from app.services.audit_service import AuditService
 from app.extraction.extractor import DeclarationExtractor
@@ -259,7 +259,8 @@ def direct_scan(
     category: str = Form("Packaged Food"),
     location: str = Form("New Delhi, Delhi"),
     files: List[UploadFile] = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user)
 ):
     """
     Direct multi-image scan endpoint:
@@ -278,11 +279,12 @@ def direct_scan(
     db.commit()
     db.refresh(product)
 
+    user_id = current_user.id if current_user else 1
     case_no = f"LM/2026/{str(uuid.uuid4().int)[:6]}"
     inspection = Inspection(
         case_number=case_no,
         product_id=product.id,
-        inspector_id=1,
+        inspector_id=user_id,
         status="REVIEW",
         score=0.0,
         inspection_type="RETAIL_PACK",
@@ -349,6 +351,14 @@ def direct_scan(
             image_paths = [img["original_path"] for img in saved_images_list]
             print(f"[GEMINI-VISION] Dispatching all {len(image_paths)} packaging photos to Gemini AI...")
             gemini_result = gemini_engine.analyze_packaging_images(image_paths, category)
+            # Normalise list output to dict if Gemini wrapped it in a list
+            if isinstance(gemini_result, list):
+                if len(gemini_result) > 0:
+                    dict_item = next((item for item in gemini_result if isinstance(item, dict) and "declarations" in item), None)
+                    gemini_result = dict_item if dict_item else (gemini_result[0] if isinstance(gemini_result[0], dict) else {})
+                else:
+                    gemini_result = {}
+
             if gemini_result and "declarations" in gemini_result and not gemini_result.get("error"):
                 gemini_successful = True
                 print(f"[GEMINI-VISION] Successfully extracted declarations across all {len(image_paths)} photos:")
@@ -417,9 +427,24 @@ def direct_scan(
     }
     eval_result = service.rule_engine.evaluate_inspection(declarations_dict, product_info)
 
+    # Create a mapping of field to evaluated status from rule engine evaluations
+    eval_status_map = {}
+    for ev in eval_result.get("evaluations", []):
+        f = ev.get("field")
+        if f:
+            current_status = eval_status_map.get(f, "PASS")
+            new_status = ev.get("status", "PASS")
+            if new_status == "FAIL" or current_status == "FAIL":
+                eval_status_map[f] = "FAIL"
+            elif new_status in ["REVIEW", "WARNING"] or current_status in ["REVIEW", "WARNING"]:
+                eval_status_map[f] = "REVIEW"
+            else:
+                eval_status_map[f] = "PASS"
+
     # Save declarations
     saved_declarations = []
     for field, d in declarations_dict.items():
+        evaluated_status = eval_status_map.get(field, "PASS" if d.get("detected") else "FAIL")
         decl_obj = Declaration(
             inspection_id=inspection.id,
             field=field,
@@ -429,7 +454,7 @@ def direct_scan(
             confidence=d.get("confidence", 0.0),
             source="AI",
             is_verified=False,
-            status="PASS" if d.get("detected") else "FAIL",
+            status=evaluated_status,
             bbox=d.get("bbox"),
             image_id=d.get("image_id")
         )
@@ -440,13 +465,21 @@ def direct_scan(
             "value": d.get("value"),
             "raw_text": d.get("raw_text"),
             "confidence": d.get("confidence", 0.0),
-            "status": "PASS" if d.get("detected") else "FAIL",
+            "status": evaluated_status,
             "is_present": d.get("detected", False),
             "bbox": d.get("bbox"),
             "image_index": d.get("image_index", 1),
             "image_id": d.get("image_id"),
             "rule": d.get("rule_citation", "Rule 6(1) PCR 2011")
         })
+
+    # Dynamic location update from manufacturer address
+    mfr_info = declarations_dict.get("manufacturer")
+    if mfr_info and mfr_info.get("value"):
+        from app.utils.location_extractor import extract_location_from_manufacturer
+        loc = extract_location_from_manufacturer(mfr_info["value"])
+        if loc:
+            inspection.location = loc
 
     inspection.status = eval_result.get("overall_status", "NON_COMPLIANT")
     inspection.score = eval_result.get("overall_score", 0.0)
@@ -462,6 +495,7 @@ def direct_scan(
         "status": inspection.status,
         "score": inspection.score,
         "date": inspection.created_at.strftime("%Y-%m-%d") if inspection.created_at else "2026-08-29",
+        "inspector_name": current_user.full_name if current_user else "Authorized Officer",
         "declarations": saved_declarations,
         "images": saved_images_list,
         "violations": eval_result.get("violations", []),
