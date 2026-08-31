@@ -1540,7 +1540,7 @@ function Dashboard({ onOpenInspection, isDark }) {
             </thead>
             <tbody>
               {INSPECTIONS.slice(0, 5).map((i) => (
-                <tr key={i.id} className="ll-tr cursor-pointer" onClick={() => onOpenInspection(i)}>
+                <tr key={i.id} className="ll-tr">
                   <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{i.id}</td>
                   <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, maxWidth: 220 }}>{i.product}</td>
                   <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
@@ -1617,11 +1617,7 @@ function InspectionsList({ onOpen, onNew }) {
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.inspector}</td>
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.date}</td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
-                  <button onClick={() => onOpen(i)} className="ll-focus inline-flex items-center gap-1" style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}>
-                    View <ChevronRight size={13} />
-                  </button>
-                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate, fontSize: 11 }}>Demo record</td>
               </tr>
             ))}
           </tbody>
@@ -2472,7 +2468,7 @@ function EvidenceModal({ requirement, onClose }) {
             <div>
               <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>DETECTED TEXT</div>
               <div style={{ ...FONT.mono, fontSize: 13, color: C.charcoal, marginTop: 3, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, padding: "8px 10px", borderRadius: 2 }}>
-                {requirement.detected || EXTRACTED_DECLARATION[Object.keys(EXTRACTED_DECLARATION).find((k) => k.toLowerCase().includes(requirement.label.split(" ")[0].toLowerCase())) || "Product Name"] || "MRP ?20.00"}
+                {requirement.detected || "—"}
               </div>
             </div>
             <div>
@@ -2504,20 +2500,21 @@ function InspectionDetail({ inspection }) {
   const [activeAngle, setActiveAngle] = useState("FRONT");
   const [hoveredReq, setHoveredReq] = useState(null);
 
-  const insp = inspection || INSPECTIONS[0];
+  const insp = inspection || {};
 
   // Derive real product name from extraction or backend
   const rawExtractedName = insp.declarations?.find(d => d.field === "product_name")?.value;
-  const productName = (insp.product_name && !insp.product_name.includes("Nutrimax")) 
-    ? insp.product_name 
-    : (rawExtractedName || (typeof insp.product === "object" ? (insp.product?.name || "Packaged Commodity") : (insp.product || "Packaged Commodity")));
+  const productName = rawExtractedName
+    || insp.product_name
+    || (typeof insp.product === "object" ? insp.product?.name : insp.product)
+    || "Packaged Commodity";
 
   const caseId = insp.case_number || (typeof insp.id === "number" ? `LM/2026/${String(insp.id).padStart(6, "0")}` : (insp.id || "LM/2026/000001"));
   const inspectionStatus = insp.status || (insp.verdict ? (insp.verdict === "COMPLIANT" ? "COMPLIANT" : insp.verdict === "REVIEW" ? "REQUIRES VERIFICATION" : "NON-COMPLIANT") : "COMPLIANT");
 
-  // Transform backend declarations or fallback to REQUIREMENTS
-  let reqs = REQUIREMENTS;
-  let extractedMap = EXTRACTED_DECLARATION;
+  // Only show requirements from a real scan — never fall back to hardcoded mock
+  let reqs = [];
+  let extractedMap = {};
 
   if (insp.declarations && Array.isArray(insp.declarations) && insp.declarations.length > 0) {
     reqs = insp.declarations.map((d, index) => {
@@ -4082,9 +4079,13 @@ export default function App() {
   const [selectedInspection, setSelectedInspection] = useState(() => {
     try {
       const saved = localStorage.getItem("legallens_current_inspection");
-      return saved ? JSON.parse(saved) : (INSPECTIONS ? INSPECTIONS[0] : null);
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      // Discard stale mock/hardcoded inspections that have no real AI declarations
+      if (!parsed || !Array.isArray(parsed.declarations) || parsed.declarations.length === 0) return null;
+      return parsed;
     } catch {
-      return INSPECTIONS ? INSPECTIONS[0] : null;
+      return null;
     }
   });
   const [users, setUsers] = useState(() => {
