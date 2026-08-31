@@ -2803,15 +2803,40 @@ function InspectionDetail({ inspection }) {
             })}
 
             {/* Bottom Floating Legend */}
-            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-3 py-1.5 rounded bg-slate-950/80 backdrop-blur border border-slate-800 text-[11px] font-mono text-slate-300 pointer-events-none">
-              <span className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Compliant
-                <span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block ml-2" /> Violation
-              </span>
-              <span className="text-amber-400 font-semibold">
-                {hoveredReq ? `Inspecting: ${reqs.find(r => r.key === hoveredReq)?.label}` : "Hover any box or table row"}
-              </span>
-            </div>
+            {(() => {
+              const hoveredItem = reqs.find(r => r.key === hoveredReq);
+              const isCompliantActive = hoveredItem && hoveredItem.status === "PASS";
+              const isViolationActive = hoveredItem && hoveredItem.status === "FAIL";
+              
+              return (
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-3 py-1.5 rounded bg-slate-950/80 backdrop-blur border border-slate-800 text-[11px] font-mono text-slate-300 pointer-events-none">
+                  <span className="flex items-center gap-2 select-none">
+                    <span className="flex items-center gap-1.5 transition-all duration-200"
+                      style={{
+                        opacity: hoveredReq ? (isCompliantActive ? 1 : 0.35) : 1,
+                        transform: isCompliantActive ? "scale(1.05)" : "scale(1)"
+                      }}
+                    >
+                      <span className={`w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block ${isCompliantActive ? 'shadow-[0_0_8px_#10B981]' : ''}`} />
+                      <span className={isCompliantActive ? 'text-emerald-400 font-bold' : ''}>Compliant</span>
+                    </span>
+                    
+                    <span className="flex items-center gap-1.5 transition-all duration-200 ml-3"
+                      style={{
+                        opacity: hoveredReq ? (isViolationActive ? 1 : 0.35) : 1,
+                        transform: isViolationActive ? "scale(1.05)" : "scale(1)"
+                      }}
+                    >
+                      <span className={`w-2.5 h-2.5 rounded-sm bg-red-500 inline-block ${isViolationActive ? 'shadow-[0_0_8px_#EF4444]' : ''}`} />
+                      <span className={isViolationActive ? 'text-red-400 font-bold' : ''}>Violation</span>
+                    </span>
+                  </span>
+                  <span className="text-amber-400 font-semibold transition-all duration-200">
+                    {hoveredReq ? `Inspecting: ${hoveredItem?.label || ''}` : "Hover any box or table row"}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Photo Thumbnail Gallery Strip */}
