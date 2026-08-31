@@ -8,16 +8,10 @@ class GeminiVisionEngine:
     Multimodal Vision AI Engine using Google GenAI SDK.
     Directly extracts PCR 2011 statutory declarations, dot-matrix inkjet MRPs,
     and addresses from raw packaging photos.
+    Supports automatic API key rotation/switching on rate limit or credit exhaustion.
     """
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.client = None
-        if self.api_key:
-            try:
-                from google import genai
-                self.client = genai.Client(api_key=self.api_key)
-            except Exception as e:
-                print(f"[GeminiVisionEngine] Initialization note: {e}")
 
     def is_available(self) -> bool:
         return bool(self.api_key or os.environ.get("GEMINI_API_KEY"))
@@ -26,25 +20,33 @@ class GeminiVisionEngine:
         """
         Runs Gemini Multimodal Vision analysis on all packaging photos simultaneously.
         """
-        api_key = self.api_key or os.environ.get("GEMINI_API_KEY")
-        if not api_key:
+        api_key_source = self.api_key or os.environ.get("GEMINI_API_KEY")
+        if not api_key_source:
             return {"error": "GEMINI_API_KEY is not configured in backend environment."}
 
-        try:
-            from google import genai
-            from google.genai import types
-            
-            client = genai.Client(api_key=api_key)
-            
-            pil_images = []
-            for p in image_paths:
-                if os.path.exists(p):
-                    pil_images.append(Image.open(p))
+        # Support comma-separated keys for auto-switching
+        api_keys = [k.strip() for k in api_key_source.split(",") if k.strip()]
+        if not api_keys:
+            return {"error": "No valid Gemini API keys found in configuration."}
 
-            if not pil_images:
-                return {"error": "No valid image files provided."}
+        last_error = None
+        for key_idx, current_key in enumerate(api_keys):
+            try:
+                from google import genai
+                from google.genai import types
+                
+                print(f"[GeminiVisionEngine] Attempting extraction with API key index {key_idx} (starts with: {current_key[:6]}...)")
+                client = genai.Client(api_key=current_key)
+                
+                pil_images = []
+                for p in image_paths:
+                    if os.path.exists(p):
+                        pil_images.append(Image.open(p))
 
-            prompt = f"""
+                if not pil_images:
+                    return {"error": "No valid image files provided."}
+
+                prompt = f"""
 You are an expert Legal Metrology (Packaged Commodities Rules 2011) AI Inspector analyzing {len(pil_images)} packaging photos for a {product_category}.
 You MUST inspect all {len(pil_images)} photos and accurately locate which photo contains each statutory declaration.
 
@@ -85,33 +87,43 @@ Return ONLY valid JSON matching this structure:
 }}
 """
 
-            contents = [prompt]
-            for idx, (img_path, pil_img) in enumerate(zip(image_paths, pil_images)):
-                angle_name = os.path.basename(img_path)
-                contents.append(f"\n[PACKAGING PHOTO {idx + 1}: {angle_name}]")
-                contents.append(pil_img)
+                contents = [prompt]
+                for idx, (img_path, pil_img) in enumerate(zip(image_paths, pil_images)):
+                    angle_name = os.path.basename(img_path)
+                    contents.append(f"\n[PACKAGING PHOTO {idx + 1}: {angle_name}]")
+                    contents.append(pil_img)
 
-            # Try current recommended models in order (gemini-3.6-flash primary)
-            response = None
-            for model_name in ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-2.5-flash", "gemini-2.0-flash"]:
-                try:
-                    response = client.models.generate_content(
-                        model=model_name,
-                        contents=contents,
-                        config=types.GenerateContentConfig(
-                            response_mime_type="application/json"
+                # Try current recommended models in order (gemini-3.6-flash primary)
+                response = None
+                for model_name in ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-2.5-flash", "gemini-2.0-flash"]:
+                    try:
+                        response = client.models.generate_content(
+                            model=model_name,
+                            contents=contents,
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json"
+                            )
                         )
-                    )
-                    if response and response.text:
-                        break
-                except Exception as model_err:
-                    print(f"[GeminiVisionEngine] Model {model_name} note: {model_err}")
+                        if response and response.text:
+                            break
+                    except Exception as model_err:
+                        print(f"[GeminiVisionEngine] Model {model_name} note: {model_err}")
+                        # If this is a rate limit or API key issue, raise it to fallback to next key immediately
+                        err_str = str(model_err).lower()
+                        if any(x in err_str for x in ["429", "quota", "limit", "resource_exhausted", "credit", "api key", "invalid"]):
+                            raise model_err
 
-            if not response or not response.text:
-                return {"error": "All Gemini vision models failed or returned empty response."}
+                if not response or not response.text:
+                    raise Exception("Empty response or model error from all vision models.")
 
-            result_json = json.loads(response.text)
-            return result_json
-        except Exception as e:
-            print(f"[GeminiVisionEngine] Error: {e}")
-            return {"error": str(e)}
+                result_json = json.loads(response.text)
+                print(f"[GeminiVisionEngine] Successful extraction using key starts with {current_key[:6]}")
+                return result_json
+
+            except Exception as e:
+                print(f"[GeminiVisionEngine] API Key {key_idx} failed: {e}")
+                last_error = e
+                # Fallthrough to try next API key in the list
+                continue
+
+        return {"error": f"All configure Gemini API keys failed. Last error: {last_error}"}
