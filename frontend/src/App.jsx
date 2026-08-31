@@ -1,5 +1,6 @@
 import ApiService from "./services/api.js";
 import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   LayoutDashboard, ClipboardList, FilePlus2, Package, FileText, ScrollText,
   Settings, Users, LogOut, Search, UploadCloud, Camera, ChevronRight, ChevronLeft,
@@ -54,8 +55,6 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
-
 
 /* ============================== DESIGN TOKENS ============================== */
 const C = {
@@ -183,13 +182,16 @@ function StatusBadge({ status, size = "sm" }) {
   const pad = size === "sm" ? "2px 9px" : "5px 14px";
   const fs = size === "sm" ? 11 : 12.5;
   return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-sm border transition-colors"
+    <motion.span
+      initial={{ scale: 0.92, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="inline-flex items-center gap-1.5 rounded-sm border transition-colors shadow-2xs"
       style={{ background: m.bg, borderColor: m.bd, color: m.color, padding: pad, fontSize: fs, fontWeight: 600, letterSpacing: "0.03em", ...FONT.body }}
     >
       <m.Icon size={size === "sm" ? 12 : 14} strokeWidth={2.3} />
       {m.label.toUpperCase()}
-    </span>
+    </motion.span>
   );
 }
 
@@ -201,21 +203,32 @@ function ReqStatusChip({ status }) {
   };
   const m = map[status] || map.REVIEW;
   return (
-    <span className="inline-flex items-center gap-1 rounded-sm border px-2 py-0.5" style={{ background: m.bg, borderColor: m.bd, color: m.c, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em" }}>
+    <motion.span
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.15 }}
+      className="inline-flex items-center gap-1 rounded-sm border px-2 py-0.5"
+      style={{ background: m.bg, borderColor: m.bd, color: m.c, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em" }}
+    >
       <m.Icon size={12.5} /> {status}
-    </span>
+    </motion.span>
   );
 }
 
 function VerdictStamp({ status, caseNo }) {
   const m = StatusMeta(status);
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <div
-      className="ll-stamp inline-flex flex-col items-center justify-center border-2 rounded-full px-6 py-4 transition-transform hover:rotate-0"
+    <motion.div
+      initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.85, rotate: -12, opacity: 0 }}
+      animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, rotate: -4, opacity: 1 }}
+      whileHover={shouldReduceMotion ? {} : { rotate: 0, scale: 1.04 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      className="ll-stamp inline-flex flex-col items-center justify-center border-2 rounded-full px-6 py-4 cursor-default shadow-md"
       style={{
         borderColor: m.color,
         color: m.color,
-        transform: "rotate(-4deg)",
         background: "repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 2px)",
         minWidth: 190,
       }}
@@ -226,18 +239,21 @@ function VerdictStamp({ status, caseNo }) {
         {m.label.toUpperCase()}
       </div>
       <div style={{ ...FONT.mono, fontSize: 9.5, letterSpacing: "0.08em", opacity: 0.8, marginTop: 3 }}>{caseNo}</div>
-    </div>
+    </motion.div>
   );
 }
 
-function Card({ children, className = "", style, padded = true }) {
+function Card({ children, className = "", style, padded = true, hoverEffect = false, ...props }) {
+  const shouldReduceMotion = useReducedMotion();
   return (
-    <div
+    <motion.div
+      whileHover={hoverEffect && !shouldReduceMotion ? { y: -2, transition: { duration: 0.18 } } : {}}
       className={`border rounded-sm transition-colors shadow-sm ${className}`}
       style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-charcoal)", ...style }}
+      {...props}
     >
       <div className={padded ? "p-5" : ""}>{children}</div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -253,8 +269,9 @@ function SectionLabel({ eyebrow, title, right }) {
   );
 }
 
-function Button({ children, variant = "primary", onClick, className = "", type = "button", size = "md", disabled = false }) {
-  const base = "ll-focus inline-flex items-center justify-center gap-2 rounded-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed";
+function Button({ children, variant = "primary", onClick, className = "", type = "button", size = "md", disabled = false, ...props }) {
+  const shouldReduceMotion = useReducedMotion();
+  const base = "ll-focus inline-flex items-center justify-center gap-2 rounded-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs";
   const sizes = size === "sm" ? "px-3 py-1.5 text-[12.5px]" : "px-4 py-2.5 text-[13.5px]";
   const styles = {
     primary: { background: "var(--ll-button-primary-bg)", color: "var(--ll-button-primary-color)", border: "none" },
@@ -264,9 +281,18 @@ function Button({ children, variant = "primary", onClick, className = "", type =
     gold: { background: "var(--ll-color-gold)", color: "#fff", border: "none" },
   };
   return (
-    <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${sizes} ${className}`} style={{ ...styles[variant], ...FONT.body }}>
+    <motion.button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      whileHover={disabled || shouldReduceMotion ? {} : { scale: 1.02, y: -1, transition: { duration: 0.12 } }}
+      whileTap={disabled || shouldReduceMotion ? {} : { scale: 0.97 }}
+      className={`${base} ${sizes} ${className}`}
+      style={{ ...styles[variant], ...FONT.body }}
+      {...props}
+    >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
@@ -619,10 +645,20 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
       </header>
 
       {/* ── MAIN HERO & AUTH GRID ── */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      <motion.main
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
+      >
 
         {/* ── LEFT SHOWCASE COLUMN (7 cols on lg) ── */}
-        <div className="lg:col-span-7 flex flex-col space-y-6">
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="lg:col-span-7 flex flex-col space-y-6"
+        >
 
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-3 shadow-sm"
@@ -680,9 +716,10 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
                 desc: "1-click generation of official bilingual legal notice PDFs and evidentiary audit logs."
               },
             ].map((p, idx) => (
-              <div
+              <motion.div
                 key={idx}
-                className="p-3.5 rounded-lg border transition-all duration-200 hover:border-amber-500/40 shadow-sm"
+                whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                className="p-3.5 rounded-lg border transition-colors shadow-sm"
                 style={{
                   background: isDark ? "rgba(19,34,56,0.4)" : "rgba(255,255,255,0.75)",
                   borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(19,34,56,0.08)",
@@ -706,7 +743,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
                 <p className="text-[11px] leading-tight" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
                   {p.desc}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </div>
 
@@ -732,10 +769,15 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
             </div>
           </div>
 
-        </div>
+        </motion.div>
 
         {/* ── RIGHT AUTHENTICATION CONSOLE (5 cols on lg) ── */}
-        <div className="lg:col-span-5 w-full flex justify-center">
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="lg:col-span-5 w-full flex justify-center"
+        >
           <div
             className="w-full max-w-md rounded-2xl border p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden transition-all"
             style={{
@@ -920,11 +962,13 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
                     const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
                     const roleLabel = u.role === "Enforcement Officer" ? "Officer" : u.role;
                     return (
-                      <button
+                      <motion.button
                         key={u.id || u.badge}
                         type="button"
+                        whileHover={{ scale: 1.02, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => handleBadgeClick(u.badge)}
-                        className="ll-focus text-xs font-mono px-2.5 py-2 rounded-md border cursor-pointer shadow-sm flex items-center justify-between gap-1.5 transition-all duration-200 hover:border-[#E5B842] hover:shadow-[0_0_12px_rgba(229,184,66,0.5)] hover:-translate-y-0.5"
+                        className="ll-focus text-xs font-mono px-2.5 py-2 rounded-md border cursor-pointer shadow-sm flex items-center justify-between gap-1.5 transition-colors duration-150"
                         style={{
                           background: isSelected
                             ? (isDark ? "#E5B842" : "#132238")
@@ -936,6 +980,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
                             ? (isDark ? "#090E17" : "#FFFFFF")
                             : (isDark ? "#F1F5F9" : "#132238"),
                           fontWeight: isSelected ? 700 : 600,
+                          boxShadow: isSelected ? "0 0 12px rgba(229,184,66,0.4)" : "none",
                         }}
                         title={`Sign in as ${u.name} (${u.role})`}
                       >
@@ -948,7 +993,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
                           <span className="font-semibold whitespace-nowrap">{u.badge}</span>
                         </div>
                         <span className="text-[10.5px] opacity-75 font-sans font-normal whitespace-nowrap flex-shrink-0">({roleLabel})</span>
-                      </button>
+                      </motion.button>
                     );
                   })
                 )}
@@ -956,9 +1001,9 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
             </div>
 
           </div>
-        </div>
+        </motion.div>
 
-      </main>
+      </motion.main>
 
       {/* ── FOOTER ── */}
       <footer className="relative z-10 w-full px-6 py-3 border-t text-center text-[11px] font-mono backdrop-blur-md"
@@ -1083,8 +1128,17 @@ function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 10 }}
+        transition={{ type: "spring", stiffness: 320, damping: 26 }}
         className="w-full max-w-md rounded-2xl border shadow-2xl overflow-hidden flex flex-col"
         style={{
           background: "var(--ll-bg-card)",
@@ -1208,8 +1262,8 @@ function CropPhotoModal({ imageSrc, onClose, onSave, isDark }) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -1336,27 +1390,36 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
           {NAV.map((n) => {
             const active = page === n.key || (page === "inspection-detail" && n.key === "inspections");
             return (
-              <button
+              <motion.button
                 key={n.key}
+                whileHover={{ x: active ? 0 : 3 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.15 }}
                 onClick={() => setPage(n.key)}
-                className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm mb-1 text-left transition-colors"
+                className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm mb-1 text-left transition-colors cursor-pointer"
                 style={{
                   background: active ? "rgba(199,167,90,0.16)" : "transparent",
                   color: active ? "#F0E4C4" : "#B7B2A2",
                   borderLeft: active ? "2px solid #C7A75A" : "2px solid transparent",
                 }}
               >
-                <n.Icon size={16} strokeWidth={2} />
+                <n.Icon size={16} strokeWidth={2} className={active ? "text-amber-400" : ""} />
                 <span style={{ fontSize: 13, fontWeight: active ? 600 : 500 }}>{n.label}</span>
-              </button>
+              </motion.button>
             );
           })}
         </nav>
         <div className="px-3 pb-4">
-          <button className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-left" style={{ color: "#B7B2A2" }} onClick={handleSignOut}>
+          <motion.button
+            whileHover={{ x: 3 }}
+            whileTap={{ scale: 0.98 }}
+            className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-left cursor-pointer transition-colors"
+            style={{ color: "#B7B2A2" }}
+            onClick={handleSignOut}
+          >
             <LogOut size={16} />
             <span style={{ fontSize: 13, fontWeight: 500 }}>Sign out</span>
-          </button>
+          </motion.button>
         </div>
       </aside>
 
@@ -1369,7 +1432,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
           <div className="flex items-center gap-4">
             <div className="relative hidden sm:block">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input placeholder="Search case no., product, barcode…" className="ll-focus" style={{ ...inputStyle, paddingLeft: 30, width: 260, fontSize: 12.5 }} />
+              <input placeholder="Search case no., product, barcode…" className="ll-focus transition-all duration-200" style={{ ...inputStyle, paddingLeft: 30, width: 260, fontSize: 12.5 }} />
             </div>
 
             <div className="relative pl-4 border-l" style={{ borderColor: C.line }} ref={profileMenuRef}>
@@ -1386,7 +1449,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                 aria-expanded={profileOpen}
                 title="Account menu"
               >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xs" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
                   {avatarUrl
                     ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                     : (currentUser?.initials || currentUser?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?")}
@@ -1398,7 +1461,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
-                      className="inline-block px-1.5 py-0.2 rounded border"
+                      className="inline-block px-1.5 py-0.2 rounded border shadow-2xs"
                       style={{ fontSize: 10, fontWeight: 700, background: roleBadgeStyle.bg, color: roleBadgeStyle.color, borderColor: roleBadgeStyle.bd }}
                     >
                       {currentUser?.role || "Enforcement"}
@@ -1407,59 +1470,78 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                 </div>
               </button>
 
-              {profileOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 mt-2 w-52 rounded-sm border shadow-lg overflow-hidden z-40"
-                  style={{ background: "var(--ll-bg-card)", borderColor: C.line }}
-                >
-                  <div className="px-3 py-2.5 border-b md:hidden" style={{ borderColor: C.line }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</div>
-                    <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}>{currentUser?.role || "Enforcement"}</div>
-                  </div>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="ll-focus w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors"
-                    style={{ color: "var(--ll-violation)", background: "transparent", border: "none", fontSize: 13, fontWeight: 600 }}
-                    onClick={handleSignOut}
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    role="menu"
+                    initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                    transition={{ duration: 0.16, ease: "easeOut" }}
+                    className="absolute right-0 mt-2 w-52 rounded-sm border shadow-lg overflow-hidden z-40"
+                    style={{ background: "var(--ll-bg-card)", borderColor: C.line }}
                   >
-                    <LogOut size={14} />
-                    Sign out
-                  </button>
-                  <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="ll-focus w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors"
-                    style={{ color: C.ink, background: "transparent", border: "none", fontSize: 13, fontWeight: 500 }}
-                    onClick={() => avatarFileRef.current?.click()}
-                  >
-                    <Camera size={14} style={{ color: C.gold }} />
-                    {avatarUrl ? "Update Profile Photo" : "Add Profile Photo"}
-                  </button>
-                </div>
-              )}
+                    <div className="px-3 py-2.5 border-b md:hidden" style={{ borderColor: C.line }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</div>
+                      <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}>{currentUser?.role || "Enforcement"}</div>
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="ll-focus w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer"
+                      style={{ color: "var(--ll-violation)", background: "transparent", border: "none", fontSize: 13, fontWeight: 600 }}
+                      onClick={handleSignOut}
+                    >
+                      <LogOut size={14} />
+                      Sign out
+                    </button>
+                    <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="ll-focus w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer"
+                      style={{ color: C.ink, background: "transparent", border: "none", fontSize: 13, fontWeight: 500 }}
+                      onClick={() => avatarFileRef.current?.click()}
+                    >
+                      <Camera size={14} style={{ color: C.gold }} />
+                      {avatarUrl ? "Update Profile Photo" : "Add Profile Photo"}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
         <div className="flex-1 overflow-y-auto ll-scroll p-8">
-          <div key={page} className="ll-fade">{children}</div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={page}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="gpu-accel"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 
       {/* Profile Photo Crop & Adjustment Modal */}
-      {cropImageSrc && (
-        <CropPhotoModal
-          imageSrc={cropImageSrc}
-          onClose={() => setCropImageSrc(null)}
-          onSave={(croppedDataUrl) => {
-            onUpdateAvatar?.(croppedDataUrl);
-            setCropImageSrc(null);
-          }}
-          isDark={isDark}
-        />
-      )}
+      <AnimatePresence>
+        {cropImageSrc && (
+          <CropPhotoModal
+            imageSrc={cropImageSrc}
+            onClose={() => setCropImageSrc(null)}
+            onSave={(croppedDataUrl) => {
+              onUpdateAvatar?.(croppedDataUrl);
+              setCropImageSrc(null);
+            }}
+            isDark={isDark}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1467,32 +1549,79 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
 /* ============================== DASHBOARD ============================== */
 
 function StatCard({ label, value, Icon, color }) {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <Card>
-      <div className="flex items-start justify-between">
+    <Card hoverEffect className="relative overflow-hidden group">
+      <div className="flex items-start justify-between relative z-10">
         <div>
-          <div style={{ ...FONT.body, fontSize: 11.5, color: C.slate, fontWeight: 600, letterSpacing: "0.03em" }}>{label.toUpperCase()}</div>
-          <div style={{ ...FONT.display, fontSize: 32, fontWeight: 700, color: C.ink, marginTop: 6 }}>{value}</div>
+          <div style={{ ...FONT.body, fontSize: 11.5, color: C.slate, fontWeight: 600, letterSpacing: "0.03em" }}>
+            {label.toUpperCase()}
+          </div>
+          <motion.div
+            initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            style={{ ...FONT.display, fontSize: 32, fontWeight: 700, color: C.ink, marginTop: 6 }}
+          >
+            {value}
+          </motion.div>
         </div>
-        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: color + "1A" }}>
-          <Icon size={17} style={{ color }} />
-        </div>
+        <motion.div
+          whileHover={shouldReduceMotion ? {} : { rotate: 8, scale: 1.12 }}
+          transition={{ type: "spring", stiffness: 300, damping: 15 }}
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-xs"
+          style={{ background: color + "1A" }}
+        >
+          <Icon size={18} style={{ color }} />
+        </motion.div>
       </div>
+      <div
+        className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-5 pointer-events-none transition-transform group-hover:scale-150 duration-500"
+        style={{ background: color }}
+      />
     </Card>
   );
 }
 
 function Dashboard({ onOpenInspection, isDark }) {
+  const shouldReduceMotion = useReducedMotion();
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: shouldReduceMotion ? 0 : 0.07,
+        delayChildren: 0.05
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 14 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring", stiffness: 280, damping: 24 }
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Inspections" value={STATS.total.toLocaleString()} Icon={ClipboardList} color={C.ink} />
         <StatCard label="Compliant" value={STATS.compliant} Icon={ShieldCheck} color={C.compliant} />
         <StatCard label="Non-Compliant" value={STATS.nonCompliant} Icon={ShieldAlert} color={C.violation} />
         <StatCard label="Requires Verification" value={STATS.review} Icon={ShieldQuestion} color={C.review} />
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <Card className="lg:col-span-3">
           <SectionLabel eyebrow="BY CATEGORY" title="Violations by Category" />
           <ResponsiveContainer width="100%" height={220}>
@@ -1523,9 +1652,9 @@ function Dashboard({ onOpenInspection, isDark }) {
             </LineChart>
           </ResponsiveContainer>
         </Card>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <Card className="lg:col-span-3 overflow-x-auto" padded={false}>
           <div className="p-5 pb-0">
             <SectionLabel eyebrow="LATEST ACTIVITY" title="Recent Inspections" />
@@ -1551,22 +1680,24 @@ function Dashboard({ onOpenInspection, isDark }) {
           </table>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <SectionLabel eyebrow="RECURRING" title="Most Common Violations" />
-          <div className="space-y-3">
-            {COMMON_VIOLATIONS.map((v) => (
-              <div key={v.rule} className="flex items-center justify-between pb-3 border-b" style={{ borderColor: C.line }}>
-                <div className="min-w-0">
-                  <div style={{ ...FONT.mono, fontSize: 11, color: C.gold, fontWeight: 600 }}>{v.rule}</div>
-                  <div style={{ fontSize: 12.5, color: C.charcoal, marginTop: 1 }}>{v.desc}</div>
+        <motion.div variants={itemVariants} className="lg:col-span-2">
+          <Card>
+            <SectionLabel eyebrow="RECURRING" title="Most Common Violations" />
+            <div className="space-y-3">
+              {COMMON_VIOLATIONS.map((v) => (
+                <div key={v.rule} className="flex items-center justify-between pb-3 border-b" style={{ borderColor: C.line }}>
+                  <div className="min-w-0">
+                    <div style={{ ...FONT.mono, fontSize: 11, color: C.gold, fontWeight: 600 }}>{v.rule}</div>
+                    <div style={{ fontSize: 12.5, color: C.charcoal, marginTop: 1 }}>{v.desc}</div>
+                  </div>
+                  <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink, flexShrink: 0, marginLeft: 12 }}>{v.count}</div>
                 </div>
-                <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink, flexShrink: 0, marginLeft: 12 }}>{v.count}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -1575,21 +1706,28 @@ function Dashboard({ onOpenInspection, isDark }) {
 function InspectionsList({ onOpen, onNew }) {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const filtered = statusFilter === "ALL" ? INSPECTIONS : INSPECTIONS.filter((i) => i.status === statusFilter);
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-4"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-            <input placeholder="Search inspections…" className="ll-focus" style={{ ...inputStyle, paddingLeft: 30, width: 240, fontSize: 12.5 }} />
+            <input placeholder="Search inspections…" className="ll-focus transition-all duration-200" style={{ ...inputStyle, paddingLeft: 30, width: 240, fontSize: 12.5 }} />
           </div>
-          <select className="ll-focus" style={{ ...inputStyle, width: 170, fontSize: 12.5 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select className="ll-focus cursor-pointer transition-all duration-200" style={{ ...inputStyle, width: 170, fontSize: 12.5 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="ALL">All statuses</option>
             <option value="COMPLIANT">Compliant</option>
             <option value="NON_COMPLIANT">Non-Compliant</option>
             <option value="REVIEW">Requires Verification</option>
           </select>
-          <select className="ll-focus" style={{ ...inputStyle, width: 170, fontSize: 12.5 }} defaultValue="">
+          <select className="ll-focus cursor-pointer transition-all duration-200" style={{ ...inputStyle, width: 170, fontSize: 12.5 }} defaultValue="">
             <option value="">All categories</option>
             {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
           </select>
@@ -1609,7 +1747,7 @@ function InspectionsList({ onOpen, onNew }) {
           </thead>
           <tbody>
             {filtered.map((i) => (
-              <tr key={i.id} className="ll-tr">
+              <tr key={i.id} className="ll-tr transition-colors duration-150">
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{i.id}</td>
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{i.product}</td>
                 <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.category}</td>
@@ -1623,7 +1761,7 @@ function InspectionsList({ onOpen, onNew }) {
           </tbody>
         </table>
       </Card>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1676,6 +1814,7 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   const handleFile = (file) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -1702,7 +1841,7 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
 
-<div
+      <motion.div
         onClick={() => {
           if (!imageData) {
             fileInputRef.current?.click();
@@ -1720,12 +1859,15 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
             handleFile(e.dataTransfer.files[0]);
           }
         }}
-        className={`w-full ${heightClass} border-2 rounded-xl flex flex-col items-center justify-center p-3 transition-all relative overflow-hidden ${isDragging
-          ? "border-amber-400 bg-amber-400/10 scale-[1.01]"
-          : imageData
+        whileHover={!imageData && !shouldReduceMotion ? { scale: 1.01, transition: { duration: 0.15 } } : {}}
+        animate={isDragging ? { scale: 1.02, borderColor: "#E5B842" } : {}}
+        className={`w-full ${heightClass} border-2 rounded-xl flex flex-col items-center justify-center p-3 transition-all relative overflow-hidden ${
+          isDragging
+            ? "border-amber-400 bg-amber-400/10 shadow-lg shadow-amber-500/10"
+            : imageData
             ? "border-emerald-500/40 bg-slate-900/40"
             : "border-dashed border-slate-700/60 hover:border-slate-500 bg-slate-800/20 cursor-pointer"
-          }`}
+        }`}
         style={{
           background: imageData ? "var(--ll-bg-card)" : "var(--ll-bg-paper-deep)",
           borderColor: isDragging ? "var(--ll-color-gold)" : imageData ? "var(--ll-compliant)" : "var(--ll-color-line)",
@@ -1736,27 +1878,34 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
           <div className="w-full h-full flex flex-col justify-between relative group">
             {/* Image Preview & Overlay */}
             <div className="relative flex-1 w-full rounded-lg overflow-hidden flex items-center justify-center bg-black/20">
-              <img
+              <motion.img
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.25 }}
                 src={imageData.previewUrl}
                 alt={label}
                 className="max-h-full max-w-full object-contain"
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <button
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-2xs">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-2.5 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md"
+                  className="px-2.5 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md cursor-pointer"
                 >
                   <UploadCloud size={13} /> Replace
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   type="button"
                   onClick={() => cameraInputRef.current?.click()}
-                  className="px-2.5 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md"
+                  className="px-2.5 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md cursor-pointer"
                   title="Capture with camera"
                 >
                   <Camera size={13} /> Camera
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -1772,23 +1921,29 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
             </div>
 
             {/* Remove Button */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.15, backgroundColor: "#DC2626" }}
+              whileTap={{ scale: 0.9 }}
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onRemove?.();
               }}
-              className="absolute top-1 right-1 p-1 rounded-full bg-slate-900/80 hover:bg-red-600 text-white transition-colors shadow"
+              className="absolute top-1 right-1 p-1 rounded-full bg-slate-900/80 text-white transition-colors shadow cursor-pointer"
               title="Remove image"
             >
               <X size={13} />
-            </button>
+            </motion.button>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-center p-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ background: "var(--ll-bg-card)", border: "1px solid var(--ll-color-line)" }}>
+            <motion.div
+              whileHover={shouldReduceMotion ? {} : { scale: 1.1, rotate: 5 }}
+              className="w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-xs"
+              style={{ background: "var(--ll-bg-card)", border: "1px solid var(--ll-color-line)" }}
+            >
               <Camera size={19} style={{ color: "var(--ll-color-gold)" }} />
-            </div>
+            </motion.div>
 
             <div className="text-xs font-bold mb-1" style={{ color: "var(--ll-color-ink)" }}>
               {label} {required && <span className="text-red-500 font-bold">*</span>}
@@ -1799,34 +1954,38 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
             </p>
 
             <div className="flex items-center gap-2">
-              <button
+              <motion.button
+                whileHover={shouldReduceMotion ? {} : { scale: 1.05 }}
+                whileTap={shouldReduceMotion ? {} : { scale: 0.95 }}
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   fileInputRef.current?.click();
                 }}
-                className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
+                className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
               >
                 <UploadCloud size={13} /> Browse
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                whileHover={shouldReduceMotion ? {} : { scale: 1.05 }}
+                whileTap={shouldReduceMotion ? {} : { scale: 0.95 }}
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   cameraInputRef.current?.click();
                 }}
-                className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
+                className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
                 title="Open mobile / tablet camera directly"
               >
                 <Camera size={13} /> Camera
-              </button>
+              </motion.button>
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -2090,13 +2249,35 @@ function dataURItoBlob(dataURI) {
         {STEPS.map((s, idx) => (
           <div key={s} className="flex items-center flex-1 last:flex-none min-w-[140px]">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{
-                background: idx <= step ? C.ink : "var(--ll-bg-card)", border: `1.5px solid ${idx <= step ? C.ink : "var(--ll-color-line)"}`,
-                color: idx <= step ? "var(--ll-button-primary-color)" : C.slate, fontSize: 12, fontWeight: 700, ...FONT.mono,
-              }}>{idx + 1}</div>
+              <motion.div
+                animate={{
+                  scale: idx === step ? 1.08 : 1,
+                  backgroundColor: idx <= step ? "var(--ll-color-ink)" : "var(--ll-bg-card)",
+                  borderColor: idx <= step ? "var(--ll-color-ink)" : "var(--ll-color-line)",
+                }}
+                transition={{ duration: 0.25 }}
+                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 shadow-2xs"
+                style={{
+                  color: idx <= step ? "var(--ll-button-primary-color)" : C.slate,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  ...FONT.mono,
+                }}
+              >
+                {idx + 1}
+              </motion.div>
               <span style={{ fontSize: 12.5, fontWeight: idx === step ? 700 : 500, color: idx <= step ? C.ink : C.slate }}>{s}</span>
             </div>
-            {idx < STEPS.length - 1 && <div className="flex-1 h-px mx-3" style={{ background: idx < step ? C.ink : "var(--ll-color-line)" }} />}
+            {idx < STEPS.length - 1 && (
+              <div className="flex-1 h-0.5 mx-3 bg-slate-200 dark:bg-slate-800 relative overflow-hidden rounded-full">
+                <motion.div
+                  className="h-full bg-slate-800 dark:bg-amber-400"
+                  initial={{ width: "0%" }}
+                  animate={{ width: idx < step ? "100%" : "0%" }}
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -2363,6 +2544,8 @@ function dataURItoBlob(dataURI) {
 
 function ProcessingScreen({ onDone, createdCase }) {
   const [doneCount, setDoneCount] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
+
   useEffect(() => {
     if (doneCount >= PIPELINE_STAGES.length) {
       const caseNumber = createdCase?.inspection_no || createdCase?.case_number || `LM/2026/${Math.floor(100000 + Math.random() * 900000)}`;
@@ -2385,20 +2568,83 @@ function ProcessingScreen({ onDone, createdCase }) {
     return () => clearTimeout(t);
   }, [doneCount, createdCase]);
 
+  const progressPercent = Math.round((doneCount / PIPELINE_STAGES.length) * 100);
+
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <SectionLabel eyebrow="STEP 4" title="Running Compliance Pipeline" />
+      
+      {/* High-Tech AI Radar Scanner Visualizer */}
+      <div className="relative w-full h-32 rounded-lg bg-slate-950 border border-slate-800 mb-6 overflow-hidden flex items-center justify-center">
+        {/* Animated Scanner Beam */}
+        {!shouldReduceMotion && (
+          <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#F59E0B] animate-scanline z-20" />
+        )}
+        
+        {/* Radial Radar Grid */}
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#E5B842_1px,transparent_1px)] [background-size:16px_16px]" />
+        
+        {/* Concentric Radar Rings */}
+        <div className="relative z-10 flex flex-col items-center justify-center">
+          <motion.div
+            animate={shouldReduceMotion ? {} : { rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
+            className="w-14 h-14 rounded-full border-2 border-dashed border-amber-400/60 flex items-center justify-center"
+          >
+            <div className="w-8 h-8 rounded-full border border-emerald-400/80 flex items-center justify-center bg-amber-400/10">
+              <ScanLine size={16} className="text-amber-400 animate-pulse" />
+            </div>
+          </motion.div>
+          <div className="mt-2 text-[11px] font-mono text-amber-300 font-semibold tracking-wider flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            GEMINI VISION AI INSPECTING PACKAGING ({progressPercent}%)
+          </div>
+        </div>
+
+        {/* Progress Bar Line */}
+        <div className="absolute bottom-0 inset-x-0 h-1 bg-slate-900">
+          <motion.div
+            className="h-full bg-gradient-to-r from-amber-500 to-emerald-400"
+            initial={{ width: "0%" }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.3 }}
+          />
+        </div>
+      </div>
+
       <div className="space-y-1">
         {PIPELINE_STAGES.map((s, idx) => {
           const complete = idx < doneCount;
           const active = idx === doneCount;
           return (
-            <div key={s} className="flex items-center gap-3 py-2.5 border-b" style={{ borderColor: C.line }}>
-              {complete ? <CheckCircle2 size={17} style={{ color: "var(--ll-compliant)" }} /> : active ? <Loader2 size={17} className="animate-spin" style={{ color: C.gold }} /> : <div className="w-4 h-4 rounded-full border" style={{ borderColor: C.line }} />}
-              <span style={{ fontSize: 13, fontWeight: complete || active ? 600 : 500, color: complete ? "var(--ll-compliant)" : active ? C.ink : C.slate }}>{s}</span>
-              {active && <span style={{ fontSize: 11, color: C.slate, marginLeft: "auto" }}>processing…</span>}
-              {complete && <span style={{ fontSize: 11, color: "var(--ll-compliant)", marginLeft: "auto" }}>done</span>}
-            </div>
+            <motion.div
+              key={s}
+              initial={shouldReduceMotion ? {} : { opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className={`flex items-center gap-3 py-2.5 px-3 rounded-md border transition-all ${
+                active
+                  ? "bg-amber-500/10 border-amber-500/30"
+                  : complete
+                  ? "bg-emerald-500/5 border-transparent"
+                  : "border-transparent opacity-60"
+              }`}
+            >
+              {complete ? (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 18 }}>
+                  <CheckCircle2 size={17} style={{ color: "var(--ll-compliant)" }} />
+                </motion.div>
+              ) : active ? (
+                <Loader2 size={17} className="animate-spin" style={{ color: C.gold }} />
+              ) : (
+                <div className="w-4 h-4 rounded-full border" style={{ borderColor: C.line }} />
+              )}
+              <span style={{ fontSize: 13, fontWeight: complete || active ? 600 : 500, color: complete ? "var(--ll-compliant)" : active ? C.ink : C.slate }}>
+                {s}
+              </span>
+              {active && <span style={{ fontSize: 11, color: C.gold, marginLeft: "auto", fontWeight: 600 }}>inspecting…</span>}
+              {complete && <span style={{ fontSize: 11, color: "var(--ll-compliant)", marginLeft: "auto", fontWeight: 600 }}>verified ✓</span>}
+            </motion.div>
           );
         })}
       </div>
@@ -2444,54 +2690,82 @@ function MockLabel({ highlightKey, requirement }) {
 }
 
 function EvidenceModal({ requirement, onClose }) {
-  if (!requirement) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" style={{ background: "var(--ll-modal-overlay)" }} onClick={onClose}>
-      <div className="ll-rise rounded-sm max-w-3xl w-full grid grid-cols-1 md:grid-cols-2 overflow-hidden border shadow-2xl" style={{ background: "var(--ll-bg-card)", borderColor: C.line, maxHeight: "85vh" }} onClick={(e) => e.stopPropagation()}>
-        <div className="p-5" style={{ background: "var(--ll-bg-paper-deep)" }}>
-          <MockLabel highlightKey={requirement.key} requirement={requirement} />
-          <div className="flex items-center justify-center gap-4 mt-3 text-xs" style={{ color: C.slate }}>
-            <span className="flex items-center gap-1"><ZoomIn size={13} /> Zoom & pan supported</span>
-          </div>
-        </div>
-        <div className="p-6 overflow-y-auto ll-scroll">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.08em" }}>EVIDENCE</div>
-              <h3 style={{ ...FONT.display, fontSize: 18, fontWeight: 600, color: C.ink }}>{requirement.label}</h3>
-            </div>
-            <button onClick={onClose} className="ll-focus p-1 text-slate-400 hover:text-slate-200"><X size={18} /></button>
-          </div>
-          <ReqStatusChip status={requirement.status} />
+  const shouldReduceMotion = useReducedMotion();
 
-          <div className="mt-5 space-y-4">
-            <div>
-              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>DETECTED TEXT</div>
-              <div style={{ ...FONT.mono, fontSize: 13, color: C.charcoal, marginTop: 3, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, padding: "8px 10px", borderRadius: 2 }}>
-                {requirement.detected || "—"}
+  return (
+    <AnimatePresence>
+      {requirement && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-xs"
+          style={{ background: "var(--ll-modal-overlay)" }}
+          onClick={onClose}
+        >
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 15 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 10 }}
+            transition={{ type: "spring", stiffness: 320, damping: 26 }}
+            className="rounded-sm max-w-3xl w-full grid grid-cols-1 md:grid-cols-2 overflow-hidden border shadow-2xl"
+            style={{ background: "var(--ll-bg-card)", borderColor: C.line, maxHeight: "85vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5" style={{ background: "var(--ll-bg-paper-deep)" }}>
+              <MockLabel highlightKey={requirement.key} requirement={requirement} />
+              <div className="flex items-center justify-center gap-4 mt-3 text-xs" style={{ color: C.slate }}>
+                <span className="flex items-center gap-1"><ZoomIn size={13} /> Zoom & pan supported</span>
               </div>
             </div>
-            <div>
-              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>OCR CONFIDENCE</div>
-              <div className="flex items-center gap-2 mt-1.5">
-                <div className="flex-1 h-1.5 rounded-full" style={{ background: "var(--ll-bg-paper-deep)" }}>
-                  <div className="h-1.5 rounded-full" style={{ width: `${requirement.confidence}%`, background: C.gold }} />
+            <div className="p-6 overflow-y-auto ll-scroll">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.08em" }}>EVIDENCE</div>
+                  <h3 style={{ ...FONT.display, fontSize: 18, fontWeight: 600, color: C.ink }}>{requirement.label}</h3>
                 </div>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{requirement.confidence}%</span>
+                <motion.button
+                  whileHover={{ scale: 1.15, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="ll-focus p-1 text-slate-400 hover:text-slate-200 cursor-pointer"
+                >
+                  <X size={18} />
+                </motion.button>
+              </div>
+              <ReqStatusChip status={requirement.status} />
+
+              <div className="mt-5 space-y-4">
+                <div>
+                  <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>DETECTED TEXT</div>
+                  <div style={{ ...FONT.mono, fontSize: 13, color: C.charcoal, marginTop: 3, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, padding: "8px 10px", borderRadius: 2 }}>
+                    {requirement.detected || "—"}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>OCR CONFIDENCE</div>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <div className="flex-1 h-1.5 rounded-full" style={{ background: "var(--ll-bg-paper-deep)" }}>
+                      <div className="h-1.5 rounded-full" style={{ width: `${requirement.confidence}%`, background: C.gold }} />
+                    </div>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{requirement.confidence}%</span>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>RELATED RULE</div>
+                  <div style={{ ...FONT.mono, fontSize: 13, color: C.ink, fontWeight: 600, marginTop: 3 }}>{requirement.rule}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>REASON</div>
+                  <p style={{ fontSize: 12.5, color: C.charcoal, marginTop: 3, lineHeight: 1.5 }}>{requirement.reason}</p>
+                </div>
               </div>
             </div>
-            <div>
-              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>RELATED RULE</div>
-              <div style={{ ...FONT.mono, fontSize: 13, color: C.ink, fontWeight: 600, marginTop: 3 }}>{requirement.rule}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: C.slate, fontWeight: 600 }}>REASON</div>
-              <p style={{ fontSize: 12.5, color: C.charcoal, marginTop: 3, lineHeight: 1.5 }}>{requirement.reason}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -2778,27 +3052,31 @@ function InspectionDetail({ inspection }) {
               const isPass = r.status === "PASS";
 
               return (
-                <div
+                <motion.div
                   key={r.key || i}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: isHovered ? 1.04 : 1 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 22 }}
                   onMouseEnter={() => handleSelectReq(r)}
                   onMouseLeave={() => setHoveredReq(null)}
-                  className={`absolute border-2 transition-all cursor-pointer rounded-sm ${
+                  className={`absolute border-2 cursor-pointer rounded-sm ${
                     isHovered
-                      ? "border-amber-400 bg-amber-400/30 shadow-[0_0_20px_#F59E0B] z-30 scale-[1.03] ring-2 ring-amber-300 animate-pulse"
+                      ? "border-amber-400 bg-amber-400/30 shadow-[0_0_25px_#F59E0B] z-30 ring-2 ring-amber-300"
                       : isPass
                         ? "border-emerald-500/70 bg-emerald-500/10 hover:border-emerald-400 hover:bg-emerald-500/20 z-10"
                         : "border-red-500/80 bg-red-500/15 hover:border-red-400 hover:bg-red-500/25 z-20"
                   }`}
                   style={{ top, left, width, height }}
                 >
-                  <span
+                  <motion.span
+                    animate={isHovered ? { y: -2, scale: 1.05 } : { y: 0, scale: 1 }}
                     className={`absolute -top-5 left-0 px-1.5 py-0.2 rounded text-[9.5px] font-mono font-bold whitespace-nowrap uppercase tracking-wider ${
-                      isHovered ? "bg-amber-500 text-slate-950" : (isPass ? "bg-emerald-600 text-white" : "bg-red-600 text-white")
+                      isHovered ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/30" : (isPass ? "bg-emerald-600 text-white" : "bg-red-600 text-white")
                     } shadow-md`}
                   >
                     {r.label?.split(" ")[0]} ({r.confidence}%)
-                  </span>
-                </div>
+                  </motion.span>
+                </motion.div>
               );
             })}
 
@@ -3544,63 +3822,84 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
       </Card>
 
       {/* ADD USER MODAL (ADMIN ONLY) */}
-      {showAddModal && (
-        <AddUserModal
-          onClose={() => setShowAddModal(false)}
-          onAdd={(newUser) => {
-            onAddUser(newUser);
-            setShowAddModal(false);
-            showToast(`Officer account ${newUser.name} created successfully.`);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {showAddModal && (
+          <AddUserModal
+            onClose={() => setShowAddModal(false)}
+            onAdd={(newUser) => {
+              onAddUser(newUser);
+              setShowAddModal(false);
+              showToast(`Officer account ${newUser.name} created successfully.`);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* EDIT USER MODAL (ADMIN ONLY) */}
-      {editingUser && (
-        <EditUserModal
-          user={editingUser}
-          onClose={() => setEditingUser(null)}
-          onSave={(updated) => {
-            onUpdateUser(editingUser.email, updated);
-            setEditingUser(null);
-            showToast(`Profile for ${updated.name} updated.`);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {editingUser && (
+          <EditUserModal
+            user={editingUser}
+            onClose={() => setEditingUser(null)}
+            onSave={(updated) => {
+              onUpdateUser(editingUser.email, updated);
+              setEditingUser(null);
+              showToast(`Profile for ${updated.name} updated.`);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* DELETE CONFIRMATION MODAL (ADMIN ONLY) */}
-      {deletingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "var(--ll-modal-overlay)" }} onClick={() => setDeletingUser(null)}>
-          <Card className="ll-rise max-w-md w-full" padded={false}>
-            <div className="p-6" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center gap-3 text-red-500 mb-3">
-                <ShieldAlert size={24} />
-                <h3 style={{ ...FONT.display, fontSize: 18, fontWeight: 700 }}>Confirm Account Revocation</h3>
-              </div>
-              <p style={{ fontSize: 13, color: C.charcoal, lineHeight: 1.5 }}>
-                Are you sure you want to delete the officer profile for <strong>{deletingUser.name}</strong> ({deletingUser.email})?
-                This will remove their inspection access rights permanently.
-              </p>
-              <div className="flex justify-end gap-2.5 mt-6">
-                <Button variant="ghost" size="sm" onClick={() => setDeletingUser(null)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => {
-                    onDeleteUser(deletingUser.email);
-                    setDeletingUser(null);
-                    showToast(`Officer account for ${deletingUser.name} deleted.`);
-                  }}
-                >
-                  <Trash2 size={13} /> Confirm Delete
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
+      <AnimatePresence>
+        {deletingUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+            style={{ background: "var(--ll-modal-overlay)" }}
+            onClick={() => setDeletingUser(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 10 }}
+              transition={{ type: "spring", stiffness: 320, damping: 26 }}
+              className="max-w-md w-full"
+            >
+              <Card padded={false}>
+                <div className="p-6" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-3 text-red-500 mb-3">
+                    <ShieldAlert size={24} />
+                    <h3 style={{ ...FONT.display, fontSize: 18, fontWeight: 700 }}>Confirm Account Revocation</h3>
+                  </div>
+                  <p style={{ fontSize: 13, color: C.charcoal, lineHeight: 1.5 }}>
+                    Are you sure you want to delete the officer profile for <strong>{deletingUser.name}</strong> ({deletingUser.email})?
+                    This will remove their inspection access rights permanently.
+                  </p>
+                  <div className="flex justify-end gap-2.5 mt-6">
+                    <Button variant="ghost" size="sm" onClick={() => setDeletingUser(null)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => {
+                        onDeleteUser(deletingUser.email);
+                        setDeletingUser(null);
+                        showToast(`Officer account for ${deletingUser.name} deleted.`);
+                      }}
+                    >
+                      <Trash2 size={13} /> Confirm Delete
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -3702,162 +4001,163 @@ function AddUserModal({ onClose, onAdd }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "var(--ll-modal-overlay)" }} onClick={onClose}>
-      <Card className="ll-rise max-w-lg w-full" padded={false}>
-        <div className="p-6 overflow-y-auto max-h-[90vh] ll-scroll" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between pb-4 mb-4 border-b" style={{ borderColor: C.line }}>
-            <div>
-              <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.1em" }}>PROVISION ACCOUNT</div>
-              <h3 style={{ ...FONT.display, fontSize: 20, fontWeight: 700, color: C.ink }}>Add New Officer</h3>
-            </div>
-            <button onClick={onClose} className="ll-focus p-1 text-slate-400 hover:text-slate-200">
-              <X size={18} />
-            </button>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-3 rounded bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
-              <AlertTriangle size={14} /> {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Full Name" required={true}>
-                <input
-                  style={inputStyle}
-                  placeholder="e.g. Vikram Sharma"
-                  value={formData.name}
-                  onChange={(e) => {
-                    setFormData({ ...formData, name: e.target.value });
-                    if (!formData.email && e.target.value) {
-                      const emailPrefix = e.target.value.toLowerCase().replace(/\s+/g, ".");
-                      setFormData((prev) => ({ ...prev, name: e.target.value, email: `${emailPrefix}@lm.gov.in` }));
-                    }
-                  }}
-                  required
-                />
-              </Field>
-
-              <Field label="Badge / Officer ID" required={true}>
-                <input
-                  style={inputStyle}
-                  value={formData.badge}
-                  onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                  placeholder="e.g. LMD-DL-0521"
-                  required
-                />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Role & Authority" required={true}>
-                <select
-                  style={inputStyle}
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                >
-                  <option value="Enforcement Officer">Enforcement Officer</option>
-                  <option value="Reviewer">Reviewer</option>
-                  <option value="Admin">Admin</option>
-                </select>
-              </Field>
-
-              <Field label="Status">
-                <select
-                  style={inputStyle}
-                  value={formData.active ? "true" : "false"}
-                  onChange={(e) => setFormData({ ...formData, active: e.target.value === "true" })}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Disabled / Suspended</option>
-                </select>
-              </Field>
-            </div>
-
-            <Field label="Official Email" required={true}>
-              <div className="relative">
-                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  style={{ ...inputStyle, paddingLeft: 32 }}
-                  type="email"
-                  placeholder="v.sharma@lm.gov.in"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-            </Field>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Jurisdiction / Division">
-                <input
-                  style={inputStyle}
-                  placeholder="e.g. West Delhi Division"
-                  value={formData.jurisdiction}
-                  onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
-                />
-              </Field>
-
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+      style={{ background: "var(--ll-modal-overlay)" }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 10 }}
+        transition={{ type: "spring", stiffness: 320, damping: 26 }}
+        className="max-w-lg w-full"
+      >
+        <Card padded={false}>
+          <div className="p-6 overflow-y-auto max-h-[90vh] ll-scroll" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between pb-4 mb-4 border-b" style={{ borderColor: C.line }}>
               <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: C.charcoal }}>
-                  Contact Mobile (10 Digits) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  style={{
-                    ...inputStyle,
-                    borderColor: phoneError ? "#EF4444" : undefined,
-                    boxShadow: phoneError ? "0 0 0 1px #EF4444" : undefined,
-                  }}
-                  placeholder="e.g. 9812345678"
-                  value={formData.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  onBlur={handlePhoneBlur}
-                  required
-                />
-                {phoneError && (
-                  <div className="mt-1 text-[11px] text-red-500 font-medium flex items-center gap-1">
-                    <AlertTriangle size={12} className="flex-shrink-0" />
-                    <span>{phoneError}</span>
-                  </div>
-                )}
+                <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.1em" }}>PROVISION ACCOUNT</div>
+                <h3 style={{ ...FONT.display, fontSize: 20, fontWeight: 700, color: C.ink }}>Add New Officer</h3>
               </div>
+              <motion.button whileHover={{ scale: 1.15, rotate: 90 }} whileTap={{ scale: 0.9 }} onClick={onClose} className="ll-focus p-1 text-slate-400 hover:text-slate-200 cursor-pointer">
+                <X size={18} />
+              </motion.button>
             </div>
 
-            <Field label="Login Password" required={true}>
-              <div className="relative">
-                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  style={{ ...inputStyle, paddingLeft: 32 }}
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Password stored in officer_users.pass"
-                  value={formData.pass}
-                  onChange={(e) => setFormData({ ...formData, pass: e.target.value })}
-                  required
-                />
+            {error && (
+              <div className="mb-4 p-3 rounded bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
+                <AlertTriangle size={14} /> {error}
               </div>
-            </Field>
+            )}
 
-            <div className="p-3 rounded border text-xs text-slate-400 flex items-start gap-2" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
-              <Key size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
-              <span>
-                This password is saved to the officer’s <strong>pass</strong> column and is required at sign-in together with the badge ID.
-              </span>
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Full Name" required={true}>
+                  <input
+                    style={inputStyle}
+                    placeholder="e.g. Vikram Sharma"
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (!formData.email && e.target.value) {
+                        const emailPrefix = e.target.value.toLowerCase().replace(/\s+/g, ".");
+                        setFormData((prev) => ({ ...prev, name: e.target.value, email: `${emailPrefix}@lm.gov.in` }));
+                      }
+                    }}
+                    required
+                  />
+                </Field>
 
-            <div className="flex justify-end gap-2.5 pt-4 border-t" style={{ borderColor: C.line }}>
-              <Button variant="ghost" type="button" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                <UserPlus size={15} /> Create Account
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Card>
-    </div>
+                <Field label="Badge / Officer ID" required={true}>
+                  <input
+                    style={inputStyle}
+                    value={formData.badge}
+                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                    placeholder="e.g. LMD-DL-0521"
+                    required
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Role & Authority" required={true}>
+                  <select
+                    style={inputStyle}
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  >
+                    <option value="Enforcement Officer">Enforcement Officer</option>
+                    <option value="Reviewer">Reviewer</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </Field>
+
+                <Field label="Official Email" required={true}>
+                  <input
+                    style={inputStyle}
+                    type="email"
+                    placeholder="officer@lm.gov.in"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Jurisdiction / Division">
+                  <input
+                    style={inputStyle}
+                    placeholder="e.g. West Delhi Division"
+                    value={formData.jurisdiction}
+                    onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
+                  />
+                </Field>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: C.charcoal }}>
+                    Contact Mobile (10 Digits) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    style={{
+                      ...inputStyle,
+                      borderColor: phoneError ? "#EF4444" : undefined,
+                      boxShadow: phoneError ? "0 0 0 1px #EF4444" : undefined,
+                    }}
+                    placeholder="e.g. 9812345678"
+                    value={formData.phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    onBlur={handlePhoneBlur}
+                    required
+                  />
+                  {phoneError && (
+                    <div className="mt-1 text-[11px] text-red-500 font-medium flex items-center gap-1">
+                      <AlertTriangle size={12} className="flex-shrink-0" />
+                      <span>{phoneError}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Field label="Login Password" required={true}>
+                <div className="relative">
+                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    style={{ ...inputStyle, paddingLeft: 32 }}
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Password stored in officer_users.pass"
+                    value={formData.pass}
+                    onChange={(e) => setFormData({ ...formData, pass: e.target.value })}
+                    required
+                  />
+                </div>
+              </Field>
+
+              <div className="p-3 rounded border text-xs text-slate-400 flex items-start gap-2" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
+                <Key size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                <span>
+                  This password is saved to the officer’s <strong>pass</strong> column and is required at sign-in together with the badge ID.
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-4 border-t" style={{ borderColor: C.line }}>
+                <Button variant="ghost" type="button" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  <UserPlus size={15} /> Create Account
+                </Button>
+              </div>
+            </form>
+          </div>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -3933,141 +4233,156 @@ function EditUserModal({ user, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "var(--ll-modal-overlay)" }} onClick={onClose}>
-      <Card className="ll-rise max-w-lg w-full" padded={false}>
-        <div className="p-6 overflow-y-auto max-h-[90vh] ll-scroll" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between pb-4 mb-4 border-b" style={{ borderColor: C.line }}>
-            <div>
-              <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.1em" }}>MODIFICATION</div>
-              <h3 style={{ ...FONT.display, fontSize: 20, fontWeight: 700, color: C.ink }}>Edit Officer Profile</h3>
-            </div>
-            <button onClick={onClose} className="ll-focus p-1 text-slate-400 hover:text-slate-200">
-              <X size={18} />
-            </button>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-3 rounded bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
-              <AlertTriangle size={14} /> {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Full Name" required={true}>
-                <input
-                  style={inputStyle}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </Field>
-
-              <Field label="Badge / Officer ID" required={true}>
-                <input
-                  style={inputStyle}
-                  value={formData.badge}
-                  onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                  required
-                />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Role & Authority" required={true}>
-                <select
-                  style={inputStyle}
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                >
-                  <option value="Enforcement Officer">Enforcement Officer</option>
-                  <option value="Reviewer">Reviewer</option>
-                  <option value="Admin">Admin</option>
-                </select>
-              </Field>
-
-              <Field label="Account Status">
-                <select
-                  style={inputStyle}
-                  value={formData.active ? "true" : "false"}
-                  onChange={(e) => setFormData({ ...formData, active: e.target.value === "true" })}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Disabled / Suspended</option>
-                </select>
-              </Field>
-            </div>
-
-            <Field label="Official Email" required={true}>
-              <input
-                style={inputStyle}
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </Field>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Jurisdiction / Division">
-                <input
-                  style={inputStyle}
-                  value={formData.jurisdiction}
-                  onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
-                />
-              </Field>
-
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+      style={{ background: "var(--ll-modal-overlay)" }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 10 }}
+        transition={{ type: "spring", stiffness: 320, damping: 26 }}
+        className="max-w-lg w-full"
+      >
+        <Card padded={false}>
+          <div className="p-6 overflow-y-auto max-h-[90vh] ll-scroll" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between pb-4 mb-4 border-b" style={{ borderColor: C.line }}>
               <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: C.charcoal }}>
-                  Contact Mobile (10 Digits) <span className="text-red-500">*</span>
-                </label>
+                <div style={{ ...FONT.mono, fontSize: 10.5, color: C.gold, letterSpacing: "0.1em" }}>MODIFICATION</div>
+                <h3 style={{ ...FONT.display, fontSize: 20, fontWeight: 700, color: C.ink }}>Edit Officer Profile</h3>
+              </div>
+              <motion.button whileHover={{ scale: 1.15, rotate: 90 }} whileTap={{ scale: 0.9 }} onClick={onClose} className="ll-focus p-1 text-slate-400 hover:text-slate-200 cursor-pointer">
+                <X size={18} />
+              </motion.button>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 rounded bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
+                <AlertTriangle size={14} /> {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Full Name" required={true}>
+                  <input
+                    style={inputStyle}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </Field>
+
+                <Field label="Badge / Officer ID" required={true}>
+                  <input
+                    style={inputStyle}
+                    value={formData.badge}
+                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                    required
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Role & Authority" required={true}>
+                  <select
+                    style={inputStyle}
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  >
+                    <option value="Enforcement Officer">Enforcement Officer</option>
+                    <option value="Reviewer">Reviewer</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </Field>
+
+                <Field label="Account Status">
+                  <select
+                    style={inputStyle}
+                    value={formData.active ? "true" : "false"}
+                    onChange={(e) => setFormData({ ...formData, active: e.target.value === "true" })}
+                  >
+                    <option value="true">Active</option>
+                    <option value="false">Disabled / Suspended</option>
+                  </select>
+                </Field>
+              </div>
+
+              <Field label="Official Email" required={true}>
                 <input
-                  style={{
-                    ...inputStyle,
-                    borderColor: phoneError ? "#EF4444" : undefined,
-                    boxShadow: phoneError ? "0 0 0 1px #EF4444" : undefined,
-                  }}
-                  placeholder="e.g. 9812345678"
-                  value={formData.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  onBlur={handlePhoneBlur}
+                  style={inputStyle}
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                 />
-                {phoneError && (
-                  <div className="mt-1 text-[11px] text-red-500 font-medium flex items-center gap-1">
-                    <AlertTriangle size={12} className="flex-shrink-0" />
-                    <span>{phoneError}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+              </Field>
 
-            <Field label="New Login Password">
-              <div className="relative">
-                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  style={{ ...inputStyle, paddingLeft: 32 }}
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Leave blank to keep the current password"
-                  value={formData.pass}
-                  onChange={(e) => setFormData({ ...formData, pass: e.target.value })}
-                />
-              </div>
-            </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Jurisdiction / Division">
+                  <input
+                    style={inputStyle}
+                    value={formData.jurisdiction}
+                    onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
+                  />
+                </Field>
 
-            <div className="flex justify-end gap-2.5 pt-4 border-t" style={{ borderColor: C.line }}>
-              <Button variant="ghost" type="button" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                Save Changes
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Card>
-    </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: C.charcoal }}>
+                    Contact Mobile (10 Digits) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    style={{
+                      ...inputStyle,
+                      borderColor: phoneError ? "#EF4444" : undefined,
+                      boxShadow: phoneError ? "0 0 0 1px #EF4444" : undefined,
+                    }}
+                    placeholder="e.g. 9812345678"
+                    value={formData.phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    onBlur={handlePhoneBlur}
+                    required
+                  />
+                  {phoneError && (
+                    <div className="mt-1 text-[11px] text-red-500 font-medium flex items-center gap-1">
+                      <AlertTriangle size={12} className="flex-shrink-0" />
+                      <span>{phoneError}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Field label="New Login Password">
+                <div className="relative">
+                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    style={{ ...inputStyle, paddingLeft: 32 }}
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Leave blank to keep existing password"
+                    value={formData.pass}
+                    onChange={(e) => setFormData({ ...formData, pass: e.target.value })}
+                  />
+                </div>
+              </Field>
+
+              <div className="flex justify-end gap-2.5 pt-4 border-t" style={{ borderColor: C.line }}>
+                <Button variant="ghost" type="button" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
 

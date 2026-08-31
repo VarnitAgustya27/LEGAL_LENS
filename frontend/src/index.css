@@ -10,4 +10,60 @@ body {
   color: #22252A;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* GPU acceleration & smooth interaction helpers */
+.gpu-accel {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* Subtle glow effects */
+.glow-gold {
+  box-shadow: 0 0 15px rgba(229, 184, 66, 0.25);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+}
+
+.glow-crimson {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+}
+
+/* Scanning radar line animation */
+@keyframes scanline {
+  0% {
+    top: 0%;
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0.8;
+  }
+}
+
+.animate-scanline {
+  animation: scanline 2.5s ease-in-out infinite alternate;
+}
+
+/* Shimmer pulse for active processing states */
+@keyframes shimmer-sweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(229,184,66,0.05) 0%, rgba(229,184,66,0.2) 50%, rgba(229,184,66,0.05) 100%);
+  background-size: 200% 100%;
+  animation: shimmer-sweep 2s infinite linear;
 }
