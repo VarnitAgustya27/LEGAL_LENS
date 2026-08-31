@@ -3,7 +3,7 @@ import os
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.config import settings
@@ -34,21 +34,48 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Optional[User]:
-    if not token:
-        user = db.query(User).filter(User.role == "INSPECTOR").first()
-        if user:
-            return user
-        return None
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        token_data = TokenData(email=email)
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
-    user = db.query(User).filter(User.email == token_data.email).first()
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
+def get_current_user(
+    token: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+    x_user_email: Optional[str] = Header(None),
+    x_user_badge: Optional[str] = Header(None),
+    x_user_name: Optional[str] = Header(None)
+) -> Optional[User]:
+    # 1. Try to authenticate using JWT Token
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            email: str = payload.get("sub")
+            if email is not None:
+                user = db.query(User).filter(User.email == email).first()
+                if user:
+                    return user
+        except JWTError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+
+    # 2. Fallback to headers (for frontend Supabase authentication integration)
+    if x_user_email:
+        user = db.query(User).filter(User.email == x_user_email).first()
+        if not user:
+            # Sync officer user from Supabase to local SQLAlchemy database on the fly
+            user = User(
+                email=x_user_email,
+                full_name=x_user_name or "Officer",
+                hashed_password="",  # Authed via frontend Supabase
+                role="INSPECTOR",
+                badge_number=x_user_badge,
+                department="Legal Metrology Department",
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+
+    # 3. If neither token nor headers are provided, reject the request as unauthorized
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication credentials were not provided.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+

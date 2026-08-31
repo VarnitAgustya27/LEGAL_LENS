@@ -4139,7 +4139,7 @@ export default function App() {
         const publicUsers = data.map(publicOfficerProfile);
         setUsers(publicUsers);
         setIsDbConnected(true);
-        const currentFound = publicUsers.find((u) => u.email === currentUser.email);
+        const currentFound = currentUser?.email ? publicUsers.find((u) => u.email === currentUser.email) : null;
         if (currentFound) setCurrentUser(currentFound);
       }
     } catch (err) {

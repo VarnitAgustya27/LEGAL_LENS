@@ -1,12 +1,41 @@
 const API_BASE = '/api';
 
 class ApiService {
-  static getHeaders() {
+  static getUserHeaders() {
     const token = localStorage.getItem('legallens_token');
+    const userStr = localStorage.getItem('legallens_current_user');
+    let user = null;
+    try {
+      user = userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      console.warn("Failed to parse local current user:", e);
+    }
+    return {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(user ? {
+        'X-User-Email': user.email || '',
+        'X-User-Badge': user.badge || '',
+        'X-User-Name': user.name || ''
+      } : {})
+    };
+  }
+
+  static getHeaders() {
     return {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...this.getUserHeaders()
     };
+  }
+
+  static handleUnauthorized(res) {
+    if (res.status === 401) {
+      localStorage.removeItem('legallens_current_user');
+      localStorage.removeItem('legallens_active_page');
+      localStorage.removeItem('legallens_token');
+      window.location.href = '/';
+      throw new Error('Session expired or unauthorized. Redirecting to login...');
+    }
+    return res;
   }
 
   // 1. Auth
@@ -30,6 +59,7 @@ class ApiService {
   static async getMe() {
     try {
       const res = await fetch(`${API_BASE}/auth/me`, { headers: this.getHeaders() });
+      this.handleUnauthorized(res);
       if (!res.ok) throw new Error('Auth check failed');
       return await res.json();
     } catch (e) {
@@ -41,6 +71,7 @@ class ApiService {
   static async getDashboardStats() {
     try {
       const res = await fetch(`${API_BASE}/dashboard/stats`, { headers: this.getHeaders() });
+      this.handleUnauthorized(res);
       if (!res.ok) throw new Error('Dashboard stats failed');
       return await res.json();
     } catch (e) {
@@ -54,6 +85,7 @@ class ApiService {
     try {
       const q = new URLSearchParams(params).toString();
       const res = await fetch(`${API_BASE}/inspections?${q}`, { headers: this.getHeaders() });
+      this.handleUnauthorized(res);
       if (!res.ok) throw new Error('Failed to fetch inspections');
       return await res.json();
     } catch (e) {
@@ -65,6 +97,7 @@ class ApiService {
   static async getInspection(id) {
     try {
       const res = await fetch(`${API_BASE}/inspections/${id}`, { headers: this.getHeaders() });
+      this.handleUnauthorized(res);
       if (!res.ok) throw new Error('Failed to fetch inspection details');
       return await res.json();
     } catch (e) {
@@ -79,6 +112,7 @@ class ApiService {
       headers: this.getHeaders(),
       body: JSON.stringify(payload)
     });
+    this.handleUnauthorized(res);
     if (!res.ok) throw new Error('Inspection creation failed');
     return await res.json();
   }
@@ -89,12 +123,12 @@ class ApiService {
     for (const f of files) {
       formData.append('files', f);
     }
-    const token = localStorage.getItem('legallens_token');
     const res = await fetch(`${API_BASE}/inspections/${inspectionId}/images`, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: this.getUserHeaders(),
       body: formData
     });
+    this.handleUnauthorized(res);
     if (!res.ok) throw new Error('Image upload failed');
     return await res.json();
   }
@@ -109,11 +143,14 @@ class ApiService {
     }
     const res = await fetch(`${API_BASE}/inspections/direct-scan`, {
       method: 'POST',
+      headers: this.getUserHeaders(),
       body: formData
     });
+    this.handleUnauthorized(res);
     if (!res.ok) throw new Error('Direct OCR scan failed');
     return await res.json();
   }
+
 
   static async runScan(inspectionId) {
     const res = await fetch(`${API_BASE}/inspections/${inspectionId}/scan`, {
@@ -202,6 +239,7 @@ class ApiService {
       method: 'POST',
       headers: this.getHeaders()
     });
+    this.handleUnauthorized(res);
     if (!res.ok) throw new Error('Demo seeding failed');
     return await res.json();
   }

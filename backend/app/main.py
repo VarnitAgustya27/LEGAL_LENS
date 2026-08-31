@@ -56,3 +56,6 @@ def root():
         "legal_act": "The Legal Metrology (Packaged Commodities) Rules, 2011",
         "docs_url": "/docs"
     }
+
+# Force reload
+
