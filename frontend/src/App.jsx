@@ -2743,14 +2743,7 @@ function InspectionDetail({ inspection }) {
                 <Eye size={12} /> {showBoxes ? "Boxes: ON" : "Boxes: OFF"}
               </button>
 
-              <button
-                type="button"
-                onClick={() => canvasUploadRef.current?.click()}
-                className="ll-focus text-xs font-mono px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-                title="Add more photos or angles"
-              >
-                <Plus size={12} className="text-amber-400" /> + Add Photos
-              </button>
+              
             </div>
           </div>
 
@@ -2847,7 +2840,7 @@ function InspectionDetail({ inspection }) {
         </Card>
 
         {/* Right: Live OCR Vision Terminal Stream (5 cols) */}
-        <Card className="lg:col-span-5 flex flex-col justify-between overflow-hidden shadow-lg" padded={false}>
+        <div className="lg:col-span-5 flex flex-col overflow-hidden shadow-sm h-[580px] border rounded-sm transition-colors" style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-charcoal)" }}>
           <div className="p-3.5 bg-slate-950 text-slate-200 flex items-center justify-between border-b border-slate-800">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10B981]" />
@@ -2868,12 +2861,9 @@ function InspectionDetail({ inspection }) {
             </button>
           </div>
 
-          <div className="p-3.5 bg-slate-950/95 text-[11px] font-mono text-slate-300 space-y-2 flex-1 max-h-[380px] overflow-y-auto select-text">
-            <div className="text-slate-500">// [INIT] EasyOCR CRAFT Text Detector active for {caseId}</div>
-            <div className="text-emerald-400 font-medium">➜ [STREAM] Resolution: 1000×1000 normalized grid</div>
-            
+          <div className="p-3.5 bg-slate-950/95 text-[11px] font-mono text-slate-300 space-y-2 flex-1 min-h-0 overflow-y-auto select-text">
+            <div className="text-emerald-400 font-medium">➜ [STREAM] Res: 1000×1000 normalized grid</div>
             {reqs.map((r, i) => {
-              const bboxStr = r.bbox ? `[${r.bbox.join(", ")}]` : `[${120 + i*90}, 200, ${180 + i*90}, 750]`;
               const isPass = r.status === "PASS";
               const isHovered = hoveredReq === r.key;
               return (
@@ -2882,25 +2872,28 @@ function InspectionDetail({ inspection }) {
                   onMouseEnter={() => handleSelectReq(r)}
                   onMouseLeave={() => setHoveredReq(null)}
                   onClick={() => handleSelectReq(r)}
-                  className={`p-2 rounded border transition-all cursor-pointer ${
+                  className={`p-3 rounded-lg border transition-all cursor-pointer space-y-2 ${
                     isHovered
-                      ? "bg-slate-900 border-amber-400 text-white shadow-sm"
-                      : "bg-slate-900/50 border-slate-800 hover:border-slate-700"
+                      ? "bg-slate-900 border-amber-400/80 text-white shadow-md shadow-amber-500/5 -translate-y-[1px]"
+                      : "bg-slate-900/40 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60"
                   }`}
                 >
-                  <div className="flex items-center justify-between text-[10.5px] mb-1">
-                    <span className="text-amber-400 font-bold tracking-wide">{r.label}</span>
-                    <span className="text-cyan-400 font-mono text-[10px]">BOX {bboxStr}</span>
+                  <div className="text-[11px] font-bold text-amber-400/90 tracking-wide">
+                    {r.label}
                   </div>
-                  <div className="text-slate-100 font-mono text-[11px] bg-slate-950/90 px-2 py-1 rounded border border-slate-800 flex items-center gap-1.5">
-                    <span className="text-emerald-400 font-bold">➜</span>
-                    <span className="font-semibold truncate">{r.detected}</span>
+                  <div className="text-slate-200 font-mono text-[11px] bg-slate-950/50 px-2.5 py-1.5 rounded-md border border-slate-800/60 flex items-center gap-2">
+                    <span className="text-emerald-400/80 font-bold select-none">➜</span>
+                    <span className="font-medium truncate">{r.detected}</span>
                   </div>
-                  <div className="flex items-center justify-between mt-1 text-[10px]">
-                    <span className="text-slate-400 font-mono">{r.rule}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-amber-300 font-semibold">{r.confidence}% conf</span>
-                      <span className={`font-bold px-1.5 py-0.2 rounded uppercase text-[9.5px] ${isPass ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-0.5">
+                    <span>{r.rule}</span>
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-amber-400/80 font-semibold">{r.confidence}% conf</span>
+                      <span className={`font-bold px-1.5 py-0.5 rounded uppercase text-[9px] tracking-wider ${
+                        isPass 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      }`}>
                         {r.status}
                       </span>
                     </div>
@@ -2914,7 +2907,7 @@ function InspectionDetail({ inspection }) {
             <span>✓ PCR 2011 Rule Matrix: {reqs.length} Checks</span>
             <span className="font-bold">{inspectionStatus}</span>
           </div>
-        </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
