@@ -1,4 +1,5 @@
 import ApiService from "./services/api.js";
+import { saveInspection, fetchInspections } from "./services/supabaseInspectionService.js";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -1704,9 +1705,72 @@ function Dashboard({ onOpenInspection, isDark }) {
 /* ============================== INSPECTIONS LIST ============================== */
 
 function InspectionsList({ onOpen, onNew }) {
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const filtered = statusFilter === "ALL" ? INSPECTIONS : INSPECTIONS.filter((i) => i.status === statusFilter);
+  const [statusFilter, setStatusFilter]   = useState("ALL");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [searchQuery, setSearchQuery]     = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [rows, setRows]                   = useState(null);   // null = loading
+  const [fetchError, setFetchError]       = useState(null);
   const shouldReduceMotion = useReducedMotion();
+
+  // Debounce search so we don't fire a query on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 380);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Fetch from Supabase whenever filters change
+  useEffect(() => {
+    let cancelled = false;
+    setRows(null);
+    setFetchError(null);
+
+    fetchInspections({ status: statusFilter, category: categoryFilter, search: debouncedSearch })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data) {
+          // Supabase unavailable — fall back to static demo list
+          const fallback = statusFilter === "ALL"
+            ? INSPECTIONS
+            : INSPECTIONS.filter((i) => i.status === statusFilter);
+          const filtered = debouncedSearch
+            ? fallback.filter((i) =>
+                [i.id, i.product, i.manufacturer].some((v) =>
+                  (v || "").toLowerCase().includes(debouncedSearch.toLowerCase())
+                )
+              )
+            : fallback;
+          setRows(filtered.map((i) => ({
+            case_number:    i.id,
+            product_name:   i.product,
+            category:       i.category,
+            manufacturer:   i.manufacturer,
+            status:         i.status,
+            inspector_name: i.inspector,
+            created_at:     i.date,
+            is_demo:        true,
+            _raw:           i,
+          })));
+        } else {
+          setRows(data);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRows(INSPECTIONS.map((i) => ({
+          case_number: i.id, product_name: i.product, category: i.category,
+          manufacturer: i.manufacturer, status: i.status, inspector_name: i.inspector,
+          created_at: i.date, is_demo: true, _raw: i,
+        })));
+      });
+
+    return () => { cancelled = true; };
+  }, [statusFilter, categoryFilter, debouncedSearch]);
+
+  const displayDate = (iso) => {
+    if (!iso) return "—";
+    return String(iso).slice(0, 10);
+  };
 
   return (
     <motion.div
@@ -1715,51 +1779,155 @@ function InspectionsList({ onOpen, onNew }) {
       transition={{ duration: 0.25 }}
       className="space-y-4"
     >
+      {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Search */}
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-            <input placeholder="Search inspections…" className="ll-focus transition-all duration-200" style={{ ...inputStyle, paddingLeft: 30, width: 240, fontSize: 12.5 }} />
+            <input
+              placeholder="Search inspections…"
+              className="ll-focus transition-all duration-200"
+              style={{ ...inputStyle, paddingLeft: 30, width: 240, fontSize: 12.5 }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <select className="ll-focus cursor-pointer transition-all duration-200" style={{ ...inputStyle, width: 170, fontSize: 12.5 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          {/* Status */}
+          <select
+            className="ll-focus cursor-pointer transition-all duration-200"
+            style={{ ...inputStyle, width: 170, fontSize: 12.5 }}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
             <option value="ALL">All statuses</option>
             <option value="COMPLIANT">Compliant</option>
             <option value="NON_COMPLIANT">Non-Compliant</option>
             <option value="REVIEW">Requires Verification</option>
           </select>
-          <select className="ll-focus cursor-pointer transition-all duration-200" style={{ ...inputStyle, width: 170, fontSize: 12.5 }} defaultValue="">
+          {/* Category */}
+          <select
+            className="ll-focus cursor-pointer transition-all duration-200"
+            style={{ ...inputStyle, width: 170, fontSize: 12.5 }}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
             <option value="">All categories</option>
             {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
           </select>
-          <Button variant="ghost" size="sm"><Filter size={13} /> More filters</Button>
+          {/* Refresh */}
+          <button
+            title="Refresh"
+            onClick={() => { setRows(null); setDebouncedSearch((s) => s); }}
+            className="ll-focus flex items-center gap-1 px-2 py-1.5 rounded-sm border text-xs transition-all hover:opacity-80"
+            style={{ borderColor: C.line, color: C.slate, background: "transparent" }}
+          >
+            <RefreshCw size={12} />
+          </button>
         </div>
         <Button onClick={onNew}><FilePlus2 size={15} /> New Inspection</Button>
       </div>
 
+      {/* ── Table ── */}
       <Card padded={false} className="overflow-x-auto">
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
             <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-              {["CASE NO.", "PRODUCT", "CATEGORY", "MANUFACTURER", "STATUS", "INSPECTOR", "DATE", ""].map((h) => (
+              {["CASE NO.", "PRODUCT", "CATEGORY", "MANUFACTURER", "STATUS", "INSPECTOR", "DATE", "SOURCE", ""].map((h) => (
                 <th key={h} className="text-left font-semibold px-4 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filtered.map((i) => (
-              <tr key={i.id} className="ll-tr transition-colors duration-150">
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{i.id}</td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{i.product}</td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.category}</td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.manufacturer}</td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={i.status} /></td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.inspector}</td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{i.date}</td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate, fontSize: 11 }}>Demo record</td>
+            {/* Loading skeleton */}
+            {rows === null && Array.from({ length: 5 }).map((_, idx) => (
+              <tr key={`skel-${idx}`}>
+                {Array.from({ length: 9 }).map((__, ci) => (
+                  <td key={ci} className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
+                    <div className="h-3 rounded animate-pulse" style={{ background: C.line, width: ci === 1 ? "80%" : "60%" }} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+
+            {/* Empty state */}
+            {rows !== null && rows.length === 0 && (
+              <tr>
+                <td colSpan={9} className="px-4 py-10 text-center" style={{ color: C.slate }}>
+                  <Database size={28} style={{ margin: "0 auto 8px", opacity: 0.4 }} />
+                  <div style={{ fontSize: 13 }}>No inspections found.</div>
+                  <div style={{ fontSize: 11.5, marginTop: 4 }}>Try clearing filters or create a new inspection.</div>
+                </td>
+              </tr>
+            )}
+
+            {/* Data rows */}
+            {(rows || []).map((i) => (
+              <tr
+                key={i.case_number}
+                className="ll-tr transition-colors duration-150"
+                style={{ cursor: i.is_demo ? "default" : "pointer" }}
+                onClick={() => !i.is_demo && i._raw && onOpen?.(i._raw)}
+              >
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
+                  {i.case_number}
+                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>
+                  {i.product_name}
+                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                  {i.category}
+                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                  {i.manufacturer || "—"}
+                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
+                  <StatusBadge status={i.status} />
+                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                  {i.inspector_name || "—"}
+                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                  {displayDate(i.created_at)}
+                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
+                  {i.is_demo ? (
+                    <span style={{ fontSize: 10.5, color: C.slate, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, borderRadius: 3, padding: "2px 6px" }}>
+                      Demo
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 10.5, color: C.compliant, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 3, padding: "2px 6px" }}>
+                      Live ●
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
+                  {!i.is_demo && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onOpen?.(i._raw || i); }}
+                      className="ll-focus px-2 py-1 rounded-sm border text-xs transition-all hover:opacity-80"
+                      style={{ borderColor: C.gold, color: C.gold, background: "transparent", fontSize: 11 }}
+                    >
+                      View
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* Footer count */}
+        {rows !== null && rows.length > 0 && (
+          <div className="px-4 py-2 border-t text-right" style={{ borderColor: C.line, fontSize: 11, color: C.slate }}>
+            {rows.length} inspection{rows.length !== 1 ? "s" : ""} shown
+            {rows.some((r) => !r.is_demo) && (
+              <span style={{ color: C.compliant, marginLeft: 8 }}>
+                ● {rows.filter((r) => !r.is_demo).length} live from Supabase
+              </span>
+            )}
+          </div>
+        )}
       </Card>
     </motion.div>
   );
@@ -4729,6 +4897,10 @@ export default function App() {
           <NewInspection
             currentUser={currentUser}
             onFinish={(i) => {
+              // Save to Supabase (fire-and-forget — never blocks navigation)
+              saveInspection(i, currentUser).catch((err) =>
+                console.warn('[onFinish] Supabase save failed:', err)
+              );
               setSelectedInspection(i);
               localStorage.setItem("legallens_current_inspection", JSON.stringify(i));
               navigateTo("inspection-detail");
