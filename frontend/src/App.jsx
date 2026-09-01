@@ -3169,8 +3169,36 @@ function InspectionDetail({ inspection }) {
   const [evidenceReq, setEvidenceReq] = useState(null);
   const [activeAngle, setActiveAngle] = useState("FRONT");
   const [hoveredReq, setHoveredReq] = useState(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const insp = inspection || {};
+
+  const handleDownloadPdf = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    try {
+      const cno = caseId || insp?.case_number || insp?.id;
+      let url = insp?.pdf_url;
+      if (!url || url.includes('/undefined')) {
+        url = `/api/reports/case/${encodeURIComponent(cno)}/pdf`;
+      }
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to generate PDF");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `Report_${(cno || 'inspection').replace(/\//g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+      console.error("PDF generation error:", err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   // Derive real product name from extraction or backend
   const rawExtractedName = insp.declarations?.find(d => d.field === "product_name")?.value;
@@ -3700,7 +3728,21 @@ function InspectionDetail({ inspection }) {
             </select>
             <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks?" />
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => window.open(ApiService.getPdfUrl(insp?.id && typeof insp.id === "number" ? insp.id : 1), "_blank")}><FileText size={13} /> Generate Official PDF</Button>
+              <Button
+                size="sm"
+                onClick={handleDownloadPdf}
+                disabled={isGeneratingPdf}
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" /> Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <FileText size={13} /> Generate Official PDF
+                  </>
+                )}
+              </Button>
               <Button size="sm" variant="ghost">Save Draft</Button>
             </div>
           </Card>
@@ -4352,15 +4394,41 @@ function Rules() {
   );
 }
 
-/* ============================== REPORTS ============================== */
-
 function Reports({ onOpenInspection }) {
   const [reportsList, setReportsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openingCase, setOpeningCase] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [downloadingPdfCase, setDownloadingPdfCase] = useState(null);
   const shouldReduceMotion = useReducedMotion();
+
+  const handleDownloadPdf = async (r) => {
+    const cno = r.case_number || r.id;
+    if (!cno || downloadingPdfCase === cno) return;
+    setDownloadingPdfCase(cno);
+    try {
+      let url = r.pdf_url;
+      if (!url || url.includes('/undefined')) {
+        url = `/api/reports/case/${encodeURIComponent(cno)}/pdf`;
+      }
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to download PDF");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `Report_${(cno || 'inspection').replace(/\//g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+      console.error("PDF download error:", err);
+    } finally {
+      setDownloadingPdfCase(null);
+    }
+  };
 
   const deduplicateReports = (arr) => {
     if (!Array.isArray(arr)) return [];
@@ -4468,22 +4536,6 @@ function Reports({ onOpenInspection }) {
     } finally {
       setOpeningCase(null);
     }
-  };
-
-  const handleDownloadPdf = (r) => {
-    const cno = r.case_number || r.id;
-    let url = r.pdf_url;
-    if (!url || url.includes('/undefined')) {
-      url = `/api/reports/case/${encodeURIComponent(cno)}/pdf`;
-    }
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.download = `Report_${(cno || 'inspection').replace(/\//g, '_')}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   return (
@@ -4620,10 +4672,19 @@ function Reports({ onOpenInspection }) {
                           </button>
                           <button
                             onClick={() => handleDownloadPdf(r)}
+                            disabled={downloadingPdfCase === cnoKey}
                             className="ll-focus inline-flex items-center gap-1.5 cursor-pointer font-bold text-xs whitespace-nowrap hover:scale-105 transition-transform px-3 py-1.5 rounded border shadow-2xs"
                             style={{ color: "var(--ll-button-primary-color)", background: "var(--ll-button-primary-bg)", borderColor: "transparent" }}
                           >
-                            <Download size={12} /> Download PDF
+                            {downloadingPdfCase === cnoKey ? (
+                              <>
+                                <Loader2 size={12} className="animate-spin" /> Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download size={12} /> Download PDF
+                              </>
+                            )}
                           </button>
                         </div>
                       </td>
