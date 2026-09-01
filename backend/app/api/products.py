@@ -64,11 +64,11 @@ def list_products(
         raw_name = (insp.get("product_name") or insp.get("product") or "Packaged Commodity").strip()
         if not raw_name:
             continue
-        key = raw_name.lower()
 
         cno = insp.get("case_number") or str(insp.get("id"))
         date_str = str(insp.get("created_at") or "2026-08-31")[:10]
         status_val = (insp.get("status") or "REVIEW").upper()
+        manufacturer = (insp.get("manufacturer") or insp.get("retailer_name") or "").strip()
 
         # Determine note summary
         violations = insp.get("violations") or []
@@ -93,22 +93,36 @@ def list_products(
             "raw": insp
         }
 
-        # Barcode generation / extraction
+        # Barcode extraction / generation
         barcode = insp.get("barcode")
         if not barcode and declarations:
             b_decl = next((d for d in declarations if d.get("field") in ["barcode", "gtin", "ean"]), None)
             if b_decl and b_decl.get("value"):
                 barcode = b_decl.get("value")
         if not barcode:
-            hash_val = abs(hash(raw_name)) % 10000000000
+            hash_val = abs(hash(raw_name + cno)) % 10000000000
             barcode = f"890{str(hash_val).zfill(10)}"
+
+        # Determine unique grouping key
+        display_name = raw_name
+        if barcode and not barcode.startswith("890"):
+            key = f"barcode:{barcode}"
+        elif raw_name.lower() in ["packaged commodity", "unknown product", "commodity", "packaged food", "packaged product"]:
+            if manufacturer and manufacturer != "—":
+                key = f"mfr:{manufacturer.lower()}"
+                display_name = f"Packaged Commodity ({manufacturer[:30]}...)" if len(manufacturer) > 30 else f"Packaged Commodity ({manufacturer})"
+            else:
+                key = f"case:{cno}"
+                display_name = f"Packaged Commodity ({cno})"
+        else:
+            key = f"name:{raw_name.lower()}"
 
         if key not in product_map:
             product_map[key] = {
-                "name": raw_name,
+                "name": display_name,
                 "barcode": barcode,
                 "category": insp.get("category") or "Packaged Food",
-                "manufacturer": insp.get("manufacturer") or "—",
+                "manufacturer": manufacturer or "—",
                 "inspections": 1,
                 "status": status_val,
                 "latest_date": date_str,
@@ -117,8 +131,8 @@ def list_products(
         else:
             product_map[key]["inspections"] += 1
             product_map[key]["history"].append(hist_item)
-            if (not product_map[key]["manufacturer"] or product_map[key]["manufacturer"] == "—") and insp.get("manufacturer"):
-                product_map[key]["manufacturer"] = insp.get("manufacturer")
+            if (not product_map[key]["manufacturer"] or product_map[key]["manufacturer"] == "—") and manufacturer:
+                product_map[key]["manufacturer"] = manufacturer
 
     # Sort history per product and sort products by latest inspection date
     results = []
