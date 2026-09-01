@@ -4152,12 +4152,12 @@ function Products({ onOpenInspection, onNewInspection }) {
           <table className="w-full text-left" style={{ fontSize: 12.5 }}>
             <thead>
               <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.05em", background: "var(--ll-table-head-bg)" }}>
-                <th className="font-semibold px-6 py-3.5 border-b text-left" style={{ borderColor: C.line }}>PRODUCT & MANUFACTURER</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-44 text-left" style={{ borderColor: C.line }}>BARCODE</th>
+                <th className="font-semibold px-6 py-3.5 border-b text-left min-w-[320px]" style={{ borderColor: C.line }}>PRODUCT & MANUFACTURER</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-40 text-left" style={{ borderColor: C.line }}>BARCODE</th>
                 <th className="font-semibold px-5 py-3.5 border-b w-36 text-left" style={{ borderColor: C.line }}>CATEGORY</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-32 text-center" style={{ borderColor: C.line }}>INSPECTIONS</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-28 text-center" style={{ borderColor: C.line }}>INSPECTIONS</th>
                 <th className="font-semibold px-5 py-3.5 border-b w-44 text-center" style={{ borderColor: C.line }}>CURRENT STATUS</th>
-                <th className="font-semibold px-6 py-3.5 border-b w-28 text-right" style={{ borderColor: C.line }}></th>
+                <th className="font-semibold px-6 py-3.5 border-b w-24 text-right" style={{ borderColor: C.line }}></th>
               </tr>
             </thead>
             <tbody>
@@ -4195,9 +4195,9 @@ function Products({ onOpenInspection, onNewInspection }) {
                       className="ll-tr cursor-pointer transition-all duration-150"
                     >
                       <td className="px-6 py-4 border-b" style={{ borderColor: C.line }}>
-                        <div style={{ fontWeight: 600, color: C.ink }}>{p.name}</div>
+                        <div style={{ fontWeight: 600, color: C.ink, fontSize: 13 }}>{p.name}</div>
                         {p.manufacturer && p.manufacturer !== "—" && (
-                          <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }} className="truncate max-w-[320px]">
+                          <div style={{ fontSize: 11.5, color: C.slate, marginTop: 2, lineHeight: 1.4 }} className="line-clamp-2">
                             {p.manufacturer}
                           </div>
                         )}
