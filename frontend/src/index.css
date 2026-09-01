@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ll-radius: 8px;
+  --ll-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --ll-shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  --ll-shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+  --ll-shadow-glow: 0 0 20px rgba(229, 184, 66, 0.18);
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -22,15 +30,30 @@ body {
 
 /* Subtle glow effects */
 .glow-gold {
-  box-shadow: 0 0 15px rgba(229, 184, 66, 0.25);
+  box-shadow: 0 0 18px rgba(229, 184, 66, 0.28);
 }
 
 .glow-emerald {
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.28);
 }
 
 .glow-crimson {
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.28);
+}
+
+/* Glassmorphism styling */
+.ll-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.dark .ll-glass {
+  background: rgba(13, 21, 36, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 184, 66, 0.12);
 }
 
 /* Scanning radar line animation */
@@ -66,4 +89,72 @@ body {
   background: linear-gradient(90deg, rgba(229,184,66,0.05) 0%, rgba(229,184,66,0.2) 50%, rgba(229,184,66,0.05) 100%);
   background-size: 200% 100%;
   animation: shimmer-sweep 2s infinite linear;
+}
+
+/* Floating breathing motion */
+@keyframes float-subtle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(0.5deg);
+  }
+}
+
+.animate-float {
+  animation: float-subtle 6s ease-in-out infinite;
+}
+
+/* Pulse ring effect */
+@keyframes pulse-ring-anim {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(229, 184, 66, 0.4);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(229, 184, 66, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(229, 184, 66, 0);
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring-anim 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Subtle background gradient shift */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-bg-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 12s ease infinite;
+}
+
+/* Modern inputs and interactions */
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: rgba(229, 184, 66, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(229, 184, 66, 0.15) !important;
+}
+
+/* Hover table row slide accent */
+.ll-tr {
+  transition: all 0.18s ease-in-out;
+}
+.ll-tr:hover {
+  background: var(--ll-tr-hover);
+  transform: translateX(2px);
 }

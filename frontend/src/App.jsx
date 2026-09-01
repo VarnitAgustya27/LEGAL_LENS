@@ -116,7 +116,7 @@ const GlobalStyle = () => (
       --ll-review: #966A16;
       --ll-review-bg: #FAF0DA;
       --ll-review-bd: #E7CE9C;
-      --ll-modal-overlay: rgba(19,34,56,0.6);
+      --ll-modal-overlay: rgba(19,34,56,0.65);
       --ll-hatch-line: rgba(19,34,56,0.05);
     }
 
@@ -125,7 +125,7 @@ const GlobalStyle = () => (
       --ll-bg-paper-deep: #0F1726;
       --ll-bg-card: #131E30;
       --ll-bg-header: #0D1524;
-      --ll-bg-sidebar: #070B12;
+      --ll-bg-sidebar: #060A11;
       --ll-color-ink: #F0F4FA;
       --ll-color-ink-soft: #CBD5E1;
       --ll-color-charcoal: #E2E8F0;
@@ -147,7 +147,7 @@ const GlobalStyle = () => (
       --ll-review: #FBBF24;
       --ll-review-bg: #281D08;
       --ll-review-bd: #543D10;
-      --ll-modal-overlay: rgba(3,7,18,0.8);
+      --ll-modal-overlay: rgba(3,7,18,0.85);
       --ll-hatch-line: rgba(240,244,250,0.04);
     }
 
@@ -159,8 +159,9 @@ const GlobalStyle = () => (
     @media (prefers-reduced-motion: reduce) {
       .ll-fade, .ll-rise { animation: none !important; }
     }
-    .ll-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-    .ll-scroll::-webkit-scrollbar-thumb { background: #556987; border-radius: 4px; }
+    .ll-scroll::-webkit-scrollbar { width: 7px; height: 7px; }
+    .ll-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 6px; }
+    .ll-scroll::-webkit-scrollbar-thumb:hover { background: #64748B; }
     .ll-focus:focus-visible { outline: 2px solid var(--ll-color-gold); outline-offset: 2px; }
     .ll-tr:hover { background: var(--ll-tr-hover); }
     .ll-stamp { position: relative; }
@@ -180,17 +181,17 @@ function StatusMeta(status) {
 
 function StatusBadge({ status, size = "sm" }) {
   const m = StatusMeta(status);
-  const pad = size === "sm" ? "2px 9px" : "5px 14px";
+  const pad = size === "sm" ? "3px 11px" : "6px 16px";
   const fs = size === "sm" ? 11 : 12.5;
   return (
     <motion.span
       initial={{ scale: 0.92, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="inline-flex items-center gap-1.5 rounded-sm border transition-colors shadow-2xs whitespace-nowrap"
-      style={{ background: m.bg, borderColor: m.bd, color: m.color, padding: pad, fontSize: fs, fontWeight: 600, letterSpacing: "0.03em", ...FONT.body }}
+      className="inline-flex items-center gap-1.5 rounded-full border transition-all shadow-xs whitespace-nowrap"
+      style={{ background: m.bg, borderColor: m.bd, color: m.color, padding: pad, fontSize: fs, fontWeight: 700, letterSpacing: "0.04em", ...FONT.body }}
     >
-      <m.Icon size={size === "sm" ? 12 : 14} strokeWidth={2.3} className="flex-shrink-0" />
+      <m.Icon size={size === "sm" ? 12 : 14} strokeWidth={2.4} className="flex-shrink-0" />
       <span>{m.label.toUpperCase()}</span>
     </motion.span>
   );
@@ -208,7 +209,7 @@ function ReqStatusChip({ status }) {
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.15 }}
-      className="inline-flex items-center gap-1 rounded-sm border px-2 py-0.5"
+      className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 shadow-2xs"
       style={{ background: m.bg, borderColor: m.bd, color: m.c, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em" }}
     >
       <m.Icon size={12.5} /> {status}
@@ -224,22 +225,22 @@ function VerdictStamp({ status, caseNo }) {
     <motion.div
       initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.85, rotate: -12, opacity: 0 }}
       animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, rotate: -4, opacity: 1 }}
-      whileHover={shouldReduceMotion ? {} : { rotate: 0, scale: 1.04 }}
+      whileHover={shouldReduceMotion ? {} : { rotate: 0, scale: 1.05 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="ll-stamp inline-flex flex-col items-center justify-center border-2 rounded-full px-6 py-4 cursor-default shadow-md"
+      className="ll-stamp relative inline-flex flex-col items-center justify-center border-2 rounded-2xl px-6 py-4 cursor-default shadow-lg overflow-hidden backdrop-blur-xs"
       style={{
         borderColor: m.color,
         color: m.color,
-        background: "repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 2px)",
-        minWidth: 190,
+        background: `radial-gradient(circle at 50% 50%, ${m.bg} 0%, transparent 85%)`,
+        minWidth: 195,
       }}
     >
-      <div className="border rounded-full w-full h-full absolute inset-1 pointer-events-none" style={{ borderColor: m.color, opacity: 0.45 }} />
-      <m.Icon size={22} strokeWidth={2} className="mb-1" />
-      <div style={{ ...FONT.display, fontWeight: 700, fontSize: 15.5, letterSpacing: "0.06em", lineHeight: 1.1 }}>
+      <div className="border border-dashed rounded-xl w-full h-full absolute inset-1.5 pointer-events-none opacity-40" style={{ borderColor: m.color }} />
+      <m.Icon size={24} strokeWidth={2.2} className="mb-1 drop-shadow-xs" />
+      <div style={{ ...FONT.display, fontWeight: 800, fontSize: 16, letterSpacing: "0.08em", lineHeight: 1.1 }}>
         {m.label.toUpperCase()}
       </div>
-      <div style={{ ...FONT.mono, fontSize: 9.5, letterSpacing: "0.08em", opacity: 0.8, marginTop: 3 }}>{caseNo}</div>
+      <div style={{ ...FONT.mono, fontSize: 9.5, letterSpacing: "0.1em", opacity: 0.85, marginTop: 4 }}>{caseNo}</div>
     </motion.div>
   );
 }
@@ -248,12 +249,17 @@ function Card({ children, className = "", style, padded = true, hoverEffect = fa
   const shouldReduceMotion = useReducedMotion();
   return (
     <motion.div
-      whileHover={hoverEffect && !shouldReduceMotion ? { y: -2, transition: { duration: 0.18 } } : {}}
-      className={`border rounded-sm transition-colors shadow-sm ${className}`}
-      style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-charcoal)", ...style }}
+      whileHover={hoverEffect && !shouldReduceMotion ? { y: -3, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)", transition: { duration: 0.2 } } : {}}
+      className={`border rounded-xl transition-all shadow-sm ${className}`}
+      style={{
+        background: "var(--ll-bg-card)",
+        borderColor: "var(--ll-color-line)",
+        color: "var(--ll-color-charcoal)",
+        ...style
+      }}
       {...props}
     >
-      <div className={padded ? "p-5" : ""}>{children}</div>
+      <div className={padded ? "p-5 sm:p-6" : ""}>{children}</div>
     </motion.div>
   );
 }
@@ -262,8 +268,8 @@ function SectionLabel({ eyebrow, title, right }) {
   return (
     <div className="flex items-end justify-between mb-4">
       <div>
-        {eyebrow && <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.12em", color: C.gold, fontWeight: 600 }}>{eyebrow}</div>}
-        <h2 style={{ ...FONT.display, fontSize: 20, color: C.ink, fontWeight: 600 }}>{title}</h2>
+        {eyebrow && <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: C.gold, fontWeight: 700 }}>{eyebrow}</div>}
+        <h2 style={{ ...FONT.display, fontSize: 21, color: C.ink, fontWeight: 700, letterSpacing: "-0.01em" }}>{title}</h2>
       </div>
       {right}
     </div>
@@ -272,8 +278,8 @@ function SectionLabel({ eyebrow, title, right }) {
 
 function Button({ children, variant = "primary", onClick, className = "", type = "button", size = "md", disabled = false, ...props }) {
   const shouldReduceMotion = useReducedMotion();
-  const base = "ll-focus inline-flex items-center justify-center gap-2 rounded-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs";
-  const sizes = size === "sm" ? "px-3 py-1.5 text-[12.5px]" : "px-4 py-2.5 text-[13.5px]";
+  const base = "ll-focus inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all whitespace-nowrap flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs select-none";
+  const sizes = size === "sm" ? "px-3 py-1.5 text-[12.5px]" : "px-4 py-2 text-[13.5px]";
   const styles = {
     primary: { background: "var(--ll-button-primary-bg)", color: "var(--ll-button-primary-color)", border: "none" },
     ghost: { background: "transparent", color: "var(--ll-color-ink)", border: "1px solid var(--ll-color-line)" },
@@ -309,8 +315,8 @@ function Field({ label, children, required = false }) {
 }
 
 const inputStyle = {
-  width: "100%", padding: "9px 11px", border: "1px solid var(--ll-color-line)", borderRadius: 2,
-  background: "var(--ll-input-bg)", fontSize: 13.5, color: "var(--ll-input-text)", ...FONT.body,
+  width: "100%", padding: "10px 13px", border: "1px solid var(--ll-color-line)", borderRadius: 6,
+  background: "var(--ll-input-bg)", fontSize: 13.5, color: "var(--ll-input-text)", transition: "all 0.2s ease", ...FONT.body,
 };
 
 /* ============================== MOCK DATA ============================== */
@@ -556,7 +562,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
 
       {/* SPREAD SCALES OF JUSTICE WATERMARK SVG (ULTRA-FAINT AMBIENT ON LEFT) */}
       <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none select-none -z-10 overflow-hidden" style={{ zIndex: 0 }}>
-        <svg viewBox="0 0 500 500" className="w-[780px] h-[780px] max-w-none opacity-[0.035] dark:opacity-[0.045] transform -translate-x-[12%] md:-translate-x-[6%] lg:translate-x-[0%]" style={{ color: isDark ? "#E5B842" : "#96742E" }}>
+        <svg viewBox="0 0 500 500" className="w-[820px] h-[820px] max-w-none opacity-[0.045] dark:opacity-[0.06] transform -translate-x-[12%] md:-translate-x-[6%] lg:translate-x-[0%] animate-float" style={{ color: isDark ? "#E5B842" : "#96742E" }}>
           {/* Outer dashed circle */}
           <circle cx="250" cy="250" r="220" fill="none" stroke="currentColor" strokeWidth="1.8" strokeDasharray="6 6" />
           {/* Inner solid circle */}
@@ -593,25 +599,28 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
       <header className="relative z-10 w-full px-5 sm:px-8 lg:px-12 py-4 border-b flex items-center justify-between backdrop-blur-md transition-colors duration-300"
         style={{
           borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(19,34,56,0.08)",
-          background: isDark ? "rgba(7,11,18,0.75)" : "rgba(251,250,246,0.85)",
+          background: isDark ? "rgba(7,11,18,0.78)" : "rgba(251,250,246,0.85)",
         }}
       >
         <div className="flex items-center gap-3.5">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg border shadow-sm"
+          <motion.div
+            whileHover={{ scale: 1.08, rotate: 5 }}
+            transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            className="flex items-center justify-center w-10 h-10 rounded-xl border shadow-sm"
             style={{
               borderColor: isDark ? "rgba(229,184,66,0.4)" : "rgba(150,116,46,0.3)",
-              background: isDark ? "rgba(229,184,66,0.1)" : "rgba(150,116,46,0.08)",
+              background: isDark ? "rgba(229,184,66,0.12)" : "rgba(150,116,46,0.08)",
               color: isDark ? "#E5B842" : "#96742E",
             }}
           >
             <Scale size={22} strokeWidth={2.2} />
-          </div>
+          </motion.div>
           <div>
             <div className="flex items-center gap-2">
               <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.18em", color: isDark ? "#E5B842" : "#96742E", fontWeight: 700 }}>
                 LEGAL METROLOGY DIVISION
               </span>
-              <span className="hidden sm:inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border"
+              <span className="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full border"
                 style={{
                   background: isDark ? "rgba(229,184,66,0.12)" : "rgba(150,116,46,0.1)",
                   borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(150,116,46,0.25)",
@@ -631,7 +640,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
           <button
             type="button"
             onClick={toggleTheme}
-            className="ll-focus flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 hover:scale-105"
+            className="ll-focus flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 hover:scale-110 shadow-xs"
             style={{
               borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(19,34,56,0.2)",
               background: isDark ? "rgba(229,184,66,0.15)" : "rgba(255,255,255,0.8)",
@@ -663,7 +672,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
         >
 
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-3 shadow-sm"
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-3 shadow-xs"
               style={{
                 background: isDark ? "rgba(229,184,66,0.12)" : "rgba(150,116,46,0.1)",
                 borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(150,116,46,0.25)",
@@ -697,7 +706,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
           </div>
 
           {/* ── 3 ENFORCEMENT PILLARS CARDS ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             {[
               {
                 icon: ScanLine,
@@ -720,11 +729,12 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
             ].map((p, idx) => (
               <motion.div
                 key={idx}
-                whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                className="p-3.5 rounded-lg border transition-colors shadow-sm"
+                whileHover={{ y: -4, transition: { duration: 0.18 } }}
+                className="p-4 rounded-xl border transition-all shadow-sm"
                 style={{
-                  background: isDark ? "rgba(19,34,56,0.4)" : "rgba(255,255,255,0.75)",
-                  borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(19,34,56,0.08)",
+                  background: isDark ? "rgba(19,34,56,0.45)" : "rgba(255,255,255,0.85)",
+                  borderColor: isDark ? "rgba(229,184,66,0.18)" : "rgba(19,34,56,0.08)",
+                  backdropFilter: "blur(8px)",
                 }}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -732,7 +742,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
                     <p.icon size={16} style={{ color: isDark ? "#E5B842" : "#96742E" }} />
                     <span className="text-xs font-bold" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>{p.title}</span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border whitespace-nowrap flex-shrink-0 font-semibold"
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border whitespace-nowrap flex-shrink-0 font-semibold"
                     style={{
                       background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
                       borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
@@ -742,7 +752,7 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
                     {p.tag}
                   </span>
                 </div>
-                <p className="text-[11px] leading-tight" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
+                <p className="text-[11px] leading-relaxed" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
                   {p.desc}
                 </p>
               </motion.div>
@@ -750,23 +760,23 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
           </div>
 
           {/* ── KEY METRICS BAR ── */}
-          <div className="pt-2 border-t flex flex-wrap items-center justify-between gap-4 text-xs font-mono"
+          <div className="pt-3 border-t flex flex-wrap items-center justify-between gap-4 text-xs font-mono"
             style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(19,34,56,0.1)" }}
           >
-            <div>
-              <span className="font-bold text-sm" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>1,284+</span>{" "}
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>1,284+</span>
               <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Inspections Logged</span>
             </div>
-            <div>
-              <span className="font-bold text-sm text-emerald-500">63%</span>{" "}
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-emerald-500">63%</span>
               <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>First-Pass Compliance</span>
             </div>
-            <div>
-              <span className="font-bold text-sm text-amber-500">8</span>{" "}
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-amber-500">8</span>
               <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Active Rule Sets</span>
             </div>
-            <div>
-              <span className="font-bold text-sm text-cyan-500">&lt; 1.2s</span>{" "}
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-cyan-500">&lt; 1.2s</span>
               <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Pipeline Latency</span>
             </div>
           </div>
@@ -783,13 +793,18 @@ function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
           <div
             className="w-full max-w-md rounded-2xl border p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden transition-all"
             style={{
-              background: isDark ? "rgba(13, 21, 36, 0.85)" : "rgba(255, 255, 255, 0.95)",
-              borderColor: isDark ? "rgba(229, 184, 66, 0.25)" : "rgba(19, 34, 56, 0.15)",
-              boxShadow: isDark ? "0 20px 40px -15px rgba(0,0,0,0.8)" : "0 20px 40px -15px rgba(19,34,56,0.12)",
+              background: isDark ? "rgba(13, 21, 36, 0.88)" : "rgba(255, 255, 255, 0.96)",
+              borderColor: isDark ? "rgba(229, 184, 66, 0.28)" : "rgba(19, 34, 56, 0.15)",
+              boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.85)" : "0 25px 50px -12px rgba(19,34,56,0.14)",
             }}
           >
-            {/* Top gold accent line */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500" />
+            {/* Top gold animated accent line */}
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500 origin-left"
+            />
 
             <div className="mb-6 text-left">
               <div className="flex items-center gap-2 mb-1.5">
@@ -1349,19 +1364,27 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
   return (
     <div className={`ll-root min-h-screen flex ${isDark ? "dark" : ""}`} style={{ background: "var(--ll-bg-paper)", ...FONT.body }}>
       <GlobalStyle />
-      <aside className="w-64 flex-shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
+      <aside className="w-64 flex-shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden shadow-xl" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
 
-        {/* Top Brand Header with Dark Mode Toggle placed directly to the right of Legal-Lens */}
-        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+        {/* Top Brand Header with Dark Mode Toggle */}
+        <div className="relative flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+          {/* Subtle top amber glow line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
+
           <button
             type="button"
             onClick={() => setPage("dashboard")}
-            className="ll-focus flex items-center gap-2.5 text-left cursor-pointer select-none"
+            className="ll-focus flex items-center gap-2.5 text-left cursor-pointer select-none group"
             style={{ background: "transparent", opacity: 1 }}
             title="Go to Home / Dashboard"
           >
-            <ScanLine size={20} style={{ color: "#C7A75A", opacity: 1 }} />
-            <span style={{ ...FONT.display, fontSize: 19, fontWeight: 700, color: "#F7F5EF", opacity: 1, letterSpacing: "0.02em" }}>
+            <motion.div
+              whileHover={{ rotate: 15, scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            >
+              <ScanLine size={21} style={{ color: "#C7A75A", opacity: 1 }} className="drop-shadow-xs" />
+            </motion.div>
+            <span style={{ ...FONT.display, fontSize: 19, fontWeight: 800, color: "#F7F5EF", opacity: 1, letterSpacing: "0.02em" }}>
               Legal-Lens
             </span>
           </button>
@@ -1370,7 +1393,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
           <button
             type="button"
             onClick={toggleTheme}
-            className="ll-focus group relative flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 hover:scale-110"
+            className="ll-focus group relative flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 hover:scale-110 shadow-xs"
             style={{
               borderColor: isDark ? "rgba(229,184,66,0.6)" : "rgba(255,255,255,0.25)",
               background: isDark ? "rgba(229,184,66,0.18)" : "rgba(255,255,255,0.08)",
@@ -1388,35 +1411,41 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
           </button>
         </div>
 
-        <nav className="flex-1 py-4 px-3 overflow-y-auto ll-scroll">
+        <nav className="flex-1 py-4 px-3 overflow-y-auto ll-scroll space-y-1">
           {NAV.map((n) => {
             const active = page === n.key || (page === "inspection-detail" && n.key === "inspections");
             return (
               <motion.button
                 key={n.key}
-                whileHover={{ x: active ? 0 : 3 }}
+                whileHover={{ x: active ? 0 : 4 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.15 }}
                 onClick={() => setPage(n.key)}
-                className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm mb-1 text-left transition-colors cursor-pointer"
+                className="ll-focus w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-left transition-all cursor-pointer relative overflow-hidden"
                 style={{
-                  background: active ? "rgba(199,167,90,0.16)" : "transparent",
-                  color: active ? "#F0E4C4" : "#B7B2A2",
-                  borderLeft: active ? "2px solid #C7A75A" : "2px solid transparent",
+                  background: active ? "rgba(199,167,90,0.18)" : "transparent",
+                  color: active ? "#F8FAFC" : "#94A3B8",
+                  boxShadow: active ? "inset 0 0 12px rgba(199,167,90,0.15)" : "none",
                 }}
               >
-                <n.Icon size={16} strokeWidth={2} className={active ? "text-amber-400" : ""} />
-                <span style={{ fontSize: 13, fontWeight: active ? 600 : 500 }}>{n.label}</span>
+                {active && (
+                  <motion.div
+                    layoutId="activeNavIndicator"
+                    className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-amber-400 shadow-[0_0_8px_#E5B842]"
+                  />
+                )}
+                <n.Icon size={16} strokeWidth={active ? 2.3 : 1.9} className={active ? "text-amber-400" : "text-slate-400"} />
+                <span style={{ fontSize: 13, fontWeight: active ? 700 : 500 }}>{n.label}</span>
               </motion.button>
             );
           })}
         </nav>
         <div className="px-3 pb-4">
           <motion.button
-            whileHover={{ x: 3 }}
+            whileHover={{ x: 4 }}
             whileTap={{ scale: 0.98 }}
-            className="ll-focus w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-left cursor-pointer transition-colors"
-            style={{ color: "#B7B2A2" }}
+            className="ll-focus w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-left cursor-pointer transition-colors"
+            style={{ color: "#94A3B8" }}
             onClick={handleSignOut}
           >
             <LogOut size={16} />
@@ -1426,21 +1455,21 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col">
-        <header className="flex items-center justify-between px-8 py-4 border-b transition-colors" style={{ borderColor: C.line, background: "var(--ll-bg-header)" }}>
+        <header className="relative z-40 flex items-center justify-between px-8 py-4 border-b transition-colors backdrop-blur-md" style={{ borderColor: C.line, background: "var(--ll-bg-header)" }}>
           <div>
-            <div style={{ ...FONT.mono, fontSize: 10.5, letterSpacing: "0.14em", color: C.gold, fontWeight: 600 }}>{eyebrow}</div>
-            <h1 style={{ ...FONT.display, fontSize: 23, fontWeight: 600, color: C.ink }}>{title}</h1>
+            <div style={{ ...FONT.mono, fontSize: 10.5, letterSpacing: "0.14em", color: C.gold, fontWeight: 700 }}>{eyebrow}</div>
+            <h1 style={{ ...FONT.display, fontSize: 23, fontWeight: 700, color: C.ink, letterSpacing: "-0.01em" }}>{title}</h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative hidden sm:block">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input placeholder="Search case no., product, barcode…" className="ll-focus transition-all duration-200" style={{ ...inputStyle, paddingLeft: 30, width: 260, fontSize: 12.5 }} />
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+              <input placeholder="Search case no., product, barcode…" className="ll-focus transition-all duration-200 rounded-lg" style={{ ...inputStyle, paddingLeft: 34, width: 270, fontSize: 12.5 }} />
             </div>
 
-            <div className="relative pl-4 border-l" style={{ borderColor: C.line }} ref={profileMenuRef}>
+            <div className="relative pl-4 border-l z-50" style={{ borderColor: C.line }} ref={profileMenuRef}>
               <button
                 type="button"
-                className="ll-focus flex items-center gap-3 rounded-sm px-1.5 py-1 -mr-1 transition-colors"
+                className="ll-focus flex items-center gap-3 rounded-lg px-2 py-1 -mr-1 transition-all"
                 style={{
                   background: profileOpen ? "var(--ll-tr-hover)" : "transparent",
                   border: "none",
@@ -1451,20 +1480,20 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                 aria-expanded={profileOpen}
                 title="Account menu"
               >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xs" style={{ background: "var(--ll-bg-sidebar)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xs border" style={{ background: "var(--ll-bg-sidebar)", borderColor: "rgba(229,184,66,0.4)", color: "#F0E4C4", ...FONT.display, fontWeight: 700, fontSize: 12 }}>
                   {avatarUrl
                     ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                     : (currentUser?.initials || currentUser?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?")}
                 </div>
                 <div className="hidden md:block text-left">
                   <div className="flex items-center gap-1.5">
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{currentUser?.name || "Officer"}</span>
                     <ChevronDown size={13} style={{ color: C.slate, transform: profileOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
-                      className="inline-block px-1.5 py-0.2 rounded border shadow-2xs"
-                      style={{ fontSize: 10, fontWeight: 700, background: roleBadgeStyle.bg, color: roleBadgeStyle.color, borderColor: roleBadgeStyle.bd }}
+                      className="inline-block px-2 py-0.2 rounded-full border shadow-2xs"
+                      style={{ fontSize: 9.5, fontWeight: 700, background: roleBadgeStyle.bg, color: roleBadgeStyle.color, borderColor: roleBadgeStyle.bd }}
                     >
                       {currentUser?.role || "Enforcement"}
                     </span>
@@ -1480,17 +1509,17 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -6 }}
                     transition={{ duration: 0.16, ease: "easeOut" }}
-                    className="absolute right-0 mt-2 w-52 rounded-sm border shadow-lg overflow-hidden z-40"
+                    className="absolute right-0 mt-2 w-56 rounded-xl border shadow-2xl overflow-hidden z-50 backdrop-blur-md"
                     style={{ background: "var(--ll-bg-card)", borderColor: C.line }}
                   >
-                    <div className="px-3 py-2.5 border-b md:hidden" style={{ borderColor: C.line }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>{currentUser?.name || "Officer"}</div>
+                    <div className="px-4 py-3 border-b md:hidden" style={{ borderColor: C.line }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{currentUser?.name || "Officer"}</div>
                       <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}>{currentUser?.role || "Enforcement"}</div>
                     </div>
                     <button
                       type="button"
                       role="menuitem"
-                      className="ll-focus w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer"
+                      className="ll-focus w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors cursor-pointer whitespace-nowrap hover:bg-slate-500/10"
                       style={{ color: "var(--ll-violation)", background: "transparent", border: "none", fontSize: 13, fontWeight: 600 }}
                       onClick={handleSignOut}
                     >
@@ -1501,12 +1530,12 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                     <button
                       type="button"
                       role="menuitem"
-                      className="ll-focus w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer"
-                      style={{ color: C.ink, background: "transparent", border: "none", fontSize: 13, fontWeight: 500 }}
+                      className="ll-focus w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors cursor-pointer border-t whitespace-nowrap hover:bg-slate-500/10"
+                      style={{ color: C.ink, borderColor: C.line, background: "transparent", fontSize: 13, fontWeight: 500 }}
                       onClick={() => avatarFileRef.current?.click()}
                     >
                       <Camera size={14} style={{ color: C.gold }} />
-                      {avatarUrl ? "Update Profile Photo" : "Add Profile Photo"}
+                      <span>{avatarUrl ? "Update Profile Photo" : "Add Profile Photo"}</span>
                     </button>
                   </motion.div>
                 )}
@@ -1514,14 +1543,14 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto ll-scroll p-8">
+        <div className="flex-1 overflow-y-auto ll-scroll p-6 sm:p-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={page}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              initial={{ opacity: 0, y: 10, filter: "blur(2px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -10, filter: "blur(2px)" }}
+              transition={{ duration: 0.22, ease: "easeInOut" }}
               className="gpu-accel"
             >
               {children}
@@ -1557,7 +1586,7 @@ function StatCard({ label, value, Icon, color, loading }) {
     <Card hoverEffect className="relative overflow-hidden group">
       <div className="flex items-start justify-between relative z-10">
         <div>
-          <div style={{ ...FONT.body, fontSize: 11.5, color: C.slate, fontWeight: 600, letterSpacing: "0.03em" }}>
+          <div style={{ ...FONT.body, fontSize: 11.5, color: C.slate, fontWeight: 700, letterSpacing: "0.04em" }}>
             {label.toUpperCase()}
           </div>
           {loading ? (
@@ -1567,23 +1596,24 @@ function StatCard({ label, value, Icon, color, loading }) {
               initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: "easeOut" }}
-              style={{ ...FONT.display, fontSize: 32, fontWeight: 700, color: C.ink, marginTop: 6 }}
+              style={{ ...FONT.display, fontSize: 32, fontWeight: 800, color: C.ink, marginTop: 6 }}
             >
               {value}
             </motion.div>
           )}
         </div>
         <motion.div
-          whileHover={shouldReduceMotion ? {} : { rotate: 8, scale: 1.12 }}
+          whileHover={shouldReduceMotion ? {} : { rotate: 8, scale: 1.15 }}
           transition={{ type: "spring", stiffness: 300, damping: 15 }}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-xs"
-          style={{ background: color + "1A" }}
+          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs border"
+          style={{ background: color + "1A", borderColor: color + "33" }}
         >
-          <Icon size={18} style={{ color }} />
+          <Icon size={20} style={{ color }} />
         </motion.div>
       </div>
+      {/* Pulsing ambient corner glow */}
       <div
-        className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-5 pointer-events-none transition-transform group-hover:scale-150 duration-500"
+        className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full opacity-10 pointer-events-none transition-transform group-hover:scale-150 duration-500 blur-sm"
         style={{ background: color }}
       />
     </Card>
@@ -1674,7 +1704,7 @@ function Dashboard({ onOpenInspection, isDark }) {
         <Card className="lg:col-span-3">
           <SectionLabel eyebrow="BY CATEGORY" title="Violations by Category" />
           {loading ? (
-            <div className="h-[220px] w-full rounded flex items-center justify-center bg-slate-900/20 animate-pulse">
+            <div className="h-[220px] w-full rounded-xl flex items-center justify-center bg-slate-900/20 animate-pulse">
               <Loader2 className="animate-spin text-slate-500" size={20} />
             </div>
           ) : (
@@ -1685,9 +1715,9 @@ function Dashboard({ onOpenInspection, isDark }) {
                 <YAxis tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
                 <Tooltip
                   cursor={false}
-                  contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 4, fontSize: 12, ...FONT.body }}
+                  contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 8, fontSize: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.15)", ...FONT.body }}
                 />
-                <Bar dataKey="violations" fill={isDark ? "#E5B842" : "#132238"} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="violations" fill={isDark ? "#E5B842" : "#132238"} radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={700} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -1695,7 +1725,7 @@ function Dashboard({ onOpenInspection, isDark }) {
         <Card className="lg:col-span-2">
           <SectionLabel eyebrow="DAILY" title="Daily Inspection Trend" />
           {loading ? (
-            <div className="h-[220px] w-full rounded flex items-center justify-center bg-slate-900/20 animate-pulse">
+            <div className="h-[220px] w-full rounded-xl flex items-center justify-center bg-slate-900/20 animate-pulse">
               <Loader2 className="animate-spin text-slate-500" size={20} />
             </div>
           ) : (
@@ -1706,9 +1736,9 @@ function Dashboard({ onOpenInspection, isDark }) {
                 <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} />
                 <Tooltip
                   cursor={{ stroke: isDark ? "#25354C" : "#DAD4C2", strokeWidth: 1 }}
-                  contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 4, fontSize: 12, ...FONT.body }}
+                  contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 8, fontSize: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.15)", ...FONT.body }}
                 />
-                <Line type="monotone" dataKey="inspections" stroke={isDark ? "#E5B842" : "#96742E"} strokeWidth={2.5} dot={{ r: 3, fill: isDark ? "#E5B842" : "#96742E" }} />
+                <Line type="monotone" dataKey="inspections" stroke={isDark ? "#E5B842" : "#96742E"} strokeWidth={2.8} dot={{ r: 3.5, fill: isDark ? "#E5B842" : "#96742E" }} isAnimationActive={true} animationDuration={700} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -1743,10 +1773,10 @@ function Dashboard({ onOpenInspection, isDark }) {
                 recentInspections.map((i) => (
                   <tr
                     key={i.case_number || i.id}
-                    className="ll-tr cursor-pointer transition-colors duration-150"
+                    className="ll-tr cursor-pointer transition-all duration-150"
                     onClick={() => onOpenInspection?.(i)}
                   >
-                    <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
+                    <td className="px-5 py-2.5 border-b font-semibold" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
                       {i.case_number || i.id}
                     </td>
                     <td className="px-5 py-2.5 border-b" style={{ borderColor: C.line, maxWidth: 220 }}>
@@ -1781,12 +1811,12 @@ function Dashboard({ onOpenInspection, isDark }) {
                 ))
               ) : (
                 commonViolations.map((v) => (
-                  <div key={v.rule} className="flex items-center justify-between pb-3 border-b" style={{ borderColor: C.line }}>
+                  <div key={v.rule} className="flex items-center justify-between pb-3 border-b transition-colors hover:bg-slate-500/5 px-2 -mx-2 rounded" style={{ borderColor: C.line }}>
                     <div className="min-w-0">
-                      <div style={{ ...FONT.mono, fontSize: 11, color: C.gold, fontWeight: 600 }}>{v.rule}</div>
+                      <div style={{ ...FONT.mono, fontSize: 11, color: C.gold, fontWeight: 700 }}>{v.rule}</div>
                       <div style={{ fontSize: 12.5, color: C.charcoal, marginTop: 1 }}>{v.desc}</div>
                     </div>
-                    <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink, flexShrink: 0, marginLeft: 12 }}>{v.count}</div>
+                    <div style={{ ...FONT.display, fontSize: 18, fontWeight: 800, color: C.ink, flexShrink: 0, marginLeft: 12 }}>{v.count}</div>
                   </div>
                 ))
               )}
@@ -1947,12 +1977,12 @@ function InspectionsList({ onOpen, onNew }) {
       </div>
 
       {/* ── Table ── */}
-      <Card padded={false} className="overflow-x-auto">
+      <Card padded={false} className="overflow-x-auto rounded-xl">
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
             <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
               {["CASE NO.", "PRODUCT", "CATEGORY", "MANUFACTURER", "STATUS", "INSPECTOR", "DATE", "SOURCE", ""].map((h) => (
-                <th key={h} className="text-left font-semibold px-4 py-3 border-t border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
+                <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -1961,8 +1991,8 @@ function InspectionsList({ onOpen, onNew }) {
             {rows === null && Array.from({ length: 5 }).map((_, idx) => (
               <tr key={`skel-${idx}`}>
                 {Array.from({ length: 9 }).map((__, ci) => (
-                  <td key={ci} className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
-                    <div className="h-3 rounded animate-pulse" style={{ background: C.line, width: ci === 1 ? "80%" : "60%" }} />
+                  <td key={ci} className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                    <div className="h-3.5 rounded animate-pulse" style={{ background: C.line, width: ci === 1 ? "80%" : "60%" }} />
                   </td>
                 ))}
               </tr>
@@ -1971,10 +2001,10 @@ function InspectionsList({ onOpen, onNew }) {
             {/* Empty state */}
             {rows !== null && rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center" style={{ color: C.slate }}>
-                  <Database size={28} style={{ margin: "0 auto 8px", opacity: 0.4 }} />
-                  <div style={{ fontSize: 13 }}>No inspections found.</div>
-                  <div style={{ fontSize: 11.5, marginTop: 4 }}>Try clearing filters or create a new inspection.</div>
+                <td colSpan={9} className="px-5 py-12 text-center" style={{ color: C.slate }}>
+                  <Database size={32} style={{ margin: "0 auto 8px", opacity: 0.4 }} />
+                  <div style={{ fontSize: 13.5, fontWeight: 600 }}>No inspections found.</div>
+                  <div style={{ fontSize: 12, marginTop: 4 }}>Try clearing filters or create a new inspection.</div>
                 </td>
               </tr>
             )}
@@ -1983,50 +2013,50 @@ function InspectionsList({ onOpen, onNew }) {
             {(rows || []).map((i) => (
               <tr
                 key={i.case_number}
-                className="ll-tr transition-colors duration-150"
+                className="ll-tr transition-all duration-150"
                 style={{ cursor: i.is_demo ? "default" : (openingId === i.case_number ? "wait" : "pointer") }}
                 onClick={() => !i.is_demo && openingId === null && handleOpenLive(i)}
               >
-                <td className="px-4 py-3 border-b whitespace-nowrap" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
+                <td className="px-5 py-3.5 border-b whitespace-nowrap font-semibold" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
                   {i.case_number}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500, minWidth: 140 }}>
+                <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, fontWeight: 600, minWidth: 140 }}>
                   {i.product_name}
                 </td>
-                <td className="px-4 py-3 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {i.category}
                 </td>
-                <td className="px-4 py-3 border-b max-w-[260px]" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-5 py-3.5 border-b max-w-[260px]" style={{ borderColor: C.line, color: C.slate }}>
                   <div className="line-clamp-2" title={i.manufacturer || ""}>
                     {i.manufacturer || "—"}
                   </div>
                 </td>
-                <td className="px-4 py-3 border-b whitespace-nowrap" style={{ borderColor: C.line }}>
+                <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line }}>
                   <StatusBadge status={i.status} />
                 </td>
-                <td className="px-4 py-3 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {i.inspector_name || "—"}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>
                   {displayDate(i.created_at)}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
+                <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
                   {i.is_demo ? (
-                    <span style={{ fontSize: 10.5, color: C.slate, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, borderRadius: 3, padding: "2px 6px" }}>
+                    <span className="inline-flex items-center gap-1" style={{ fontSize: 10.5, color: C.slate, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, borderRadius: 9999, padding: "2px 8px" }}>
                       Demo
                     </span>
                   ) : (
-                    <span style={{ fontSize: 10.5, color: C.compliant, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 3, padding: "2px 6px" }}>
-                      Live ●
+                    <span className="inline-flex items-center gap-1.5 font-semibold" style={{ fontSize: 10.5, color: C.compliant, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.35)", borderRadius: 9999, padding: "2px 8px" }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: C.line }}>
+                <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
                   {!i.is_demo && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleOpenLive(i); }}
                       disabled={openingId === i.case_number}
-                      className="ll-focus px-2 py-1 rounded-sm border text-xs transition-all hover:opacity-80 flex items-center gap-1"
+                      className="ll-focus px-2.5 py-1 rounded-md border text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1 shadow-xs"
                       style={{ borderColor: C.gold, color: C.gold, background: "transparent", fontSize: 11, opacity: openingId === i.case_number ? 0.6 : 1 }}
                     >
                       {openingId === i.case_number
@@ -2901,40 +2931,51 @@ function ProcessingScreen({ onDone, createdCase }) {
   const progressPercent = Math.round((doneCount / PIPELINE_STAGES.length) * 100);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden rounded-xl">
       <SectionLabel eyebrow="STEP 4" title="Running Compliance Pipeline" />
       
       {/* High-Tech AI Radar Scanner Visualizer */}
-      <div className="relative w-full h-32 rounded-lg bg-slate-950 border border-slate-800 mb-6 overflow-hidden flex items-center justify-center">
+      <div className="relative w-full h-36 rounded-xl bg-slate-950 border border-slate-800 mb-6 overflow-hidden flex items-center justify-center shadow-inner">
         {/* Animated Scanner Beam */}
         {!shouldReduceMotion && (
-          <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#F59E0B] animate-scanline z-20" />
+          <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_20px_#F59E0B] animate-scanline z-20" />
         )}
         
         {/* Radial Radar Grid */}
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#E5B842_1px,transparent_1px)] [background-size:16px_16px]" />
+        <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#E5B842_1px,transparent_1px)] [background-size:16px_16px]" />
         
-        {/* Concentric Radar Rings */}
+        {/* Concentric Dual Radar Rings */}
         <div className="relative z-10 flex flex-col items-center justify-center">
-          <motion.div
-            animate={shouldReduceMotion ? {} : { rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-            className="w-14 h-14 rounded-full border-2 border-dashed border-amber-400/60 flex items-center justify-center"
-          >
-            <div className="w-8 h-8 rounded-full border border-emerald-400/80 flex items-center justify-center bg-amber-400/10">
-              <ScanLine size={16} className="text-amber-400 animate-pulse" />
-            </div>
-          </motion.div>
-          <div className="mt-2 text-[11px] font-mono text-amber-300 font-semibold tracking-wider flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          <div className="relative flex items-center justify-center">
+            {/* Outer counter-rotating ring */}
+            <motion.div
+              animate={shouldReduceMotion ? {} : { rotate: -360 }}
+              transition={{ repeat: Infinity, duration: 9, ease: "linear" }}
+              className="w-18 h-18 rounded-full border border-dashed border-amber-400/35 absolute"
+            />
+
+            {/* Inner clockwise rotating ring */}
+            <motion.div
+              animate={shouldReduceMotion ? {} : { rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+              className="w-13 h-13 rounded-full border-2 border-dashed border-amber-400/70 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+            >
+              <div className="w-8 h-8 rounded-full border border-emerald-400/90 flex items-center justify-center bg-amber-400/15">
+                <ScanLine size={16} className="text-amber-300 animate-pulse drop-shadow-xs" />
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="mt-2.5 text-[11px] font-mono text-amber-300 font-bold tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             GEMINI VISION AI INSPECTING PACKAGING ({progressPercent}%)
           </div>
         </div>
 
-        {/* Progress Bar Line */}
-        <div className="absolute bottom-0 inset-x-0 h-1 bg-slate-900">
+        {/* Progress Bar Line with Shimmer */}
+        <div className="absolute bottom-0 inset-x-0 h-1.5 bg-slate-900 overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-amber-500 to-emerald-400"
+            className="h-full bg-gradient-to-r from-amber-500 via-amber-300 to-emerald-400 animate-shimmer"
             initial={{ width: "0%" }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.3 }}
@@ -2942,7 +2983,7 @@ function ProcessingScreen({ onDone, createdCase }) {
         </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {PIPELINE_STAGES.map((s, idx) => {
           const complete = idx < doneCount;
           const active = idx === doneCount;
@@ -2951,13 +2992,13 @@ function ProcessingScreen({ onDone, createdCase }) {
               key={s}
               initial={shouldReduceMotion ? {} : { opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className={`flex items-center gap-3 py-2.5 px-3 rounded-md border transition-all ${
+              transition={{ delay: idx * 0.04 }}
+              className={`flex items-center gap-3 py-2.5 px-3.5 rounded-lg border transition-all ${
                 active
-                  ? "bg-amber-500/10 border-amber-500/30"
+                  ? "bg-amber-500/12 border-amber-500/40 shadow-xs"
                   : complete
-                  ? "bg-emerald-500/5 border-transparent"
-                  : "border-transparent opacity-60"
+                  ? "bg-emerald-500/8 border-emerald-500/15"
+                  : "border-transparent opacity-50"
               }`}
             >
               {complete ? (
@@ -2969,11 +3010,11 @@ function ProcessingScreen({ onDone, createdCase }) {
               ) : (
                 <div className="w-4 h-4 rounded-full border" style={{ borderColor: C.line }} />
               )}
-              <span style={{ fontSize: 13, fontWeight: complete || active ? 600 : 500, color: complete ? "var(--ll-compliant)" : active ? C.ink : C.slate }}>
+              <span style={{ fontSize: 13, fontWeight: complete || active ? 700 : 500, color: complete ? "var(--ll-compliant)" : active ? C.ink : C.slate }}>
                 {s}
               </span>
-              {active && <span style={{ fontSize: 11, color: C.gold, marginLeft: "auto", fontWeight: 600 }}>inspecting…</span>}
-              {complete && <span style={{ fontSize: 11, color: "var(--ll-compliant)", marginLeft: "auto", fontWeight: 600 }}>verified ✓</span>}
+              {active && <span style={{ fontSize: 11, color: C.gold, marginLeft: "auto", fontWeight: 700 }}>inspecting…</span>}
+              {complete && <span style={{ fontSize: 11, color: "var(--ll-compliant)", marginLeft: "auto", fontWeight: 700 }}>verified ✓</span>}
             </motion.div>
           );
         })}
@@ -3326,11 +3367,11 @@ function InspectionDetail({ inspection }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left: Interactive Multi-Angle Visual Bounding Box Canvas (7 cols) */}
-        <Card className="lg:col-span-7 flex flex-col justify-between" padded={false}>
-          <div className="p-3.5 border-b flex flex-wrap items-center justify-between gap-3" style={{ borderColor: C.line }}>
+        <Card className="lg:col-span-7 flex flex-col justify-between overflow-hidden rounded-xl shadow-md" padded={false}>
+          <div className="p-4 border-b flex flex-wrap items-center justify-between gap-3" style={{ borderColor: C.line }}>
             <div className="flex items-center gap-2">
-              <ScanLine size={16} style={{ color: C.gold }} />
-              <span style={{ ...FONT.display, fontSize: 14, fontWeight: 700, color: C.ink }}>
+              <ScanLine size={17} style={{ color: C.gold }} />
+              <span style={{ ...FONT.display, fontSize: 14.5, fontWeight: 700, color: C.ink }}>
                 Package Vision Canvas ({photosList.length} Photos)
               </span>
             </div>
@@ -3343,9 +3384,9 @@ function InspectionDetail({ inspection }) {
                     key={p.id}
                     type="button"
                     onClick={() => setActivePhotoId(p.id)}
-                    className={`ll-focus text-[11px] font-mono px-2.5 py-0.5 rounded transition-all whitespace-nowrap font-semibold cursor-pointer ${
+                    className={`ll-focus text-[11px] font-mono px-3 py-1 rounded-md transition-all whitespace-nowrap font-semibold cursor-pointer ${
                       activePhotoId === p.id
-                        ? "bg-amber-500 text-slate-950 shadow-sm"
+                        ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
@@ -3357,20 +3398,18 @@ function InspectionDetail({ inspection }) {
               <button
                 type="button"
                 onClick={() => setShowBoxes(!showBoxes)}
-                className={`ll-focus text-xs font-mono px-2.5 py-1 rounded border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                className={`ll-focus text-xs font-mono px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs ${
                   showBoxes ? "bg-amber-500/20 text-amber-300 border-amber-500/40" : "bg-slate-800 text-slate-400 border-slate-700"
                 }`}
                 title="Toggle bounding box highlights"
               >
                 <Eye size={12} /> {showBoxes ? "Boxes: ON" : "Boxes: OFF"}
               </button>
-
-              
             </div>
           </div>
 
           {/* Canvas Image Container with Dynamic Overlays */}
-          <div className="relative min-h-[360px] max-h-[460px] w-full bg-slate-950/90 flex items-center justify-center overflow-hidden group select-none">
+          <div className="relative min-h-[360px] max-h-[460px] w-full bg-slate-950/95 flex items-center justify-center overflow-hidden group select-none">
             <img
               src={currentPhoto.url}
               alt={currentPhoto.label}
@@ -3435,7 +3474,7 @@ function InspectionDetail({ inspection }) {
               const isViolationActive = hoveredItem && hoveredItem.status === "FAIL";
               
               return (
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-3 py-1.5 rounded bg-slate-950/80 backdrop-blur border border-slate-800 text-[11px] font-mono text-slate-300 pointer-events-none">
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-3.5 py-1.5 rounded-lg bg-slate-950/85 backdrop-blur-md border border-slate-800 text-[11px] font-mono text-slate-300 pointer-events-none">
                   <span className="flex items-center gap-2 select-none">
                     <span className="flex items-center gap-1.5 transition-all duration-200"
                       style={{
@@ -3443,7 +3482,7 @@ function InspectionDetail({ inspection }) {
                         transform: isCompliantActive ? "scale(1.05)" : "scale(1)"
                       }}
                     >
-                      <span className={`w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block ${isCompliantActive ? 'shadow-[0_0_8px_#10B981]' : ''}`} />
+                      <span className={`w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block ${isCompliantActive ? 'shadow-[0_0_8px_#10B981]' : ''}`} />
                       <span className={isCompliantActive ? 'text-emerald-400 font-bold' : ''}>Compliant</span>
                     </span>
                     
@@ -3453,7 +3492,7 @@ function InspectionDetail({ inspection }) {
                         transform: isViolationActive ? "scale(1.05)" : "scale(1)"
                       }}
                     >
-                      <span className={`w-2.5 h-2.5 rounded-sm bg-red-500 inline-block ${isViolationActive ? 'shadow-[0_0_8px_#EF4444]' : ''}`} />
+                      <span className={`w-2.5 h-2.5 rounded-full bg-red-500 inline-block ${isViolationActive ? 'shadow-[0_0_8px_#EF4444]' : ''}`} />
                       <span className={isViolationActive ? 'text-red-400 font-bold' : ''}>Violation</span>
                     </span>
                   </span>
@@ -3474,7 +3513,7 @@ function InspectionDetail({ inspection }) {
               <div
                 key={p.id}
                 onClick={() => setActivePhotoId(p.id)}
-                className={`relative flex-shrink-0 w-12 h-12 rounded border-2 overflow-hidden cursor-pointer transition-all ${
+                className={`relative flex-shrink-0 w-12 h-12 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
                   activePhotoId === p.id
                     ? "border-amber-400 scale-105 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
                     : "border-slate-700 opacity-60 hover:opacity-100 hover:border-slate-500"
@@ -3491,7 +3530,7 @@ function InspectionDetail({ inspection }) {
         </Card>
 
         {/* Right: Live OCR Vision Terminal Stream (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col overflow-hidden shadow-sm h-[580px] border rounded-sm transition-colors" style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-charcoal)" }}>
+        <div className="lg:col-span-5 flex flex-col overflow-hidden shadow-md h-[580px] border rounded-xl transition-all" style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-charcoal)" }}>
           <div className="p-3.5 bg-slate-950 text-slate-200 flex items-center justify-between border-b border-slate-800">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10B981]" />
@@ -3506,7 +3545,7 @@ function InspectionDetail({ inspection }) {
                 navigator.clipboard.writeText(rawJson);
                 alert("Copied raw OCR bounding box JSON to clipboard!");
               }}
-              className="ll-focus px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10.5px] font-mono text-amber-300 border border-slate-700 transition-all flex items-center gap-1"
+              className="ll-focus px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10.5px] font-mono text-amber-300 border border-slate-700 transition-all flex items-center gap-1"
             >
               <Code size={11} /> Copy JSON
             </button>
@@ -3523,16 +3562,16 @@ function InspectionDetail({ inspection }) {
                   onMouseEnter={() => handleSelectReq(r)}
                   onMouseLeave={() => setHoveredReq(null)}
                   onClick={() => handleSelectReq(r)}
-                  className={`p-3 rounded-lg border transition-all cursor-pointer space-y-2 ${
+                  className={`p-3 rounded-xl border transition-all cursor-pointer space-y-2 ${
                     isHovered
-                      ? "bg-slate-900 border-amber-400/80 text-white shadow-md shadow-amber-500/5 -translate-y-[1px]"
+                      ? "bg-slate-900 border-amber-400/80 text-white shadow-md shadow-amber-500/10 -translate-y-[1px]"
                       : "bg-slate-900/40 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60"
                   }`}
                 >
                   <div className="text-[11px] font-bold text-amber-400/90 tracking-wide">
                     {r.label}
                   </div>
-                  <div className="text-slate-200 font-mono text-[11px] bg-slate-950/50 px-2.5 py-1.5 rounded-md border border-slate-800/60 flex items-center gap-2">
+                  <div className="text-slate-200 font-mono text-[11px] bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800/60 flex items-center gap-2">
                     <span className="text-emerald-400/80 font-bold select-none">➜</span>
                     <span className="font-medium truncate">{r.detected}</span>
                   </div>
@@ -3540,10 +3579,10 @@ function InspectionDetail({ inspection }) {
                     <span>{r.rule}</span>
                     <div className="flex items-center gap-2.5">
                       <span className="text-amber-400/80 font-semibold">{r.confidence}% conf</span>
-                      <span className={`font-bold px-1.5 py-0.5 rounded uppercase text-[9px] tracking-wider ${
+                      <span className={`font-bold px-2 py-0.5 rounded-full uppercase text-[9px] tracking-wider ${
                         isPass 
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                          : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                          : 'bg-red-500/15 text-red-400 border border-red-500/30'
                       }`}>
                         {r.status}
                       </span>
@@ -3554,7 +3593,7 @@ function InspectionDetail({ inspection }) {
             })}
           </div>
 
-          <div className="p-2.5 bg-slate-950 border-t border-slate-800 text-[10.5px] font-mono text-amber-400 flex items-center justify-between">
+          <div className="p-3 bg-slate-950 border-t border-slate-800 text-[10.5px] font-mono text-amber-400 flex items-center justify-between">
             <span>✓ PCR 2011 Rule Matrix: {reqs.length} Checks</span>
             <span className="font-bold">{inspectionStatus}</span>
           </div>
@@ -3562,13 +3601,13 @@ function InspectionDetail({ inspection }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 overflow-x-auto" padded={false}>
+        <Card className="lg:col-span-2 overflow-x-auto rounded-xl" padded={false}>
           <div className="p-5 pb-0"><SectionLabel eyebrow="RULE-BY-RULE" title="Compliance Checklist" /></div>
           <table className="w-full" style={{ fontSize: 12.5 }}>
             <thead>
               <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
                 {["REQUIREMENT", "RULE", "STATUS", "CONFIDENCE", ""].map((h) => (
-                  <th key={h} className="text-left font-semibold px-5 py-2 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                  <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -3579,14 +3618,14 @@ function InspectionDetail({ inspection }) {
                   onMouseEnter={() => handleSelectReq(r)}
                   onMouseLeave={() => setHoveredReq(null)}
                   onClick={() => handleSelectReq(r)}
-                  className={`ll-tr transition-colors cursor-pointer ${hoveredReq === r.key ? 'bg-amber-500/10' : ''}`}
+                  className={`ll-tr transition-all cursor-pointer ${hoveredReq === r.key ? 'bg-amber-500/10' : ''}`}
                 >
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.label}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.gold }}>{r.rule}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><ReqStatusChip status={r.status} /></td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.charcoal }}>{r.confidence}%</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                    <button onClick={() => setEvidenceReq(r)} className="ll-focus inline-flex items-center gap-1 cursor-pointer" style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}>
+                  <td className="px-5 py-3.5 border-b font-semibold" style={{ borderColor: C.line }}>{r.label}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.gold, fontWeight: 700 }}>{r.rule}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}><ReqStatusChip status={r.status} /></td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.charcoal, fontWeight: 600 }}>{r.confidence}%</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                    <button onClick={() => setEvidenceReq(r)} className="ll-focus inline-flex items-center gap-1 cursor-pointer font-bold text-xs hover:scale-105 transition-transform" style={{ color: C.ink }}>
                       <Eye size={13} /> View
                     </button>
                   </td>
@@ -3690,36 +3729,36 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: 15 }}
         transition={{ duration: 0.2 }}
-        className="relative z-10 w-full max-w-3xl max-h-[88vh] flex flex-col rounded-sm border shadow-2xl overflow-hidden"
+        className="relative z-10 w-full max-w-3xl max-h-[88vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden"
         style={{ background: "var(--ll-bg-card)", borderColor: C.line }}
       >
         {/* Modal Header */}
-        <div className="p-5 border-b flex items-start justify-between gap-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
+        <div className="p-6 border-b flex items-start justify-between gap-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Shield size={15} style={{ color: C.gold }} />
-              <span style={{ ...FONT.display, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: C.gold }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Shield size={16} style={{ color: C.gold }} />
+              <span style={{ ...FONT.display, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: C.gold }}>
                 CASE AUDIT TRAIL • LEGAL METROLOGY ACT, 2009
               </span>
             </div>
-            <h2 style={{ ...FONT.display, fontSize: 20, fontWeight: 700, color: C.ink }}>
+            <h2 style={{ ...FONT.display, fontSize: 22, fontWeight: 800, color: C.ink }}>
               {product.name}
             </h2>
 
             {/* Product Metadata Chips */}
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-xs px-2.5 py-0.5 rounded font-medium border" style={{ background: "var(--ll-bg-page)", borderColor: C.line, color: C.charcoal }}>
+            <div className="flex flex-wrap items-center gap-2 mt-2.5">
+              <span className="text-xs px-3 py-1 rounded-full font-semibold border" style={{ background: "var(--ll-bg-page)", borderColor: C.line, color: C.charcoal }}>
                 {product.category}
               </span>
-              <span className="text-xs px-2.5 py-0.5 rounded font-mono border" style={{ background: "var(--ll-bg-page)", borderColor: C.line, color: C.slate }}>
+              <span className="text-xs px-3 py-1 rounded-full font-mono border" style={{ background: "var(--ll-bg-page)", borderColor: C.line, color: C.slate }}>
                 Barcode: {product.barcode}
               </span>
               {product.manufacturer && product.manufacturer !== "—" && (
-                <span className="text-xs px-2.5 py-0.5 rounded border truncate max-w-[260px]" style={{ background: "var(--ll-bg-page)", borderColor: C.line, color: C.slate }}>
+                <span className="text-xs px-3 py-1 rounded-full border truncate max-w-[260px]" style={{ background: "var(--ll-bg-page)", borderColor: C.line, color: C.slate }}>
                   Mfg: {product.manufacturer}
                 </span>
               )}
-              <span className="text-xs px-2 py-0.5 rounded border" style={{ background: "var(--ll-bg-page)", borderColor: C.line, color: C.gold, fontWeight: 600 }}>
+              <span className="text-xs px-2.5 py-1 rounded-full border font-semibold" style={{ background: "var(--ll-bg-page)", borderColor: C.line, color: C.gold }}>
                 {product.history?.length || 1} Total Test{(product.history?.length || 1) === 1 ? '' : 's'}
               </span>
               <StatusBadge status={product.status} />
@@ -3728,7 +3767,7 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-sm hover:bg-slate-500/10 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-full hover:bg-slate-500/10 text-slate-400 hover:text-white transition-colors"
             title="Close modal"
           >
             <X size={18} />
@@ -3736,9 +3775,9 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
         </div>
 
         {/* Modal Scrollable Timeline Body */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-0" style={{ background: "var(--ll-bg-page)" }}>
+        <div className="p-6 overflow-y-auto flex-1 space-y-0 ll-scroll" style={{ background: "var(--ll-bg-page)" }}>
           <div className="mb-4">
-            <span style={{ fontSize: 11.5, fontWeight: 600, color: C.slate, letterSpacing: "0.04em" }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: C.slate, letterSpacing: "0.06em" }}>
               CHRONOLOGICAL INSPECTION TIMELINE (NEWEST FIRST)
             </span>
           </div>
@@ -3759,7 +3798,7 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
                   {/* Vertical timeline connector */}
                   <div className="flex flex-col items-center">
                     <div
-                      className="w-3.5 h-3.5 rounded-full border-2 transition-transform group-hover:scale-125 shadow-xs flex-shrink-0"
+                      className="w-4 h-4 rounded-full border-2 transition-transform group-hover:scale-125 shadow-xs flex-shrink-0"
                       style={{ borderColor: m.color, background: m.bg }}
                     />
                     {!isLast && (
@@ -3770,7 +3809,7 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
                   {/* Timeline Content Card */}
                   <div className="pb-6 flex-1">
                     <div
-                      className="p-4 rounded-sm border transition-all hover:border-[var(--ll-gold)] shadow-2xs duration-150"
+                      className="p-4 rounded-xl border transition-all hover:border-[var(--ll-gold)] shadow-xs duration-150"
                       style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -3789,7 +3828,7 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
                           variant="outline"
                           onClick={() => handleOpenReport(h)}
                           disabled={isOpening}
-                          className="text-xs gap-1 py-1 px-3 h-7"
+                          className="text-xs gap-1 py-1 px-3 h-7 rounded-lg font-semibold"
                         >
                           {isOpening ? (
                             <>
@@ -3808,7 +3847,7 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
                         <p style={{ fontSize: 12.5, color: C.charcoal, lineHeight: 1.4, maxWidth: "75%" }}>
                           {h.note}
                         </p>
-                        <span className="text-xs flex items-center gap-1" style={{ color: C.slate }}>
+                        <span className="text-xs flex items-center gap-1 font-medium" style={{ color: C.slate }}>
                           <Shield size={11} /> Inspector: {h.inspector}
                         </span>
                       </div>
@@ -3999,7 +4038,7 @@ function Products({ onOpenInspection, onNewInspection }) {
       transition={{ duration: 0.25 }}
       className="space-y-6"
     >
-      <Card padded={false}>
+      <Card padded={false} className="rounded-xl overflow-hidden">
         {/* Header & Filter Toolbar */}
         <div className="p-5 border-b space-y-4" style={{ borderColor: C.line }}>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -4010,12 +4049,12 @@ function Products({ onOpenInspection, onNewInspection }) {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-1 rounded-full border font-mono" style={{ borderColor: C.line, color: C.slate, background: "var(--ll-bg-page)" }}>
+              <span className="text-xs px-3 py-1 rounded-full border font-mono font-semibold" style={{ borderColor: C.line, color: C.slate, background: "var(--ll-bg-page)" }}>
                 {productsList.length} Products Registered
               </span>
               <button
                 onClick={loadData}
-                className="ll-focus p-2 rounded-sm border hover:bg-slate-500/10 transition-colors"
+                className="ll-focus p-2 rounded-lg border hover:bg-slate-500/10 transition-colors"
                 style={{ borderColor: C.line, color: C.slate }}
                 title="Refresh product catalogue"
               >
@@ -4067,7 +4106,7 @@ function Products({ onOpenInspection, onNewInspection }) {
             <thead>
               <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
                 {["PRODUCT", "BARCODE", "CATEGORY", "INSPECTIONS", "CURRENT STATUS", ""].map((h) => (
-                  <th key={h} className="text-left font-semibold px-5 py-3 border-b" style={{ borderColor: C.line }}>{h}</th>
+                  <th key={h} className="text-left font-semibold px-5 py-3.5 border-b" style={{ borderColor: C.line }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -4105,7 +4144,7 @@ function Products({ onOpenInspection, onNewInspection }) {
                       onClick={() => setModalProduct(p)}
                       className="ll-tr cursor-pointer transition-all duration-150"
                     >
-                      <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
+                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
                         <div style={{ fontWeight: 600, color: C.ink }}>{p.name}</div>
                         {p.manufacturer && p.manufacturer !== "—" && (
                           <div style={{ fontSize: 11, color: C.slate, marginTop: 1 }} className="truncate max-w-[280px]">
@@ -4113,25 +4152,25 @@ function Products({ onOpenInspection, onNewInspection }) {
                           </div>
                         )}
                       </td>
-                      <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.slate }}>
+                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.slate }}>
                         {p.barcode}
                       </td>
-                      <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>
                         {p.category}
                       </td>
-                      <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" style={{ background: "var(--ll-bg-page)", color: C.charcoal, border: `1px solid ${C.line}` }}>
+                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ background: "var(--ll-bg-page)", color: C.charcoal, border: `1px solid ${C.line}` }}>
                           {p.inspections} test{p.inspections === 1 ? '' : 's'}
                         </span>
                       </td>
-                      <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
+                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
                         <StatusBadge status={p.status} />
                       </td>
-                      <td className="px-5 py-3 border-b text-right" style={{ borderColor: C.line }}>
+                      <td className="px-5 py-3.5 border-b text-right" style={{ borderColor: C.line }}>
                         <button
                           onClick={(e) => { e.stopPropagation(); setModalProduct(p); }}
-                          className="ll-focus inline-flex items-center gap-1 transition-transform hover:translate-x-0.5"
-                          style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}
+                          className="ll-focus inline-flex items-center gap-1 transition-transform hover:translate-x-1 font-bold text-xs"
+                          style={{ color: C.gold }}
                         >
                           History <ChevronRight size={13} />
                         </button>
@@ -4170,34 +4209,40 @@ function Rules() {
         <Button onClick={() => setShowAdd(true)}><Plus size={15} /> Add Rule</Button>
       </div>
 
-      <Card padded={false} className="overflow-x-auto">
+      <Card padded={false} className="overflow-x-auto rounded-xl">
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
             <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
               {["RULE CODE", "NAME", "APPLICABLE CATEGORY", "SEVERITY", "VERSION", "EFFECTIVE FROM", "STATUS"].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {RULES.map((r) => {
               const sevColor = r.severity === "HIGH" ? C.violation : r.severity === "MEDIUM" ? C.review : C.slate;
+              const sevBg = r.severity === "HIGH" ? C.violationBg : r.severity === "MEDIUM" ? C.reviewBg : "var(--ll-bg-paper-deep)";
+              const sevBd = r.severity === "HIGH" ? C.violationBd : r.severity === "MEDIUM" ? C.reviewBd : C.line;
               return (
                 <tr key={r.code} className="ll-tr">
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontWeight: 600, color: C.ink }}>{r.code}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.name}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.category}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                    <span style={{ color: sevColor, fontWeight: 700, fontSize: 11 }}>{r.severity}</span>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontWeight: 700, color: C.ink }}>{r.code}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, fontWeight: 600 }}>{r.name}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.category}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                    <span style={{ color: sevColor, background: sevBg, border: `1px solid ${sevBd}`, fontWeight: 700, fontSize: 10.5, padding: "2px 8px", borderRadius: 9999 }}>{r.severity}</span>
                   </td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5 }}>{r.version}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.effective}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
-                    <span style={{
-                      fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 2,
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5 }}>{r.version}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.effective}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                    <span className="inline-flex items-center gap-1.5" style={{
+                      fontSize: 10.5, fontWeight: 700, padding: "2px 10px", borderRadius: 9999,
                       background: r.status === "ACTIVE" ? "var(--ll-compliant-bg)" : "var(--ll-bg-paper-deep)",
                       color: r.status === "ACTIVE" ? "var(--ll-compliant)" : C.slate,
-                    }}>{r.status}</span>
+                      border: r.status === "ACTIVE" ? "1px solid var(--ll-compliant-bd)" : `1px solid ${C.line}`,
+                    }}>
+                      {r.status === "ACTIVE" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                      {r.status}
+                    </span>
                   </td>
                 </tr>
               );
@@ -4207,12 +4252,12 @@ function Rules() {
       </Card>
 
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: "var(--ll-modal-overlay)" }} onClick={() => setShowAdd(false)}>
-          <Card className="ll-rise max-w-lg w-full">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-xs" style={{ background: "var(--ll-modal-overlay)" }} onClick={() => setShowAdd(false)}>
+          <Card className="ll-rise max-w-lg w-full rounded-2xl shadow-2xl">
             <div onClick={(e) => e.stopPropagation()}>
               <div className="flex items-start justify-between mb-4">
                 <SectionLabel eyebrow="RULE REPOSITORY" title="Add New Rule Version" />
-                <button onClick={() => setShowAdd(false)} className="ll-focus p-1 text-slate-400 hover:text-slate-200"><X size={18} /></button>
+                <button onClick={() => setShowAdd(false)} className="ll-focus p-1 rounded-full text-slate-400 hover:text-slate-200"><X size={18} /></button>
               </div>
               <div className="grid grid-cols-2 gap-x-4">
                 <Field label="Rule Code"><input style={inputStyle} placeholder="e.g. PCR-MRP-001" /></Field>
@@ -4227,7 +4272,7 @@ function Rules() {
                 </Field>
               </div>
               <Field label="Description & Source"><textarea style={{ ...inputStyle, minHeight: 60 }} placeholder="Legal text reference / gazette citation" /></Field>
-              <div className="flex justify-end gap-2 mt-2">
+              <div className="flex justify-end gap-2 mt-4 pt-3 border-t" style={{ borderColor: C.line }}>
                 <Button variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
                 <Button onClick={() => setShowAdd(false)}>Save Rule</Button>
               </div>
@@ -4362,10 +4407,10 @@ function Reports({ onOpenInspection }) {
   };
 
   return (
-    <Card padded={false} className="overflow-x-auto relative">
+    <Card padded={false} className="overflow-x-auto relative rounded-xl shadow-md">
       <div className="p-5 pb-0 flex items-center justify-between">
         <SectionLabel eyebrow="GENERATED" title="Inspection Reports" />
-        <span className="text-xs font-mono text-slate-500">{reportsList.length} Unique Inspection Cases</span>
+        <span className="text-xs font-mono text-slate-500 font-semibold">{reportsList.length} Unique Inspection Cases</span>
       </div>
 
       {loading ? (
@@ -4377,7 +4422,7 @@ function Reports({ onOpenInspection }) {
           <thead>
             <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
               {["CASE NO.", "PRODUCT", "INSPECTOR", "DATE", "STATUS", ""].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -4388,26 +4433,26 @@ function Reports({ onOpenInspection }) {
 
               return (
                 <tr key={cnoKey} className="ll-tr">
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{cnoKey}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, fontWeight: 500 }}>{r.product_name || r.product}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.inspector_name || r.inspector}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.date}</td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}><StatusBadge status={r.status} /></td>
-                  <td className="px-5 py-3 border-b" style={{ borderColor: C.line }}>
+                  <td className="px-5 py-3.5 border-b font-semibold" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{cnoKey}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, fontWeight: 600 }}>{r.product_name || r.product}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.inspector_name || r.inspector}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.date}</td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}><StatusBadge status={r.status} /></td>
+                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
                     <div className="flex gap-3">
                       <button
                         onClick={() => handleViewInspection(r)}
                         disabled={isOpening}
-                        className="ll-focus inline-flex items-center gap-1 hover:underline cursor-pointer"
-                        style={{ color: C.ink, fontWeight: 600, fontSize: 12 }}
+                        className="ll-focus inline-flex items-center gap-1 cursor-pointer font-bold text-xs hover:scale-105 transition-transform"
+                        style={{ color: C.ink }}
                       >
                         {isOpening ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />}
                         View
                       </button>
                       <button
                         onClick={() => handleDownloadPdf(r)}
-                        className="ll-focus inline-flex items-center gap-1 hover:underline cursor-pointer"
-                        style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}
+                        className="ll-focus inline-flex items-center gap-1 cursor-pointer font-bold text-xs hover:scale-105 transition-transform"
+                        style={{ color: C.gold }}
                       >
                         <Download size={13} /> Official PDF
                       </button>
@@ -4498,11 +4543,11 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className="fixed bottom-6 right-6 z-50 ll-rise flex items-center gap-3 px-4 py-3 rounded border shadow-lg"
+          className="fixed bottom-6 right-6 z-50 ll-rise flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl backdrop-blur-md"
           style={{ background: "var(--ll-bg-sidebar)", color: "#fff", borderColor: C.gold }}
         >
           <CheckCircle2 size={18} style={{ color: "#C7A75A" }} />
-          <span style={{ fontSize: 13, fontWeight: 500 }}>{toastMessage}</span>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{toastMessage}</span>
           <button onClick={() => setToastMessage(null)} className="ml-2 text-slate-300 hover:text-white">
             <X size={14} />
           </button>
@@ -4510,12 +4555,15 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
       )}
 
       {/* Database Connection & Role Status Banner */}
-      <Card className="border-l-4" style={{ borderLeftColor: isAdmin ? "var(--ll-compliant)" : "var(--ll-review)" }}>
+      <Card className="border-l-4 rounded-xl shadow-md" style={{ borderLeftColor: isAdmin ? "var(--ll-compliant)" : "var(--ll-review)" }}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div
-              className="w-10 h-10 rounded flex items-center justify-center flex-shrink-0"
-              style={{ background: isAdmin ? "var(--ll-compliant-bg)" : "var(--ll-review-bg)" }}
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs border"
+              style={{
+                background: isAdmin ? "var(--ll-compliant-bg)" : "var(--ll-review-bg)",
+                borderColor: isAdmin ? "var(--ll-compliant-bd)" : "var(--ll-review-bd)"
+              }}
             >
               {isAdmin ? (
                 <ShieldCheck size={22} style={{ color: "var(--ll-compliant)" }} />
@@ -4525,11 +4573,11 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 style={{ ...FONT.display, fontSize: 16, fontWeight: 700, color: C.ink }}>
+                <h3 style={{ ...FONT.display, fontSize: 16.5, fontWeight: 800, color: C.ink }}>
                   {isAdmin ? "Administrator Authority Active" : "Restricted Officer View — Read Only"}
                 </h3>
                 <span
-                  className="px-2 py-0.5 rounded text-[10.5px] font-bold uppercase tracking-wider border"
+                  className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider border shadow-2xs"
                   style={{
                     background: isAdmin ? "var(--ll-compliant-bg)" : "var(--ll-review-bg)",
                     color: isAdmin ? "var(--ll-compliant)" : "var(--ll-review)",
@@ -4541,7 +4589,7 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
 
                 {/* Supabase status badge */}
                 <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border shadow-2xs"
                   style={{
                     background: isDbConnected ? "rgba(34,197,94,0.12)" : "rgba(234,179,8,0.12)",
                     color: isDbConnected ? "#22C55E" : "#EAB308",
@@ -4577,22 +4625,27 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
           ["Enforcement Officers", counts.officers, UserCheck, C.compliant],
           ["Reviewers", counts.reviewers, User, C.gold],
         ].map(([label, val, Icon, col]) => (
-          <Card key={label} padded={false}>
-            <div className="p-4 flex items-center justify-between">
+          <Card key={label} padded={false} hoverEffect className="rounded-xl">
+            <div className="p-5 flex items-center justify-between">
               <div>
-                <div style={{ fontSize: 11, color: C.slate, fontWeight: 600, letterSpacing: "0.03em" }}>{label.toUpperCase()}</div>
-                <div style={{ ...FONT.display, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 3 }}>{val}</div>
+                <div style={{ fontSize: 11, color: C.slate, fontWeight: 700, letterSpacing: "0.04em" }}>{label.toUpperCase()}</div>
+                <div style={{ ...FONT.display, fontSize: 26, fontWeight: 800, color: C.ink, marginTop: 3 }}>{val}</div>
               </div>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(199,167,90,0.15)" }}>
-                <Icon size={16} style={{ color: col }} />
-              </div>
+              <motion.div
+                whileHover={{ rotate: 10, scale: 1.15 }}
+                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs"
+                style={{ background: col + "1A", borderColor: col + "33" }}
+              >
+                <Icon size={18} style={{ color: col }} />
+              </motion.div>
             </div>
           </Card>
         ))}
       </div>
 
       {/* Directory Table Card */}
-      <Card padded={false}>
+      <Card padded={false} className="rounded-xl overflow-hidden shadow-md">
         <div className="p-5 border-b flex flex-wrap items-center justify-between gap-4" style={{ borderColor: C.line }}>
           <div>
             <SectionLabel eyebrow="PERSONNEL & ACCESS" title="Legal Metrology Officers & Accounts" />
