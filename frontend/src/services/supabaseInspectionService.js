@@ -129,7 +129,12 @@ const MISSING_IMAGE_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://ww
 
 function cleanImageUrl(img) {
   if (!img) return MISSING_IMAGE_PLACEHOLDER;
-  let url = typeof img === 'string' ? img : (img.url || img.image_url);
+  if (typeof img === 'object' && img.supabase_url && String(img.supabase_url).startsWith('http')) {
+    return img.supabase_url;
+  }
+  let url = typeof img === 'string' ? img : (img.supabase_url || img.url || img.image_url);
+  if (url && String(url).startsWith('http')) return url;
+
   const orig = typeof img === 'object' ? img.original_path : null;
 
   if ((!url || url.includes(":\\")) && orig) {
