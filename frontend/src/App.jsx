@@ -2032,7 +2032,16 @@ function InspectionsList({ onOpen, onNew }) {
                   </div>
                 </td>
                 <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line }}>
-                  <StatusBadge status={i.status} />
+                  <StatusBadge status={(() => {
+                    if (Array.isArray(i.declarations) && i.declarations.length > 0) {
+                      const passes = i.declarations.filter(d => (d.status === "PASS" || d.status === "COMPLIANT") && d.value && String(d.value).trim() !== "" && String(d.value).toLowerCase() !== "null").length;
+                      const ratio = passes / i.declarations.length;
+                      if (passes === i.declarations.length) return "COMPLIANT";
+                      if (ratio < 0.50) return "NON_COMPLIANT";
+                      return "REVIEW";
+                    }
+                    return i.status;
+                  })()} />
                 </td>
                 <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {i.inspector_name || "—"}
@@ -3156,7 +3165,6 @@ function InspectionDetail({ inspection }) {
     : "NA"));
 
   const caseId = insp.case_number || (typeof insp.id === "number" ? `LM/2026/${String(insp.id).padStart(6, "0")}` : (insp.id || "LM/2026/000001"));
-  const inspectionStatus = insp.status || (insp.verdict ? (insp.verdict === "COMPLIANT" ? "COMPLIANT" : insp.verdict === "REVIEW" ? "REQUIRES VERIFICATION" : "NON-COMPLIANT") : "COMPLIANT");
 
   // Only show requirements from a real scan — never fall back to hardcoded mock
   let reqs = [];
@@ -3207,6 +3215,17 @@ function InspectionDetail({ inspection }) {
   const failCount = reqs.filter((r) => r.status === "FAIL").length;
   const reviewCount = reqs.filter((r) => r.status === "REVIEW").length;
   const avgConf = Math.round(reqs.reduce((s, r) => s + (r.confidence || 90), 0) / (reqs.length || 1));
+
+  // 3-Tier Classification:
+  // 1. 100% (passCount === reqs.length) -> COMPLIANT
+  // 2. < 50% (passRatio < 0.50) -> NON_COMPLIANT
+  // 3. 50% to 99% -> REVIEW (Requires Verification)
+  const passRatio = passCount / (reqs.length || 1);
+  const computedStatus = (passCount === reqs.length && reqs.length > 0)
+    ? "COMPLIANT"
+    : (passRatio < 0.50 ? "NON_COMPLIANT" : "REVIEW");
+
+  const inspectionStatus = computedStatus;
 
   const extractedMfr = insp.declarations?.find(d => d.field === "manufacturer")?.value;
   const manufacturerVal = extractedMfr || insp.manufacturer || (typeof insp.product === "object" && insp.product?.category) || "Registered Food Manufacturer";
@@ -3259,12 +3278,12 @@ function InspectionDetail({ inspection }) {
     });
   }
 
-  // If no uploaded photos, fallback to the 3 standard test package photos
+  const MISSING_IMAGE_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'><rect width='100%' height='100%' fill='%230f172a'/><g transform='translate(250, 140)' stroke='%23475569' stroke-width='2' fill='none'><rect x='0' y='0' width='100' height='80' rx='8'/><circle cx='35' cy='30' r='12'/><path d='M10,70 L40,40 L65,65 L80,50 L90,70'/></g><text x='300' y='250' text-anchor='middle' fill='%2394a3b8' font-family='sans-serif' font-size='14' font-weight='600'>Image File Not Found on Server</text><text x='300' y='275' text-anchor='middle' fill='%2364748b' font-family='sans-serif' font-size='12'>Uploaded file path is not present on disk</text></svg>";
+
+  // If no uploaded photos, fallback to SVG placeholder
   if (initialPhotos.length === 0) {
     initialPhotos.push(
-      { id: "FRONT", label: "PHOTO 1 (FRONT)", url: "/assets/package_front.jpg" },
-      { id: "BACK", label: "PHOTO 2 (STATUTORY)", url: "/assets/package_back.jpg" },
-      { id: "SIDE", label: "PHOTO 3 (NUTRITION)", url: "/assets/package_side.jpg" }
+      { id: "FRONT", label: "PHOTO 1 (FRONT)", url: MISSING_IMAGE_PLACEHOLDER }
     );
   }
 
@@ -3299,7 +3318,7 @@ function InspectionDetail({ inspection }) {
     }
   };
 
-  const currentPhoto = photosList.find(p => p.id === activePhotoId) || photosList[0] || { url: "/assets/package_front.jpg", label: "PHOTO" };
+  const currentPhoto = photosList.find(p => p.id === activePhotoId) || photosList[0] || { url: MISSING_IMAGE_PLACEHOLDER, label: "PHOTO" };
 
   const handleAddNewPhotos = (e) => {
     const files = Array.from(e.target.files || []);
@@ -3414,7 +3433,11 @@ function InspectionDetail({ inspection }) {
               src={currentPhoto.url}
               alt={currentPhoto.label}
               className="max-h-[440px] max-w-full object-contain transition-transform duration-300"
-              onError={(e) => { e.target.src = "/assets/package_front.jpg"; }}
+              onError={(e) => {
+                if (e.target.src !== MISSING_IMAGE_PLACEHOLDER) {
+                  e.target.src = MISSING_IMAGE_PLACEHOLDER;
+                }
+              }}
             />
 
               {/* Bounding Box Highlights (Only rendered for declarations ACTUALLY found on this photo) */}
@@ -3905,7 +3928,8 @@ function Products({ onOpenInspection, onNewInspection }) {
     for (const item of inspections) {
       const rawName = item.product_name || item.product || item.name || "Packaged Commodity";
       const cleanName = rawName.trim();
-      const key = cleanName.toLowerCase();
+      const manufacturer = (item.manufacturer || item.retailer_name || "").trim();
+      const cno = item.case_number || item.id || String(Math.random());
 
       let barcode = item.barcode;
       if (!barcode && Array.isArray(item.declarations)) {
@@ -3913,7 +3937,25 @@ function Products({ onOpenInspection, onNewInspection }) {
         if (bDecl?.value) barcode = bDecl.value;
       }
       if (!barcode) {
-        barcode = generateBarcode(cleanName);
+        barcode = generateBarcode(cleanName + cno);
+      }
+
+      // Determine unique grouping key
+      let key = cleanName.toLowerCase();
+      let displayName = cleanName;
+
+      if (barcode && !barcode.startsWith("890")) {
+        key = `barcode:${barcode}`;
+      } else if (["packaged commodity", "unknown product", "commodity", "packaged food", "packaged product"].includes(cleanName.toLowerCase())) {
+        if (manufacturer && manufacturer !== "—") {
+          key = `mfr:${manufacturer.toLowerCase()}`;
+          displayName = `Packaged Commodity (${manufacturer.length > 30 ? manufacturer.slice(0, 30) + '...' : manufacturer})`;
+        } else {
+          key = `case:${cno}`;
+          displayName = `Packaged Commodity (${cno})`;
+        }
+      } else {
+        key = `name:${cleanName.toLowerCase()}`;
       }
 
       let note = "All mandatory declarations verified under PCR 2011";
@@ -3938,7 +3980,7 @@ function Products({ onOpenInspection, onNewInspection }) {
       }
 
       const historyEntry = {
-        id: item.case_number || item.id,
+        id: cno,
         date: String(item.created_at || item.date || new Date().toISOString()).slice(0, 10),
         status: rawStat,
         inspector: item.inspector_name || item.inspector || "Authorized Officer",
@@ -3949,10 +3991,10 @@ function Products({ onOpenInspection, onNewInspection }) {
 
       if (!productMap.has(key)) {
         productMap.set(key, {
-          name: cleanName,
+          name: displayName,
           barcode: barcode,
           category: item.category || "Packaged Food",
-          manufacturer: item.manufacturer || "—",
+          manufacturer: manufacturer || "—",
           inspections: 1,
           status: rawStat,
           latest_date: historyEntry.date,
@@ -3963,8 +4005,8 @@ function Products({ onOpenInspection, onNewInspection }) {
         const existing = productMap.get(key);
         existing.inspections += 1;
         existing.history.push(historyEntry);
-        if ((!existing.manufacturer || existing.manufacturer === "—") && item.manufacturer) {
-          existing.manufacturer = item.manufacturer;
+        if ((!existing.manufacturer || existing.manufacturer === "—") && manufacturer) {
+          existing.manufacturer = manufacturer;
         }
       }
     }

@@ -141,14 +141,20 @@ def upload_inspection_images(
 
     saved_images = []
     for file in files:
-        file_path = os.path.join(upload_dir, f"{uuid.uuid4().hex}_{file.filename}")
+        fname = f"{uuid.uuid4().hex}_{file.filename}"
+        file_path = os.path.join(upload_dir, fname)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+
+        from app.utils.supabase_uploader import upload_image_to_supabase_storage
+        pub_url = upload_image_to_supabase_storage(file_path, fname)
+        rel_url = f"/uploads/inspections/{inspection_id}/{fname}"
 
         img_obj = InspectionImage(
             inspection_id=inspection.id,
             image_type=image_type,
             original_path=file_path,
+            image_url=pub_url or rel_url,
             quality_status="GOOD",
             quality_score=1.0,
             quality_metrics={}

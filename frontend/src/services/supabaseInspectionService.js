@@ -77,7 +77,7 @@ export async function fetchInspections({ status = 'ALL', category = '', search =
 
   let query = supabase
     .from('inspections')
-    .select('id, case_number, product_name, category, manufacturer, location, status, score, inspector_name, inspector_badge, declarations, violations, notes, is_demo, created_at')
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -125,8 +125,40 @@ export async function fetchInspectionByCase(caseNumber) {
  * Normalise a full Supabase inspections row into the shape InspectionDetail expects.
  * (Supabase uses snake_case; InspectionDetail reads camelCase/mixed fields from directScan)
  */
+const MISSING_IMAGE_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'><rect width='100%' height='100%' fill='%230f172a'/><g transform='translate(250, 140)' stroke='%23475569' stroke-width='2' fill='none'><rect x='0' y='0' width='100' height='80' rx='8'/><circle cx='35' cy='30' r='12'/><path d='M10,70 L40,40 L65,65 L80,50 L90,70'/></g><text x='300' y='250' text-anchor='middle' fill='%2394a3b8' font-family='sans-serif' font-size='14' font-weight='600'>Image File Not Found on Server</text><text x='300' y='275' text-anchor='middle' fill='%2364748b' font-family='sans-serif' font-size='12'>Uploaded file path is not present on disk</text></svg>";
+
+function cleanImageUrl(img) {
+  if (!img) return MISSING_IMAGE_PLACEHOLDER;
+  let url = typeof img === 'string' ? img : (img.url || img.image_url);
+  const orig = typeof img === 'object' ? img.original_path : null;
+
+  if ((!url || url.includes(":\\")) && orig) {
+    const rel = orig.replace(/\\/g, "/").split("/uploads/")[1];
+    url = rel ? `/uploads/${rel}` : orig;
+  }
+  if (url && url.includes(":\\")) {
+    const rel = url.replace(/\\/g, "/").split("/uploads/")[1];
+    if (rel) url = `/uploads/${rel}`;
+  }
+  return url || MISSING_IMAGE_PLACEHOLDER;
+}
+
+/**
+ * Normalise a full Supabase inspections row into the shape InspectionDetail expects.
+ * (Supabase uses snake_case; InspectionDetail reads camelCase/mixed fields from directScan)
+ */
 export function mapSupabaseRowToInspection(row) {
   if (!row) return null;
+  const rawImages = Array.isArray(row.images) ? row.images : [];
+  const images = rawImages.map((img) => ({
+    id: img.id || `img_${Math.random()}`,
+    angle: img.image_type || img.angle || "FRONT",
+    image_type: img.image_type || img.angle || "FRONT",
+    url: cleanImageUrl(img),
+    original_path: img.original_path,
+    quality_status: img.quality_status || "GOOD"
+  }));
+
   return {
     // Identity
     case_number: row.case_number,
@@ -150,7 +182,7 @@ export function mapSupabaseRowToInspection(row) {
     // Full JSONB payloads — these are what InspectionDetail renders
     declarations: Array.isArray(row.declarations) ? row.declarations : [],
     violations: Array.isArray(row.violations) ? row.violations : [],
-    images: Array.isArray(row.images) ? row.images : [],
+    images: images,
     ocr_detections: Array.isArray(row.ocr_detections) ? row.ocr_detections : [],
     // Extras
     notes: row.notes,
@@ -183,21 +215,14 @@ export function mapBackendInspectionToFrontend(data) {
     statutory_reference: v.statutory_reference
   }));
 
-  const images = (data.images || []).map((img) => {
-    let url = img.url || img.image_url;
-    if (!url && img.original_path) {
-      const rel = img.original_path.replace(/\\/g, "/").split("/uploads/")[1];
-      url = rel ? `/uploads/${rel}` : img.original_path;
-    }
-    return {
-      id: img.id,
-      angle: img.image_type || "FRONT",
-      image_type: img.image_type || "FRONT",
-      url: url || "/uploads/sample.jpg",
-      original_path: img.original_path,
-      quality_status: img.quality_status || "GOOD"
-    };
-  });
+  const images = (data.images || []).map((img) => ({
+    id: img.id,
+    angle: img.image_type || "FRONT",
+    image_type: img.image_type || "FRONT",
+    url: cleanImageUrl(img),
+    original_path: img.original_path,
+    quality_status: img.quality_status || "GOOD"
+  }));
 
   return {
     id: data.case_number || data.id,

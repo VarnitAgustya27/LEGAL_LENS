@@ -133,8 +133,8 @@ class InspectionReportGenerator:
         for ev in evals:
             ev_status = ev.get("status", "PASS")
             st_color = '#3A6B35' if ev_status == 'PASS' else '#9B2C2C' if ev_status == 'FAIL' else '#966A16'
-            conf_str = f"{int(ev.get('confidence', 0.9)*100)}%"
-            val_str = ev.get("detected", ev.get("message", "Detected"))
+            conf_str = f"{int(ev.get('confidence', 0.95)*100)}%"
+            val_str = str(ev.get("detected") or ev.get("value") or ev.get("message") or "Detected")
             if len(val_str) > 40:
                 val_str = val_str[:38] + "..."
             decl_rows.append([

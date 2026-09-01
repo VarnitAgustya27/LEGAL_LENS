@@ -67,13 +67,45 @@ def save_report_to_supabase_db(report_data: dict) -> bool:
         "status": report_data.get("status", "REVIEW")
     }
 
-    try:
-        r = requests.post(endpoint, json=payload, headers=headers, timeout=10)
-        if r.status_code in [200, 201]:
-            print(f"[SUPABASE-DB] Successfully saved report to Supabase DB table 'reports': {report_data.get('case_number')}")
-            return True
-        else:
-            print(f"[SUPABASE-DB] DB insert note: {r.status_code} {r.text}")
-    except Exception as e:
-        print(f"[SUPABASE-DB] Error saving to Supabase DB: {e}")
-    return False
+def upload_image_to_supabase_storage(file_path: str, filename: str) -> Optional[str]:
+    """
+    Uploads an inspection photo to Supabase Storage bucket 'product-images'.
+    Returns the public CDN URL if successful.
+    """
+    if not os.path.exists(file_path):
+        return None
+
+    supabase_url = settings.SUPABASE_URL.rstrip('/')
+    anon_key = settings.SUPABASE_ANON_KEY or settings.SUPABASE_SERVICE_ROLE_KEY
+
+    if supabase_url and anon_key:
+        upload_endpoint = f"{supabase_url}/storage/v1/object/product-images/{filename}"
+        public_url = f"{supabase_url}/storage/v1/object/public/product-images/{filename}"
+
+        try:
+            with open(file_path, "rb") as f:
+                img_data = f.read()
+
+            content_type = "image/jpeg"
+            if filename.endswith(".png"):
+                content_type = "image/png"
+            elif filename.endswith(".webp"):
+                content_type = "image/webp"
+
+            headers = {
+                "apikey": anon_key,
+                "Authorization": f"Bearer {anon_key}",
+                "x-upsert": "true",
+                "Content-Type": content_type
+            }
+
+            resp = requests.post(upload_endpoint, data=img_data, headers=headers, timeout=10)
+            if resp.status_code in [200, 201]:
+                print(f"[SUPABASE-STORAGE] Successfully uploaded image to Supabase Cloud CDN: {public_url}")
+                return public_url
+            else:
+                print(f"[SUPABASE-STORAGE] Image upload note: bucket 'product-images' status {resp.status_code}: {resp.text}")
+        except Exception as e:
+            print(f"[SUPABASE-STORAGE] Image upload note: {e}")
+
+    return None

@@ -88,15 +88,10 @@ def download_pdf_report(inspection_id: int, db: Session = Depends(get_db)):
     if not inspection:
         raise HTTPException(status_code=404, detail="Inspection not found")
 
-    pdf_filename = f"Report_{inspection.case_number.replace('/', '_')}.pdf"
-    pdf_path = os.path.abspath(f"./uploads/reports/{pdf_filename}")
-
-    if not os.path.exists(pdf_path):
-        # Generate on the fly
-        service.generate_inspection_report(db, inspection_id)
-
+    pdf_path = _generate_pdf_for_case_payload(inspection.case_number, db)
+    filename = os.path.basename(pdf_path)
     if os.path.exists(pdf_path):
-        return FileResponse(pdf_path, media_type="application/pdf", filename=pdf_filename)
+        return FileResponse(pdf_path, media_type="application/pdf", filename=filename)
     raise HTTPException(status_code=404, detail="PDF report could not be generated.")
 
 def _generate_pdf_for_case_payload(case_number: str, db: Session) -> str:

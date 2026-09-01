@@ -138,6 +138,7 @@ class RuleEngine:
                         "status": "PASS",
                         "severity": None,
                         "message": f"{label} declared in standard format with tax qualifier: {val}",
+                        "detected": raw_text or val,
                         "confidence": conf,
                         "statutory_reference": stat_ref,
                         "evidence_bbox": bbox,
@@ -175,6 +176,7 @@ class RuleEngine:
                         "status": "PASS",
                         "severity": None,
                         "message": f"{label} declared in standard metric unit: {val}",
+                        "detected": raw_text or val,
                         "confidence": conf,
                         "statutory_reference": stat_ref,
                         "evidence_bbox": bbox,
@@ -212,6 +214,7 @@ class RuleEngine:
                         "status": "PASS",
                         "severity": None,
                         "message": f"{label} contact details detected and valid.",
+                        "detected": raw_text or val,
                         "confidence": conf,
                         "statutory_reference": stat_ref,
                         "evidence_bbox": bbox,
@@ -228,6 +231,7 @@ class RuleEngine:
                     "status": "PASS",
                     "severity": None,
                     "message": f"{label} detected and legible: {val}",
+                    "detected": raw_text or val,
                     "confidence": conf,
                     "statutory_reference": stat_ref,
                     "evidence_bbox": bbox,
@@ -237,10 +241,15 @@ class RuleEngine:
 
         score = round((passed_count / max(1, total_applicable)) * 100, 1)
         pass_ratio = passed_count / max(1, total_applicable)
-        if pass_ratio < 0.50:
-            overall_status = "NON_COMPLIANT"
-        elif passed_count == total_applicable:
+
+        # Statutory Enforcement Classification:
+        # 1. 100% (8/8) -> COMPLIANT
+        # 2. < 50% (< 4/8, e.g. 3/8, 2/8) -> NON_COMPLIANT
+        # 3. 50% to 99% (4/8 to 7/8) -> REVIEW (Requires Verification)
+        if passed_count == total_applicable and total_applicable > 0:
             overall_status = "COMPLIANT"
+        elif pass_ratio < 0.50:
+            overall_status = "NON_COMPLIANT"
         else:
             overall_status = "REVIEW"
 

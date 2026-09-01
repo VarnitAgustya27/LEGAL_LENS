@@ -209,12 +209,9 @@
       "field": "unit_sale_price",
       "statutory_reference": "Rule 6(11) of PCR, 2011 (2022 Amendment)",
       "category_applicability": [
-        "Packaged Food",
-        "Cosmetics",
-        "Household Chemicals",
-        "Personal Care"
+        "ALL"
       ],
-      "is_mandatory": false,
+      "is_mandatory": true,
       "severity": "LOW",
       "validation_type": "PRICE_PER_UNIT",
       "description": "Unit sale price declaration (price per g, kg, ml, liter, or unit) for retail packages.",
