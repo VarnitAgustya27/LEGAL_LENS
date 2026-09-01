@@ -159,9 +159,21 @@ const GlobalStyle = () => (
     @media (prefers-reduced-motion: reduce) {
       .ll-fade, .ll-rise { animation: none !important; }
     }
-    .ll-scroll::-webkit-scrollbar { width: 7px; height: 7px; }
-    .ll-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 6px; }
-    .ll-scroll::-webkit-scrollbar-thumb:hover { background: #64748B; }
+    /* Hide horizontal scrollbar tracks completely across all tabs & tables */
+    .overflow-x-auto::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar {
+      display: none !important;
+      height: 0px !important;
+      width: 0px !important;
+    }
+    .overflow-x-auto, .no-scrollbar {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 0px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
     .ll-focus:focus-visible { outline: 2px solid var(--ll-color-gold); outline-offset: 2px; }
     .ll-tr:hover { background: var(--ll-tr-hover); }
     .ll-stamp { position: relative; }
@@ -1835,6 +1847,7 @@ function InspectionsList({ onOpen, onNew }) {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [searchQuery, setSearchQuery]     = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [refreshKey, setRefreshKey]       = useState(0);
   const [rows, setRows]                   = useState(null);   // null = loading
   const [fetchError, setFetchError]       = useState(null);
   const [openingId, setOpeningId]         = useState(null); // case_number being opened
@@ -1867,7 +1880,7 @@ function InspectionsList({ onOpen, onNew }) {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // Fetch from Supabase whenever filters change
+  // Fetch from Supabase whenever filters or refreshKey change
   useEffect(() => {
     let cancelled = false;
     setRows(null);
@@ -1913,7 +1926,7 @@ function InspectionsList({ onOpen, onNew }) {
       });
 
     return () => { cancelled = true; };
-  }, [statusFilter, categoryFilter, debouncedSearch]);
+  }, [statusFilter, categoryFilter, debouncedSearch, refreshKey]);
 
   const displayDate = (iso) => {
     if (!iso) return "—";
@@ -1966,23 +1979,26 @@ function InspectionsList({ onOpen, onNew }) {
           {/* Refresh */}
           <button
             title="Refresh"
-            onClick={() => { setRows(null); setDebouncedSearch((s) => s); }}
-            className="ll-focus flex items-center gap-1 px-2 py-1.5 rounded-sm border text-xs transition-all hover:opacity-80"
+            onClick={() => {
+              setRows(null);
+              setRefreshKey((k) => k + 1);
+            }}
+            className="ll-focus flex items-center gap-1 px-2 py-1.5 rounded-sm border text-xs transition-all hover:opacity-80 cursor-pointer"
             style={{ borderColor: C.line, color: C.slate, background: "transparent" }}
           >
-            <RefreshCw size={12} />
+            <RefreshCw size={12} className={rows === null ? "animate-spin" : ""} />
           </button>
         </div>
         <Button onClick={onNew}><FilePlus2 size={15} /> New Inspection</Button>
       </div>
 
       {/* ── Table ── */}
-      <Card padded={false} className="overflow-x-auto rounded-xl">
+      <Card padded={false} className="overflow-x-auto ll-scroll rounded-xl">
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
             <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
               {["CASE NO.", "PRODUCT", "CATEGORY", "MANUFACTURER", "STATUS", "INSPECTOR", "DATE", "SOURCE", ""].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
+                <th key={h} className="text-left font-semibold px-5 py-2.5 border-t border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -1991,7 +2007,7 @@ function InspectionsList({ onOpen, onNew }) {
             {rows === null && Array.from({ length: 5 }).map((_, idx) => (
               <tr key={`skel-${idx}`}>
                 {Array.from({ length: 9 }).map((__, ci) => (
-                  <td key={ci} className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                  <td key={ci} className="px-5 py-2.5 border-b" style={{ borderColor: C.line }}>
                     <div className="h-3.5 rounded animate-pulse" style={{ background: C.line, width: ci === 1 ? "80%" : "60%" }} />
                   </td>
                 ))}
@@ -2017,21 +2033,21 @@ function InspectionsList({ onOpen, onNew }) {
                 style={{ cursor: i.is_demo ? "default" : (openingId === i.case_number ? "wait" : "pointer") }}
                 onClick={() => !i.is_demo && openingId === null && handleOpenLive(i)}
               >
-                <td className="px-5 py-3.5 border-b whitespace-nowrap font-semibold" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
+                <td className="px-5 py-2.5 border-b whitespace-nowrap font-semibold" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>
                   {i.case_number}
                 </td>
-                <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, fontWeight: 600, minWidth: 140 }}>
+                <td className="px-5 py-2.5 border-b font-semibold" style={{ borderColor: C.line, color: C.ink, minWidth: 140 }}>
                   {i.product_name}
                 </td>
-                <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {i.category}
                 </td>
-                <td className="px-5 py-3.5 border-b max-w-[260px]" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-5 py-2.5 border-b max-w-[260px]" style={{ borderColor: C.line, color: C.slate }}>
                   <div className="line-clamp-2" title={i.manufacturer || ""}>
                     {i.manufacturer || "—"}
                   </div>
                 </td>
-                <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line }}>
+                <td className="px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line }}>
                   <StatusBadge status={(() => {
                     if (Array.isArray(i.declarations) && i.declarations.length > 0) {
                       const passes = i.declarations.filter(d => (d.status === "PASS" || d.status === "COMPLIANT") && d.value && String(d.value).trim() !== "" && String(d.value).toLowerCase() !== "null").length;
@@ -2043,13 +2059,13 @@ function InspectionsList({ onOpen, onNew }) {
                     return i.status;
                   })()} />
                 </td>
-                <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {i.inspector_name || "—"}
                 </td>
-                <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                <td className="px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {displayDate(i.created_at)}
                 </td>
-                <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                <td className="px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line }}>
                   {i.is_demo ? (
                     <span className="inline-flex items-center gap-1" style={{ fontSize: 10.5, color: C.slate, background: "var(--ll-bg-paper)", border: `1px solid ${C.line}`, borderRadius: 9999, padding: "2px 8px" }}>
                       Demo
@@ -2060,7 +2076,7 @@ function InspectionsList({ onOpen, onNew }) {
                     </span>
                   )}
                 </td>
-                <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                <td className="px-5 py-3.5 border-b whitespace-nowrap" style={{ borderColor: C.line }}>
                   {!i.is_demo && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleOpenLive(i); }}
@@ -4148,28 +4164,28 @@ function Products({ onOpenInspection, onNewInspection }) {
         </div>
 
         {/* Product Catalogue Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto ll-scroll">
           <table className="w-full text-left" style={{ fontSize: 12.5 }}>
             <thead>
               <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.05em", background: "var(--ll-table-head-bg)" }}>
-                <th className="font-semibold px-6 py-3.5 border-b text-left min-w-[320px]" style={{ borderColor: C.line }}>PRODUCT & MANUFACTURER</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-40 text-left" style={{ borderColor: C.line }}>BARCODE</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-36 text-left" style={{ borderColor: C.line }}>CATEGORY</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-28 text-center" style={{ borderColor: C.line }}>INSPECTIONS</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-44 text-center" style={{ borderColor: C.line }}>CURRENT STATUS</th>
-                <th className="font-semibold px-6 py-3.5 border-b w-24 text-right" style={{ borderColor: C.line }}></th>
+                <th className="font-semibold px-6 py-2.5 border-b text-left min-w-[320px]" style={{ borderColor: C.line }}>PRODUCT & MANUFACTURER</th>
+                <th className="font-semibold px-5 py-2.5 border-b w-40 text-left" style={{ borderColor: C.line }}>BARCODE</th>
+                <th className="font-semibold px-5 py-2.5 border-b w-36 text-left" style={{ borderColor: C.line }}>CATEGORY</th>
+                <th className="font-semibold px-5 py-2.5 border-b w-28 text-center" style={{ borderColor: C.line }}>INSPECTIONS</th>
+                <th className="font-semibold px-5 py-2.5 border-b w-44 text-center" style={{ borderColor: C.line }}>CURRENT STATUS</th>
+                <th className="font-semibold px-6 py-2.5 border-b w-24 text-right" style={{ borderColor: C.line }}></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: 4 }).map((_, idx) => (
                   <tr key={idx} className="border-b" style={{ borderColor: C.line }}>
-                    <td className="px-6 py-4"><div className="h-4 w-48 bg-slate-700/20 animate-pulse rounded" /></td>
-                    <td className="px-5 py-4"><div className="h-4 w-24 bg-slate-700/20 animate-pulse rounded" /></td>
-                    <td className="px-5 py-4"><div className="h-4 w-20 bg-slate-700/20 animate-pulse rounded" /></td>
-                    <td className="px-5 py-4 text-center"><div className="h-4 w-10 bg-slate-700/20 animate-pulse rounded mx-auto" /></td>
-                    <td className="px-5 py-4 text-center"><div className="h-6 w-28 bg-slate-700/20 animate-pulse rounded mx-auto" /></td>
-                    <td className="px-6 py-4 text-right"><div className="h-4 w-16 bg-slate-700/20 animate-pulse rounded ml-auto" /></td>
+                    <td className="px-6 py-2.5"><div className="h-4 w-48 bg-slate-700/20 animate-pulse rounded" /></td>
+                    <td className="px-5 py-2.5"><div className="h-4 w-24 bg-slate-700/20 animate-pulse rounded" /></td>
+                    <td className="px-5 py-2.5"><div className="h-4 w-20 bg-slate-700/20 animate-pulse rounded" /></td>
+                    <td className="px-5 py-2.5 text-center"><div className="h-4 w-10 bg-slate-700/20 animate-pulse rounded mx-auto" /></td>
+                    <td className="px-5 py-2.5 text-center"><div className="h-6 w-28 bg-slate-700/20 animate-pulse rounded mx-auto" /></td>
+                    <td className="px-6 py-2.5 text-right"><div className="h-4 w-16 bg-slate-700/20 animate-pulse rounded ml-auto" /></td>
                   </tr>
                 ))
               ) : filteredProducts.length === 0 ? (
@@ -4194,7 +4210,7 @@ function Products({ onOpenInspection, onNewInspection }) {
                       onClick={() => setModalProduct(p)}
                       className="ll-tr cursor-pointer transition-all duration-150"
                     >
-                      <td className="px-6 py-4 border-b" style={{ borderColor: C.line }}>
+                      <td className="px-6 py-2.5 border-b" style={{ borderColor: C.line }}>
                         <div style={{ fontWeight: 600, color: C.ink, fontSize: 13 }}>{p.name}</div>
                         {p.manufacturer && p.manufacturer !== "—" && (
                           <div style={{ fontSize: 11.5, color: C.slate, marginTop: 2, lineHeight: 1.4 }} className="line-clamp-2">
@@ -4202,15 +4218,15 @@ function Products({ onOpenInspection, onNewInspection }) {
                           </div>
                         )}
                       </td>
-                      <td className="px-5 py-4 border-b text-left" style={{ borderColor: C.line }}>
+                      <td className="px-5 py-2.5 border-b text-left" style={{ borderColor: C.line }}>
                         <span className="inline-block px-2.5 py-0.5 rounded font-mono text-xs border" style={{ borderColor: C.line, background: "var(--ll-bg-page)", color: C.slate }}>
                           {p.barcode}
                         </span>
                       </td>
-                      <td className="px-5 py-4 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
+                      <td className="px-5 py-2.5 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
                         {p.category}
                       </td>
-                      <td className="px-5 py-4 border-b text-center" style={{ borderColor: C.line }}>
+                      <td className="px-5 py-2.5 border-b text-center" style={{ borderColor: C.line }}>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border shadow-2xs" style={{ background: "var(--ll-bg-page)", color: C.charcoal, borderColor: C.line }}>
                           {p.inspections} test{p.inspections === 1 ? '' : 's'}
                         </span>
@@ -4477,7 +4493,7 @@ function Reports({ onOpenInspection }) {
       transition={{ duration: 0.25 }}
       className="space-y-6"
     >
-      <Card padded={false} className="overflow-x-auto relative rounded-xl shadow-sm">
+      <Card padded={false} className="overflow-x-auto ll-scroll relative rounded-xl shadow-sm">
         {/* Header & Filter Toolbar */}
         <div className="p-6 border-b space-y-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -4512,9 +4528,9 @@ function Reports({ onOpenInspection }) {
             <div className="relative flex-1 min-w-[240px] max-w-md">
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input
-                placeholder="Search by case no., product, inspector…"
+                placeholder="Search case no, product or inspector…"
                 className="ll-focus transition-all duration-200 rounded-lg"
-                style={{ ...inputStyle, paddingLeft: 34, width: "100%", fontSize: 12.5 }}
+                style={{ ...inputStyle, paddingLeft: 34, fontSize: 12.5, width: "100%" }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -4542,12 +4558,12 @@ function Reports({ onOpenInspection }) {
           <table className="w-full text-left" style={{ fontSize: 12.5 }}>
             <thead>
               <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.05em", background: "var(--ll-table-head-bg)" }}>
-                <th className="font-semibold px-6 py-3.5 border-b w-48 text-left" style={{ borderColor: C.line }}>CASE NO.</th>
-                <th className="font-semibold px-5 py-3.5 border-b text-left" style={{ borderColor: C.line }}>PRODUCT NAME</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-48 text-left" style={{ borderColor: C.line }}>INSPECTOR</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-36 text-left" style={{ borderColor: C.line }}>DATE</th>
-                <th className="font-semibold px-5 py-3.5 border-b w-48 text-center" style={{ borderColor: C.line }}>STATUS</th>
-                <th className="font-semibold px-6 py-3.5 border-b w-48 text-right" style={{ borderColor: C.line }}></th>
+                <th className="font-semibold px-6 py-2.5 border-b w-44 text-left" style={{ borderColor: C.line }}>CASE NO.</th>
+                <th className="font-semibold px-5 py-2.5 border-b text-left min-w-[280px]" style={{ borderColor: C.line }}>PRODUCT NAME</th>
+                <th className="font-semibold px-5 py-2.5 border-b w-44 text-left" style={{ borderColor: C.line }}>INSPECTOR</th>
+                <th className="font-semibold px-5 py-2.5 border-b w-32 text-left" style={{ borderColor: C.line }}>DATE</th>
+                <th className="font-semibold px-5 py-2.5 border-b w-44 text-center" style={{ borderColor: C.line }}>STATUS</th>
+                <th className="font-semibold px-6 py-2.5 border-b w-52 text-right" style={{ borderColor: C.line }}></th>
               </tr>
             </thead>
             <tbody>
@@ -4572,26 +4588,26 @@ function Reports({ onOpenInspection }) {
 
                   return (
                     <tr key={cnoKey} className="ll-tr">
-                      <td className="px-6 py-4 border-b font-semibold text-left" style={{ borderColor: C.line }}>
+                      <td className="px-6 py-2.5 border-b font-semibold text-left" style={{ borderColor: C.line }}>
                         <span className="inline-block px-2.5 py-0.5 rounded font-mono text-xs border" style={{ borderColor: C.line, background: "var(--ll-bg-page)", color: C.ink }}>
                           {cnoKey}
                         </span>
                       </td>
-                      <td className="px-5 py-4 border-b font-semibold text-left" style={{ borderColor: C.line, color: C.ink }}>
+                      <td className="px-5 py-2.5 border-b font-semibold text-left" style={{ borderColor: C.line, color: C.ink }}>
                         {r.product_name || r.product}
                       </td>
-                      <td className="px-5 py-4 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
+                      <td className="px-5 py-2.5 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
                         {r.inspector_name || r.inspector}
                       </td>
-                      <td className="px-5 py-4 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
+                      <td className="px-5 py-2.5 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
                         <span className="flex items-center gap-1.5">
                           <Calendar size={12} className="opacity-60" /> {r.date}
                         </span>
                       </td>
-                      <td className="px-5 py-4 border-b text-center" style={{ borderColor: C.line }}>
+                      <td className="px-5 py-2.5 border-b text-center" style={{ borderColor: C.line }}>
                         <StatusBadge status={r.status} />
                       </td>
-                      <td className="px-6 py-4 border-b text-right" style={{ borderColor: C.line }}>
+                      <td className="px-6 py-2.5 border-b text-right" style={{ borderColor: C.line }}>
                         <div className="flex items-center justify-end gap-3">
                           <button
                             onClick={() => handleViewInspection(r)}
@@ -4604,10 +4620,10 @@ function Reports({ onOpenInspection }) {
                           </button>
                           <button
                             onClick={() => handleDownloadPdf(r)}
-                            className="ll-focus inline-flex items-center gap-1.5 cursor-pointer font-bold text-xs hover:scale-105 transition-transform px-3 py-1 rounded border"
+                            className="ll-focus inline-flex items-center gap-1.5 cursor-pointer font-bold text-xs whitespace-nowrap hover:scale-105 transition-transform px-3 py-1.5 rounded border shadow-2xs"
                             style={{ color: "var(--ll-button-primary-color)", background: "var(--ll-button-primary-bg)", borderColor: "transparent" }}
                           >
-                            <Download size={12} /> Official PDF
+                            <Download size={12} /> Download PDF
                           </button>
                         </div>
                       </td>
