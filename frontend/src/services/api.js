@@ -119,6 +119,33 @@ class ApiService {
     }
   }
 
+  // 3b. Products
+  static async getProducts(params = {}) {
+    try {
+      const q = new URLSearchParams(params).toString();
+      const res = await fetch(`${API_BASE}/products?${q}`, { headers: this.getHeaders() });
+      this.handleUnauthorized(res);
+      if (!res.ok) throw new Error('Failed to fetch products');
+      return await res.json();
+    } catch (e) {
+      console.warn('Products API fetch fallback:', e);
+      return null;
+    }
+  }
+
+  static async getProductHistory(productIdOrName) {
+    try {
+      const encoded = encodeURIComponent(productIdOrName);
+      const res = await fetch(`${API_BASE}/products/${encoded}/history`, { headers: this.getHeaders() });
+      this.handleUnauthorized(res);
+      if (!res.ok) throw new Error('Failed to fetch product history');
+      return await res.json();
+    } catch (e) {
+      console.warn('Product history API fetch fallback:', e);
+      return null;
+    }
+  }
+
   static async createInspection(payload) {
     const res = await fetch(`${API_BASE}/inspections`, {
       method: 'POST',

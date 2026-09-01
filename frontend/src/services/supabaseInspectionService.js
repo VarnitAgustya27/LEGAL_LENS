@@ -77,7 +77,7 @@ export async function fetchInspections({ status = 'ALL', category = '', search =
 
   let query = supabase
     .from('inspections')
-    .select('id, case_number, product_name, category, manufacturer, location, status, score, inspector_name, inspector_badge, is_demo, created_at')
+    .select('id, case_number, product_name, category, manufacturer, location, status, score, inspector_name, inspector_badge, declarations, violations, notes, is_demo, created_at')
     .order('created_at', { ascending: false })
     .limit(limit);
 

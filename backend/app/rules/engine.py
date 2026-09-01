@@ -38,6 +38,15 @@ class RuleEngine:
             severity = rule.get("severity", "HIGH")
             v_type = rule.get("validation_type", "PRESENCE")
 
+            # Check category applicability
+            cat_app = rule.get("category_applicability", ["ALL"])
+            if "ALL" not in cat_app and category not in cat_app:
+                continue
+
+            # Check import applicability for Country of Origin
+            if rule.get("is_mandatory_when_imported") and not is_imported and not rule.get("is_mandatory", True):
+                continue
+
             decl = declarations.get(field, {})
             is_detected = decl.get("detected", False)
             raw_text = str(decl.get("raw_text") or "")
@@ -45,6 +54,11 @@ class RuleEngine:
             conf = decl.get("confidence", 0.0)
             bbox = decl.get("bbox")
             image_id = decl.get("image_id")
+
+            # If optional declaration is not detected, skip without failing
+            is_mandatory = rule.get("is_mandatory", True)
+            if not is_mandatory and not is_detected:
+                continue
 
             total_applicable += 1
 

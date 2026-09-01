@@ -12,6 +12,7 @@ from app.api.rules import router as rules_router
 from app.api.dashboard import router as dashboard_router
 from app.api.reports import router as reports_router
 from app.api.demo import router as demo_router
+from app.api.products import router as products_router
 
 # Initialize database tables and seed records
 init_database()
@@ -41,6 +42,7 @@ app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 # Include Routers
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(inspections_router, prefix=settings.API_V1_STR)
+app.include_router(products_router, prefix=settings.API_V1_STR)
 app.include_router(declarations_router, prefix=settings.API_V1_STR)
 app.include_router(rules_router, prefix=settings.API_V1_STR)
 app.include_router(dashboard_router, prefix=settings.API_V1_STR)
