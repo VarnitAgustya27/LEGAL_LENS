@@ -4080,23 +4080,28 @@ function Products({ onOpenInspection, onNewInspection }) {
       transition={{ duration: 0.25 }}
       className="space-y-6"
     >
-      <Card padded={false} className="rounded-xl overflow-hidden">
+      <Card padded={false} className="rounded-xl overflow-hidden shadow-sm">
         {/* Header & Filter Toolbar */}
-        <div className="p-5 border-b space-y-4" style={{ borderColor: C.line }}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="p-6 border-b space-y-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <SectionLabel eyebrow="ALL PRODUCTS" title="Product Catalogue" />
-              <p style={{ fontSize: 12.5, color: C.slate, marginTop: 2 }}>
+              <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.12em", color: C.gold, fontWeight: 700 }}>
+                ALL PRODUCTS
+              </div>
+              <h2 style={{ ...FONT.display, fontSize: 21, color: C.ink, fontWeight: 700, letterSpacing: "-0.01em", marginTop: 2 }}>
+                Product Catalogue
+              </h2>
+              <p style={{ fontSize: 12.5, color: C.slate, marginTop: 4 }}>
                 Aggregated compliance records and inspection history for all packaged commodities evaluated by enforcement officers.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-3 py-1 rounded-full border font-mono font-semibold" style={{ borderColor: C.line, color: C.slate, background: "var(--ll-bg-page)" }}>
+            <div className="flex items-center gap-3">
+              <span className="text-xs px-3.5 py-1.5 rounded-full border font-mono font-semibold shadow-2xs" style={{ borderColor: C.line, color: C.slate, background: "var(--ll-bg-page)" }}>
                 {productsList.length} Products Registered
               </span>
               <button
                 onClick={loadData}
-                className="ll-focus p-2 rounded-lg border hover:bg-slate-500/10 transition-colors"
+                className="ll-focus p-2 rounded-lg border hover:bg-slate-500/10 transition-colors cursor-pointer"
                 style={{ borderColor: C.line, color: C.slate }}
                 title="Refresh product catalogue"
               >
@@ -4106,21 +4111,21 @@ function Products({ onOpenInspection, onNewInspection }) {
           </div>
 
           {/* Search and Filters */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input
                 placeholder="Search by product name, barcode, manufacturer…"
-                className="ll-focus transition-all duration-200"
-                style={{ ...inputStyle, paddingLeft: 32, width: "100%", fontSize: 12.5 }}
+                className="ll-focus transition-all duration-200 rounded-lg"
+                style={{ ...inputStyle, paddingLeft: 34, width: "100%", fontSize: 12.5 }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
             <select
-              className="ll-focus cursor-pointer transition-all duration-200"
-              style={{ ...inputStyle, width: 170, fontSize: 12.5 }}
+              className="ll-focus cursor-pointer transition-all duration-200 rounded-lg"
+              style={{ ...inputStyle, width: 180, fontSize: 12.5 }}
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
@@ -4129,8 +4134,8 @@ function Products({ onOpenInspection, onNewInspection }) {
             </select>
 
             <select
-              className="ll-focus cursor-pointer transition-all duration-200"
-              style={{ ...inputStyle, width: 170, fontSize: 12.5 }}
+              className="ll-focus cursor-pointer transition-all duration-200 rounded-lg"
+              style={{ ...inputStyle, width: 180, fontSize: 12.5 }}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -4144,29 +4149,32 @@ function Products({ onOpenInspection, onNewInspection }) {
 
         {/* Product Catalogue Table */}
         <div className="overflow-x-auto">
-          <table className="w-full" style={{ fontSize: 12.5 }}>
+          <table className="w-full text-left" style={{ fontSize: 12.5 }}>
             <thead>
-              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-                {["PRODUCT", "BARCODE", "CATEGORY", "INSPECTIONS", "CURRENT STATUS", ""].map((h) => (
-                  <th key={h} className="text-left font-semibold px-5 py-3.5 border-b" style={{ borderColor: C.line }}>{h}</th>
-                ))}
+              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.05em", background: "var(--ll-table-head-bg)" }}>
+                <th className="font-semibold px-6 py-3.5 border-b text-left" style={{ borderColor: C.line }}>PRODUCT & MANUFACTURER</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-44 text-left" style={{ borderColor: C.line }}>BARCODE</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-36 text-left" style={{ borderColor: C.line }}>CATEGORY</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-32 text-center" style={{ borderColor: C.line }}>INSPECTIONS</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-44 text-center" style={{ borderColor: C.line }}>CURRENT STATUS</th>
+                <th className="font-semibold px-6 py-3.5 border-b w-28 text-right" style={{ borderColor: C.line }}></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: 4 }).map((_, idx) => (
                   <tr key={idx} className="border-b" style={{ borderColor: C.line }}>
-                    <td className="px-5 py-4"><div className="h-4 w-48 bg-slate-700/20 animate-pulse rounded" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-48 bg-slate-700/20 animate-pulse rounded" /></td>
                     <td className="px-5 py-4"><div className="h-4 w-24 bg-slate-700/20 animate-pulse rounded" /></td>
                     <td className="px-5 py-4"><div className="h-4 w-20 bg-slate-700/20 animate-pulse rounded" /></td>
-                    <td className="px-5 py-4"><div className="h-4 w-10 bg-slate-700/20 animate-pulse rounded" /></td>
-                    <td className="px-5 py-4"><div className="h-6 w-28 bg-slate-700/20 animate-pulse rounded" /></td>
-                    <td className="px-5 py-4"><div className="h-4 w-16 bg-slate-700/20 animate-pulse rounded" /></td>
+                    <td className="px-5 py-4 text-center"><div className="h-4 w-10 bg-slate-700/20 animate-pulse rounded mx-auto" /></td>
+                    <td className="px-5 py-4 text-center"><div className="h-6 w-28 bg-slate-700/20 animate-pulse rounded mx-auto" /></td>
+                    <td className="px-6 py-4 text-right"><div className="h-4 w-16 bg-slate-700/20 animate-pulse rounded ml-auto" /></td>
                   </tr>
                 ))
               ) : filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <Package size={32} className="mx-auto mb-2 opacity-40" style={{ color: C.slate }} />
                     <p style={{ fontSize: 13, color: C.slate, fontWeight: 500 }}>No products match your filter criteria.</p>
                     <button
@@ -4186,32 +4194,34 @@ function Products({ onOpenInspection, onNewInspection }) {
                       onClick={() => setModalProduct(p)}
                       className="ll-tr cursor-pointer transition-all duration-150"
                     >
-                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                      <td className="px-6 py-4 border-b" style={{ borderColor: C.line }}>
                         <div style={{ fontWeight: 600, color: C.ink }}>{p.name}</div>
                         {p.manufacturer && p.manufacturer !== "—" && (
-                          <div style={{ fontSize: 11, color: C.slate, marginTop: 1 }} className="truncate max-w-[280px]">
+                          <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }} className="truncate max-w-[320px]">
                             {p.manufacturer}
                           </div>
                         )}
                       </td>
-                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5, color: C.slate }}>
-                        {p.barcode}
+                      <td className="px-5 py-4 border-b text-left" style={{ borderColor: C.line }}>
+                        <span className="inline-block px-2.5 py-0.5 rounded font-mono text-xs border" style={{ borderColor: C.line, background: "var(--ll-bg-page)", color: C.slate }}>
+                          {p.barcode}
+                        </span>
                       </td>
-                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>
+                      <td className="px-5 py-4 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
                         {p.category}
                       </td>
-                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ background: "var(--ll-bg-page)", color: C.charcoal, border: `1px solid ${C.line}` }}>
+                      <td className="px-5 py-4 border-b text-center" style={{ borderColor: C.line }}>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border shadow-2xs" style={{ background: "var(--ll-bg-page)", color: C.charcoal, borderColor: C.line }}>
                           {p.inspections} test{p.inspections === 1 ? '' : 's'}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
+                      <td className="px-5 py-4 border-b text-center" style={{ borderColor: C.line }}>
                         <StatusBadge status={p.status} />
                       </td>
-                      <td className="px-5 py-3.5 border-b text-right" style={{ borderColor: C.line }}>
+                      <td className="px-6 py-4 border-b text-right" style={{ borderColor: C.line }}>
                         <button
                           onClick={(e) => { e.stopPropagation(); setModalProduct(p); }}
-                          className="ll-focus inline-flex items-center gap-1 transition-transform hover:translate-x-1 font-bold text-xs"
+                          className="ll-focus inline-flex items-center gap-1 transition-transform hover:translate-x-1 font-bold text-xs cursor-pointer"
                           style={{ color: C.gold }}
                         >
                           History <ChevronRight size={13} />
@@ -4251,10 +4261,10 @@ function Rules() {
         <Button onClick={() => setShowAdd(true)}><Plus size={15} /> Add Rule</Button>
       </div>
 
-      <Card padded={false} className="overflow-x-auto rounded-xl">
+      <Card padded={false} className="overflow-x-auto rounded-xl shadow-sm">
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
               {["RULE CODE", "NAME", "APPLICABLE CATEGORY", "SEVERITY", "VERSION", "EFFECTIVE FROM", "STATUS"].map((h) => (
                 <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
               ))}
@@ -4332,6 +4342,9 @@ function Reports({ onOpenInspection }) {
   const [reportsList, setReportsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openingCase, setOpeningCase] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const shouldReduceMotion = useReducedMotion();
 
   const deduplicateReports = (arr) => {
     if (!Array.isArray(arr)) return [];
@@ -4347,26 +4360,35 @@ function Reports({ onOpenInspection }) {
     return result;
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadReports = async () => {
-      try {
-        const apiData = await ApiService.getReports();
-        if (isMounted) {
-          setReportsList(Array.isArray(apiData) ? apiData : []);
-          setLoading(false);
-        }
-      } catch (e) {
-        if (isMounted) {
-          setReportsList([]);
-          setLoading(false);
-        }
-      }
-    };
+  const loadReports = async () => {
+    setLoading(true);
+    try {
+      const apiData = await ApiService.getReports();
+      setReportsList(Array.isArray(apiData) ? apiData : []);
+    } catch (e) {
+      setReportsList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadReports();
-    return () => { isMounted = false; };
   }, []);
+
+  const filteredReports = reportsList.filter((r) => {
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      const match = (r.case_number && r.case_number.toLowerCase().includes(q)) ||
+                    (r.product_name && r.product_name.toLowerCase().includes(q)) ||
+                    (r.product && r.product.toLowerCase().includes(q)) ||
+                    (r.inspector_name && r.inspector_name.toLowerCase().includes(q)) ||
+                    (r.inspector && r.inspector.toLowerCase().includes(q));
+      if (!match) return false;
+    }
+    if (statusFilter !== "ALL" && (r.status || "REVIEW").toUpperCase() !== statusFilter) return false;
+    return true;
+  });
 
   const handleViewInspection = async (r) => {
     const cno = r.case_number || r.id;
@@ -4449,64 +4471,155 @@ function Reports({ onOpenInspection }) {
   };
 
   return (
-    <Card padded={false} className="overflow-x-auto relative rounded-xl shadow-md">
-      <div className="p-5 pb-0 flex items-center justify-between">
-        <SectionLabel eyebrow="GENERATED" title="Inspection Reports" />
-        <span className="text-xs font-mono text-slate-500 font-semibold">{reportsList.length} Unique Inspection Cases</span>
-      </div>
+    <motion.div
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-6"
+    >
+      <Card padded={false} className="overflow-x-auto relative rounded-xl shadow-sm">
+        {/* Header & Filter Toolbar */}
+        <div className="p-6 border-b space-y-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.12em", color: C.gold, fontWeight: 700 }}>
+                GENERATED DOSSIERS
+              </div>
+              <h2 style={{ ...FONT.display, fontSize: 21, color: C.ink, fontWeight: 700, letterSpacing: "-0.01em", marginTop: 2 }}>
+                Inspection Reports
+              </h2>
+              <p style={{ fontSize: 12.5, color: C.slate, marginTop: 4 }}>
+                Official bilingual legal metrology inspection reports, enforcement notices, and audit records.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs px-3.5 py-1.5 rounded-full border font-mono font-semibold shadow-2xs" style={{ borderColor: C.line, color: C.slate, background: "var(--ll-bg-page)" }}>
+                {reportsList.length} Unique Inspection Cases
+              </span>
+              <button
+                onClick={loadReports}
+                className="ll-focus p-2 rounded-lg border hover:bg-slate-500/10 transition-colors cursor-pointer"
+                style={{ borderColor: C.line, color: C.slate }}
+                title="Refresh reports"
+              >
+                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+              </button>
+            </div>
+          </div>
 
-      {loading ? (
-        <div className="p-8 text-center text-slate-400 flex items-center justify-center gap-2">
-          <Loader2 className="animate-spin" size={18} /> Loading Official PDF Reports...
+          {/* Search & Status Filter */}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+              <input
+                placeholder="Search by case no., product, inspector…"
+                className="ll-focus transition-all duration-200 rounded-lg"
+                style={{ ...inputStyle, paddingLeft: 34, width: "100%", fontSize: 12.5 }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <select
+              className="ll-focus cursor-pointer transition-all duration-200 rounded-lg"
+              style={{ ...inputStyle, width: 180, fontSize: 12.5 }}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="COMPLIANT">Compliant</option>
+              <option value="NON_COMPLIANT">Non-Compliant</option>
+              <option value="REVIEW">Requires Verification</option>
+            </select>
+          </div>
         </div>
-      ) : (
-        <table className="w-full" style={{ fontSize: 12.5 }}>
-          <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
-              {["CASE NO.", "PRODUCT", "INSPECTOR", "DATE", "STATUS", ""].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {reportsList.map((r) => {
-              const cnoKey = r.case_number || r.id;
-              const isOpening = openingCase === cnoKey;
 
-              return (
-                <tr key={cnoKey} className="ll-tr">
-                  <td className="px-5 py-3.5 border-b font-semibold" style={{ borderColor: C.line, ...FONT.mono, color: C.ink }}>{cnoKey}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, fontWeight: 600 }}>{r.product_name || r.product}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.inspector_name || r.inspector}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.date}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}><StatusBadge status={r.status} /></td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleViewInspection(r)}
-                        disabled={isOpening}
-                        className="ll-focus inline-flex items-center gap-1 cursor-pointer font-bold text-xs hover:scale-105 transition-transform"
-                        style={{ color: C.ink }}
-                      >
-                        {isOpening ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />}
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleDownloadPdf(r)}
-                        className="ll-focus inline-flex items-center gap-1 cursor-pointer font-bold text-xs hover:scale-105 transition-transform"
-                        style={{ color: C.gold }}
-                      >
-                        <Download size={13} /> Official PDF
-                      </button>
-                    </div>
+        {loading ? (
+          <div className="p-12 text-center text-slate-400 flex items-center justify-center gap-2">
+            <Loader2 className="animate-spin" size={18} /> Loading Official PDF Reports...
+          </div>
+        ) : (
+          <table className="w-full text-left" style={{ fontSize: 12.5 }}>
+            <thead>
+              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.05em", background: "var(--ll-table-head-bg)" }}>
+                <th className="font-semibold px-6 py-3.5 border-b w-48 text-left" style={{ borderColor: C.line }}>CASE NO.</th>
+                <th className="font-semibold px-5 py-3.5 border-b text-left" style={{ borderColor: C.line }}>PRODUCT NAME</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-48 text-left" style={{ borderColor: C.line }}>INSPECTOR</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-36 text-left" style={{ borderColor: C.line }}>DATE</th>
+                <th className="font-semibold px-5 py-3.5 border-b w-48 text-center" style={{ borderColor: C.line }}>STATUS</th>
+                <th className="font-semibold px-6 py-3.5 border-b w-48 text-right" style={{ borderColor: C.line }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredReports.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <FileText size={32} className="mx-auto mb-2 opacity-40" style={{ color: C.slate }} />
+                    <p style={{ fontSize: 13, color: C.slate, fontWeight: 500 }}>No inspection reports match your filter criteria.</p>
+                    <button
+                      onClick={() => { setSearchTerm(""); setStatusFilter("ALL"); }}
+                      className="mt-3 text-xs font-semibold hover:underline"
+                      style={{ color: C.gold }}
+                    >
+                      Clear Filters
+                    </button>
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
-    </Card>
+              ) : (
+                filteredReports.map((r) => {
+                  const cnoKey = r.case_number || r.id;
+                  const isOpening = openingCase === cnoKey;
+
+                  return (
+                    <tr key={cnoKey} className="ll-tr">
+                      <td className="px-6 py-4 border-b font-semibold text-left" style={{ borderColor: C.line }}>
+                        <span className="inline-block px-2.5 py-0.5 rounded font-mono text-xs border" style={{ borderColor: C.line, background: "var(--ll-bg-page)", color: C.ink }}>
+                          {cnoKey}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 border-b font-semibold text-left" style={{ borderColor: C.line, color: C.ink }}>
+                        {r.product_name || r.product}
+                      </td>
+                      <td className="px-5 py-4 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
+                        {r.inspector_name || r.inspector}
+                      </td>
+                      <td className="px-5 py-4 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
+                        <span className="flex items-center gap-1.5">
+                          <Calendar size={12} className="opacity-60" /> {r.date}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 border-b text-center" style={{ borderColor: C.line }}>
+                        <StatusBadge status={r.status} />
+                      </td>
+                      <td className="px-6 py-4 border-b text-right" style={{ borderColor: C.line }}>
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => handleViewInspection(r)}
+                            disabled={isOpening}
+                            className="ll-focus inline-flex items-center gap-1.5 cursor-pointer font-bold text-xs hover:scale-105 transition-transform px-2.5 py-1 rounded border"
+                            style={{ color: C.ink, borderColor: C.line, background: "var(--ll-bg-page)" }}
+                          >
+                            {isOpening ? <Loader2 size={12} className="animate-spin" /> : <Eye size={12} />}
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleDownloadPdf(r)}
+                            className="ll-focus inline-flex items-center gap-1.5 cursor-pointer font-bold text-xs hover:scale-105 transition-transform px-3 py-1 rounded border"
+                            style={{ color: "var(--ll-button-primary-color)", background: "var(--ll-button-primary-bg)", borderColor: "transparent" }}
+                          >
+                            <Download size={12} /> Official PDF
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </motion.div>
   );
 }
 
