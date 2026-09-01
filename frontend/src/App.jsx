@@ -5688,6 +5688,9 @@ export default function App() {
 
   // Update User Handler (optimistic + Supabase persistence)
   const handleUpdateUser = async (targetEmail, updatedFields) => {
+    const oldUser = users.find((u) => u.email === targetEmail);
+    const oldName = oldUser?.name;
+
     const { pass, password, ...safeFields } = updatedFields;
     setUsers((prev) =>
       prev.map((u) => (u.email === targetEmail ? { ...u, ...safeFields } : u))
@@ -5700,28 +5703,106 @@ export default function App() {
       try {
         const dbFields = { ...safeFields };
         if (typeof pass === "string" && pass.length > 0) dbFields.pass = pass;
+
+        // 1. Update officer_users table in Supabase
         const { error } = await supabase
           .from("officer_users")
           .update(dbFields)
           .eq("email", targetEmail);
         if (error) console.error("Supabase update error:", error);
+
+        // 2. Cascade officer name change to inspections & reports tables in Supabase if name changed
+        if (safeFields.name && safeFields.name !== oldName) {
+          const newName = safeFields.name;
+
+          // A. Update inspections table by inspector_email
+          const { error: inspEmailErr } = await supabase
+            .from("inspections")
+            .update({ inspector_name: newName })
+            .eq("inspector_email", targetEmail);
+          if (inspEmailErr) console.warn("Supabase inspections email update note:", inspEmailErr);
+
+          // B. Update inspections table by old inspector_name
+          if (oldName) {
+            const { error: inspNameErr } = await supabase
+              .from("inspections")
+              .update({ inspector_name: newName })
+              .eq("inspector_name", oldName);
+            if (inspNameErr) console.warn("Supabase inspections name update note:", inspNameErr);
+
+            // C. Update reports table by inspector_name / inspector
+            try {
+              await supabase
+                .from("reports")
+                .update({ inspector_name: newName })
+                .eq("inspector_name", oldName);
+            } catch (rErr) {
+              console.warn("Supabase reports inspector_name update note:", rErr);
+            }
+            try {
+              await supabase
+                .from("reports")
+                .update({ inspector: newName })
+                .eq("inspector", oldName);
+            } catch (rErr) {
+              console.warn("Supabase reports inspector update note:", rErr);
+            }
+          }
+        }
       } catch (err) {
         console.error("Supabase update exception:", err);
       }
     }
   };
 
-  // Delete User Handler (optimistic + Supabase persistence)
+  // Delete User Handler (optimistic + Supabase persistence + update inspections & reports)
   const handleDeleteUser = async (targetEmail) => {
+    const deletedUser = users.find((u) => u.email === targetEmail);
+    const deletedName = deletedUser?.name;
+
     setUsers((prev) => prev.filter((u) => u.email !== targetEmail));
 
     if (isSupabaseConfigured() && supabase) {
       try {
+        // 1. Delete user record from officer_users
         const { error } = await supabase
           .from("officer_users")
           .delete()
           .eq("email", targetEmail);
         if (error) console.error("Supabase delete error:", error);
+
+        // 2. Mark officer name as "Deleted User" in inspections table in Supabase
+        const { error: inspEmailErr } = await supabase
+          .from("inspections")
+          .update({ inspector_name: "Deleted User" })
+          .eq("inspector_email", targetEmail);
+        if (inspEmailErr) console.warn("Supabase inspections delete update email note:", inspEmailErr);
+
+        if (deletedName) {
+          const { error: inspNameErr } = await supabase
+            .from("inspections")
+            .update({ inspector_name: "Deleted User" })
+            .eq("inspector_name", deletedName);
+          if (inspNameErr) console.warn("Supabase inspections delete update name note:", inspNameErr);
+
+          // 3. Mark officer name as "Deleted User" in reports table in Supabase
+          try {
+            await supabase
+              .from("reports")
+              .update({ inspector_name: "Deleted User" })
+              .eq("inspector_name", deletedName);
+          } catch (rErr) {
+            console.warn("Supabase reports delete inspector_name note:", rErr);
+          }
+          try {
+            await supabase
+              .from("reports")
+              .update({ inspector: "Deleted User" })
+              .eq("inspector", deletedName);
+          } catch (rErr) {
+            console.warn("Supabase reports delete inspector note:", rErr);
+          }
+        }
       } catch (err) {
         console.error("Supabase delete exception:", err);
       }
