@@ -3281,7 +3281,9 @@ function InspectionDetail({ inspection }) {
       const cno = caseId || insp?.case_number || insp?.id;
       let url = insp?.pdf_url;
       if (!url || url.includes('/undefined')) {
-        url = `/api/reports/case/${encodeURIComponent(cno)}/pdf`;
+        url = `${ApiService.getApiBase()}/reports/case/${encodeURIComponent(cno)}/pdf`;
+      } else if (url.startsWith('/api')) {
+        url = url.replace('/api', ApiService.getApiBase());
       }
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to generate PDF");
@@ -4511,7 +4513,9 @@ function Reports({ onOpenInspection }) {
     try {
       let url = r.pdf_url;
       if (!url || url.includes('/undefined')) {
-        url = `/api/reports/case/${encodeURIComponent(cno)}/pdf`;
+        url = `${ApiService.getApiBase()}/reports/case/${encodeURIComponent(cno)}/pdf`;
+      } else if (url.startsWith('/api')) {
+        url = url.replace('/api', ApiService.getApiBase());
       }
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to download PDF");

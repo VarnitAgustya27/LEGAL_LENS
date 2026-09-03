@@ -145,6 +145,13 @@ function cleanImageUrl(img) {
     const rel = url.replace(/\\/g, "/").split("/uploads/")[1];
     if (rel) url = `/uploads/${rel}`;
   }
+  if (url && typeof url === 'string' && url.startsWith('/uploads/')) {
+    const rawApi = import.meta.env.VITE_API_BASE_URL;
+    if (rawApi && rawApi.startsWith('http')) {
+      const backendRoot = rawApi.replace(/\/api\/?$/, '');
+      url = `${backendRoot}${url}`;
+    }
+  }
   return url || MISSING_IMAGE_PLACEHOLDER;
 }
 

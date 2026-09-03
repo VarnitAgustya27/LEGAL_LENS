@@ -13,7 +13,8 @@ def test_compliant_declarations(rule_engine):
         "country_of_origin": {"detected": True, "value": "India", "raw_text": "Made in India", "confidence": 0.97},
         "mfg_date": {"detected": True, "value": "08/2026", "raw_text": "Mfg Date: 08/2026", "confidence": 0.94},
         "best_before": {"detected": True, "value": "6 Months", "raw_text": "Best Before 6 Months", "confidence": 0.93},
-        "consumer_care": {"detected": True, "value": "1800-11-2233", "raw_text": "Helpline: 1800-11-2233 | care@abc.com", "confidence": 0.91}
+        "consumer_care": {"detected": True, "value": "1800-11-2233", "raw_text": "Helpline: 1800-11-2233 | care@abc.com", "confidence": 0.91},
+        "unit_sale_price": {"detected": True, "value": "Rs. 0.125 / g", "raw_text": "Unit Sale Price: Rs. 0.125 / g", "confidence": 0.95}
     }
     product_info = {"is_imported": False, "category": "Packaged Food"}
     res = rule_engine.evaluate_inspection(declarations, product_info)

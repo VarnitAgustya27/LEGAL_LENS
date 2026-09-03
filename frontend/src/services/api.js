@@ -1,6 +1,19 @@
-const API_BASE = '/api';
+const rawBase = import.meta.env.VITE_API_BASE_URL;
+let cleanBase = rawBase ? rawBase.trim().replace(/\/+$/, '') : '/api';
+if (cleanBase.startsWith('http') && !cleanBase.endsWith('/api')) {
+  cleanBase = `${cleanBase}/api`;
+}
+const API_BASE = cleanBase;
 
 class ApiService {
+  static getApiBase() {
+    return API_BASE;
+  }
+
+  static getBackendRoot() {
+    return API_BASE.startsWith('http') ? API_BASE.replace(/\/api\/?$/, '') : '';
+  }
+
   static getUserHeaders() {
     const token = localStorage.getItem('legallens_token');
     const userStr = localStorage.getItem('legallens_current_user');
