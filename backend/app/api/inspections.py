@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, status
 from sqlalchemy.orm import Session
-
+from app.config import settings
 from app.database.session import get_db
 from app.models.user import User
 from app.models.product import Product
@@ -361,24 +361,25 @@ def direct_scan(
             "id": f"img_{img_obj.id}",
             "angle": angle_label,
             "image_type": angle_label,
-            "original_path": web_url,
+            "original_path": file_path,
+            "local_path": file_path,
             "image_url": web_url,
             "url": web_url,
             "filename": file.filename
         })
 
     # 1. Primary: Run Gemini Vision AI on all images (Lightning fast ~1.5s)
+    all_detections = []
     gemini_successful = False
     declarations_dict = {}
 
     try:
-        from app.config import settings
         from app.ocr.gemini_engine import GeminiVisionEngine
         gemini_engine = GeminiVisionEngine(api_key=settings.GEMINI_API_KEY)
         if gemini_engine.is_available():
-            image_paths = [img["original_path"] for img in saved_images_list]
+            image_paths = [img.get("local_path") or img["original_path"] for img in saved_images_list]
             print(f"\n==========================================================================")
-            print(f"[GEMINI-VISION] 🤖 Dispatching {len(image_paths)} packaging photo(s) to Gemini Vision AI...")
+            print(f"[GEMINI-VISION] Dispatching {len(image_paths)} packaging photo(s) to Gemini Vision AI...")
             print(f"==========================================================================")
             gemini_result = gemini_engine.analyze_packaging_images(image_paths, category)
             # Normalise list output to dict if Gemini wrapped it in a list
@@ -442,7 +443,8 @@ def direct_scan(
         print("[FALLBACK] Running local CPU EasyOCR engine...")
         for img in saved_images_list:
             try:
-                detections = service.ocr_engine.extract_text(img["original_path"], image_id=img["angle"])
+                img_p = img.get("local_path") or img["original_path"]
+                detections = service.ocr_engine.extract_text(img_p, image_id=img["angle"])
                 all_detections.extend(detections)
             except Exception as e:
                 print(f"[OCR] Note on {img['filename']}: {e}")
