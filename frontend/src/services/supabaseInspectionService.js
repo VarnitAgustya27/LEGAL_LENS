@@ -133,7 +133,7 @@ function cleanImageUrl(img) {
     return img.supabase_url;
   }
   let url = typeof img === 'string' ? img : (img.supabase_url || img.url || img.image_url);
-  if (url && String(url).startsWith('http')) return url;
+  if (url && String(url).startsWith('http') && !String(url).includes('/uploads/')) return url;
 
   const orig = typeof img === 'object' ? img.original_path : null;
 
@@ -145,7 +145,13 @@ function cleanImageUrl(img) {
     const rel = url.replace(/\\/g, "/").split("/uploads/")[1];
     if (rel) url = `/uploads/${rel}`;
   }
-  if (url && typeof url === 'string' && url.startsWith('/uploads/')) {
+  if (url && typeof url === 'string' && (url.startsWith('/uploads/') || url.includes('/uploads/'))) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (supabaseUrl && supabaseUrl.startsWith('https://')) {
+      const filename = url.split('/').pop();
+      const bucket = url.includes('/reports/') ? 'reports' : 'product-images';
+      return `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/${bucket}/${filename}`;
+    }
     const rawApi = import.meta.env.VITE_API_BASE_URL;
     if (rawApi && rawApi.startsWith('http')) {
       const backendRoot = rawApi.replace(/\/api\/?$/, '');
@@ -280,10 +286,13 @@ export async function fetchDashboardStats() {
   const review = data.filter((i) => i.status === 'REVIEW').length;
 
   // Violations by Category
+  const DEFAULT_CATEGORIES = ['Packaged Food', 'Cosmetics', 'Beverages', 'Personal Care', 'Imported Goods'];
   const catMap = {};
+  DEFAULT_CATEGORIES.forEach((cat) => { catMap[cat] = 0; });
+
   data.forEach((i) => {
     const cat = i.category || 'Packaged Food';
-    if (!catMap[cat]) catMap[cat] = 0;
+    if (catMap[cat] === undefined) catMap[cat] = 0;
     if (i.status === 'NON_COMPLIANT' || i.status === 'REVIEW') {
       const vCount = Array.isArray(i.violations) && i.violations.length > 0 ? i.violations.length : 1;
       catMap[cat] += vCount;

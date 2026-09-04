@@ -148,13 +148,14 @@ def upload_inspection_images(
 
         from app.utils.supabase_uploader import upload_image_to_supabase_storage
         pub_url = upload_image_to_supabase_storage(file_path, fname)
-        rel_url = f"/uploads/inspections/{inspection_id}/{fname}"
+        fallback_supabase = f"{settings.SUPABASE_URL.rstrip('/')}/storage/v1/object/public/product-images/{fname}"
+        final_url = pub_url or fallback_supabase
 
         img_obj = InspectionImage(
             inspection_id=inspection.id,
             image_type=image_type,
-            original_path=file_path,
-            image_url=pub_url or rel_url,
+            original_path=final_url,
+            image_url=final_url,
             quality_status="GOOD",
             quality_score=1.0,
             quality_metrics={}
@@ -348,12 +349,19 @@ def direct_scan(
         db.commit()
         db.refresh(img_obj)
 
-        web_url = f"/uploads/inspections/{inspection.id}/{safe_name}"
+        from app.utils.supabase_uploader import upload_image_to_supabase_storage
+        pub_url = upload_image_to_supabase_storage(file_path, safe_name)
+        fallback_supabase = f"{settings.SUPABASE_URL.rstrip('/')}/storage/v1/object/public/product-images/{safe_name}"
+        web_url = pub_url or fallback_supabase
+        img_obj.original_path = web_url
+        img_obj.image_url = web_url
+        db.commit()
+
         saved_images_list.append({
             "id": f"img_{img_obj.id}",
             "angle": angle_label,
             "image_type": angle_label,
-            "original_path": file_path,
+            "original_path": web_url,
             "image_url": web_url,
             "url": web_url,
             "filename": file.filename

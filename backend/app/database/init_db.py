@@ -69,6 +69,17 @@ def init_database():
                         db.add(rule_obj)
                 db.commit()
                 print("Legal Metrology (PCR 2011) rules loaded.")
+
+        # 3. Migrate legacy local image paths to Supabase Storage URLs
+        from app.models.inspection_image import InspectionImage
+        from app.config import settings
+        legacy_imgs = db.query(InspectionImage).all()
+        for img in legacy_imgs:
+            if img.original_path and "/uploads/" in img.original_path:
+                fname = os.path.basename(img.original_path)
+                sb_url = f"{settings.SUPABASE_URL.rstrip('/')}/storage/v1/object/public/product-images/{fname}"
+                img.original_path = sb_url
+        db.commit()
     finally:
         db.close()
 

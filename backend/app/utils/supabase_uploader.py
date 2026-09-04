@@ -3,6 +3,20 @@ import requests
 from typing import Optional
 from app.config import settings
 
+def ensure_supabase_bucket(bucket_name: str, supabase_url: str, key: str):
+    """Ensures that the public storage bucket exists in Supabase."""
+    try:
+        url = f"{supabase_url}/storage/v1/bucket"
+        headers = {
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json"
+        }
+        payload = {"id": bucket_name, "name": bucket_name, "public": True}
+        requests.post(url, json=payload, headers=headers, timeout=5)
+    except Exception as e:
+        print(f"[SUPABASE-STORAGE] ensure_bucket note: {e}")
+
 def upload_pdf_to_supabase(pdf_file_path: str, filename: str) -> str:
     """
     Uploads a generated PDF file to Supabase Storage bucket 'reports'.
@@ -12,7 +26,7 @@ def upload_pdf_to_supabase(pdf_file_path: str, filename: str) -> str:
         return f"{settings.API_V1_STR}/reports/pdf"
 
     supabase_url = settings.SUPABASE_URL.rstrip('/')
-    anon_key = settings.SUPABASE_ANON_KEY or settings.SUPABASE_SERVICE_ROLE_KEY
+    anon_key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY
 
     if supabase_url and anon_key:
         upload_endpoint = f"{supabase_url}/storage/v1/object/reports/{filename}"
@@ -34,6 +48,12 @@ def upload_pdf_to_supabase(pdf_file_path: str, filename: str) -> str:
                 print(f"[SUPABASE-STORAGE] Successfully uploaded report to Supabase: {public_url}")
                 return public_url
             else:
+                # Attempt to create bucket and retry
+                ensure_supabase_bucket("reports", supabase_url, anon_key)
+                retry_resp = requests.post(upload_endpoint, data=pdf_data, headers=headers, timeout=10)
+                if retry_resp.status_code in [200, 201]:
+                    print(f"[SUPABASE-STORAGE] Successfully uploaded report to Supabase after bucket creation: {public_url}")
+                    return public_url
                 print(f"[SUPABASE-STORAGE] Upload note: Storage bucket 'reports' returned status {resp.status_code}")
         except Exception as e:
             print(f"[SUPABASE-STORAGE] Upload note: {e}")
@@ -46,7 +66,7 @@ def save_report_to_supabase_db(report_data: dict) -> bool:
     Saves/Upserts a report metadata row into Supabase PostgreSQL 'public.reports' table.
     """
     supabase_url = settings.SUPABASE_URL.rstrip('/')
-    anon_key = settings.SUPABASE_ANON_KEY or settings.SUPABASE_SERVICE_ROLE_KEY
+    anon_key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY
     if not supabase_url or not anon_key:
         return False
 
@@ -67,6 +87,12 @@ def save_report_to_supabase_db(report_data: dict) -> bool:
         "status": report_data.get("status", "REVIEW")
     }
 
+    try:
+        resp = requests.post(endpoint, json=payload, headers=headers, timeout=10)
+        return resp.status_code in [200, 201]
+    except Exception:
+        return False
+
 def upload_image_to_supabase_storage(file_path: str, filename: str) -> Optional[str]:
     """
     Uploads an inspection photo to Supabase Storage bucket 'product-images'.
@@ -76,7 +102,7 @@ def upload_image_to_supabase_storage(file_path: str, filename: str) -> Optional[
         return None
 
     supabase_url = settings.SUPABASE_URL.rstrip('/')
-    anon_key = settings.SUPABASE_ANON_KEY or settings.SUPABASE_SERVICE_ROLE_KEY
+    anon_key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY
 
     if supabase_url and anon_key:
         upload_endpoint = f"{supabase_url}/storage/v1/object/product-images/{filename}"
@@ -87,9 +113,9 @@ def upload_image_to_supabase_storage(file_path: str, filename: str) -> Optional[
                 img_data = f.read()
 
             content_type = "image/jpeg"
-            if filename.endswith(".png"):
+            if filename.lower().endswith(".png"):
                 content_type = "image/png"
-            elif filename.endswith(".webp"):
+            elif filename.lower().endswith(".webp"):
                 content_type = "image/webp"
 
             headers = {
@@ -104,6 +130,12 @@ def upload_image_to_supabase_storage(file_path: str, filename: str) -> Optional[
                 print(f"[SUPABASE-STORAGE] Successfully uploaded image to Supabase Cloud CDN: {public_url}")
                 return public_url
             else:
+                # Attempt to create bucket and retry
+                ensure_supabase_bucket("product-images", supabase_url, anon_key)
+                retry_resp = requests.post(upload_endpoint, data=img_data, headers=headers, timeout=10)
+                if retry_resp.status_code in [200, 201]:
+                    print(f"[SUPABASE-STORAGE] Successfully uploaded image to Supabase after bucket creation: {public_url}")
+                    return public_url
                 print(f"[SUPABASE-STORAGE] Image upload note: bucket 'product-images' status {resp.status_code}: {resp.text}")
         except Exception as e:
             print(f"[SUPABASE-STORAGE] Image upload note: {e}")
