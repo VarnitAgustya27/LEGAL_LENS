@@ -42,6 +42,8 @@ def list_reports(db: Session = Depends(get_db)):
                         "case_number": cno,
                         "product_name": insp.get("product_name") or "Packaged Commodity",
                         "inspector_name": insp.get("inspector_name") or "Enforcement Officer",
+                        "inspector_email": insp.get("inspector_email"),
+                        "inspector_badge": insp.get("inspector_badge"),
                         "date": str(insp.get("created_at", ""))[:10] if insp.get("created_at") else "2026-08-31",
                         "status": insp.get("status") or "REVIEW",
                         "score": insp.get("score") or 0.0,

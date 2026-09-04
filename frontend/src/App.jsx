@@ -1966,7 +1966,7 @@ function Dashboard({ onOpenInspection, isDark }) {
 
 /* ============================== INSPECTIONS LIST ============================== */
 
-function InspectionsList({ onOpen, onNew }) {
+function InspectionsList({ onOpen, onNew, users = [] }) {
   const [statusFilter, setStatusFilter]   = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [searchQuery, setSearchQuery]     = useState("");
@@ -1976,6 +1976,29 @@ function InspectionsList({ onOpen, onNew }) {
   const [fetchError, setFetchError]       = useState(null);
   const [openingId, setOpeningId]         = useState(null); // case_number being opened
   const shouldReduceMotion = useReducedMotion();
+
+  // Helper to dynamically resolve inspector name from users list while strictly preserving Deleted User
+  const resolveInspectorName = (item) => {
+    const raw = item?.inspector_name || item?.inspector || "";
+    if (String(raw).trim().toLowerCase() === "deleted user") {
+      return "Deleted User";
+    }
+    if (Array.isArray(users) && users.length > 0) {
+      if (item?.inspector_email) {
+        const found = users.find(u => u.email && u.email.toLowerCase() === item.inspector_email.toLowerCase());
+        if (found?.name) return found.name;
+      }
+      if (item?.inspector_badge) {
+        const found = users.find(u => u.badge && u.badge.toLowerCase() === item.inspector_badge.toLowerCase());
+        if (found?.name) return found.name;
+      }
+      if (raw && raw !== "—") {
+        const found = users.find(u => u.name && u.name.toLowerCase() === raw.toLowerCase());
+        if (found?.name) return found.name;
+      }
+    }
+    return raw || "—";
+  };
 
   // Fetch full inspection data from Supabase then navigate to detail
   const handleOpenLive = async (row) => {
@@ -2184,7 +2207,7 @@ function InspectionsList({ onOpen, onNew }) {
                   })()} />
                 </td>
                 <td className="px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
-                  {i.inspector_name || "—"}
+                  {resolveInspectorName(i)}
                 </td>
                 <td className="px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line, color: C.slate }}>
                   {displayDate(i.created_at)}
@@ -2696,7 +2719,7 @@ function dataURItoBlob(dataURI) {
   return (
     <div className="w-full max-w-5xl">
 
-      {/* SIH Golden Demo Presets (1-Click Compliance Test) */}
+      {/* SIH Golden Demo Presets (1-Click Compliance Test) - temporarily commented out for demo
       <div className="mb-6 p-4 rounded-sm border" style={{ background: "var(--ll-bg-card)", borderColor: C.gold }}>
         <div className="flex items-center gap-2 mb-1">
           <Sparkles size={16} style={{ color: C.gold }} />
@@ -2769,6 +2792,7 @@ function dataURItoBlob(dataURI) {
           </Button>
         </div>
       </div>
+      */}
 
       <div className="flex items-center mb-8 overflow-x-auto pb-2">
         {STEPS.map((s, idx) => (
@@ -3324,7 +3348,7 @@ function EvidenceModal({ requirement, onClose }) {
   );
 }
 
-function InspectionDetail({ inspection }) {
+function InspectionDetail({ inspection, users = [] }) {
   const [evidenceReq, setEvidenceReq] = useState(null);
   const [activeAngle, setActiveAngle] = useState("FRONT");
   const [hoveredReq, setHoveredReq] = useState(null);
@@ -3448,7 +3472,18 @@ function InspectionDetail({ inspection }) {
     console.warn("Failed to read user name from localStorage:", e);
   }
   
-  const inspectorVal = insp.inspector_name || insp.inspector || currentUserFullName || "NA";
+  let inspectorVal = insp.inspector_name || insp.inspector || currentUserFullName || "NA";
+  if (String(inspectorVal).trim().toLowerCase() === "deleted user") {
+    inspectorVal = "Deleted User";
+  } else if (Array.isArray(users) && users.length > 0) {
+    if (insp.inspector_email) {
+      const u = users.find(x => x.email && x.email.toLowerCase() === insp.inspector_email.toLowerCase());
+      if (u?.name) inspectorVal = u.name;
+    } else if (insp.inspector_badge) {
+      const u = users.find(x => x.badge && x.badge.toLowerCase() === insp.inspector_badge.toLowerCase());
+      if (u?.name) inspectorVal = u.name;
+    }
+  }
 
   const canvasUploadRef = useRef(null);
   const [showBoxes, setShowBoxes] = useState(true);
@@ -4134,7 +4169,7 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
 
 /* ============================== PRODUCTS ============================== */
 
-function Products({ onOpenInspection, onNewInspection }) {
+function Products({ onOpenInspection, onNewInspection, users = [] }) {
   const [productsList, setProductsList] = useState([]);
   const [modalProduct, setModalProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -4215,11 +4250,24 @@ function Products({ onOpenInspection, onNewInspection }) {
         }
       }
 
+      let inspectorName = item.inspector_name || item.inspector || "Authorized Officer";
+      if (String(inspectorName).trim().toLowerCase() === "deleted user") {
+        inspectorName = "Deleted User";
+      } else if (Array.isArray(users) && users.length > 0) {
+        if (item.inspector_email) {
+          const u = users.find(x => x.email && x.email.toLowerCase() === item.inspector_email.toLowerCase());
+          if (u?.name) inspectorName = u.name;
+        } else if (item.inspector_badge) {
+          const u = users.find(x => x.badge && x.badge.toLowerCase() === item.inspector_badge.toLowerCase());
+          if (u?.name) inspectorName = u.name;
+        }
+      }
+
       const historyEntry = {
         id: cno,
         date: String(item.created_at || item.date || new Date().toISOString()).slice(0, 10),
         status: rawStat,
-        inspector: item.inspector_name || item.inspector || "Authorized Officer",
+        inspector: inspectorName,
         score: typeof item.score === "number" ? item.score : (rawStat === "COMPLIANT" ? 100 : 50),
         note: note,
         raw: item
@@ -4572,7 +4620,7 @@ function Rules() {
   );
 }
 
-function Reports({ onOpenInspection }) {
+function Reports({ onOpenInspection, users = [] }) {
   const [reportsList, setReportsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openingCase, setOpeningCase] = useState(null);
@@ -4580,6 +4628,29 @@ function Reports({ onOpenInspection }) {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [downloadingPdfCase, setDownloadingPdfCase] = useState(null);
   const shouldReduceMotion = useReducedMotion();
+
+  // Helper to dynamically resolve inspector name from users list while strictly preserving Deleted User
+  const resolveInspectorName = (r) => {
+    const raw = r?.inspector_name || r?.inspector || r?.generated_by || "";
+    if (String(raw).trim().toLowerCase() === "deleted user") {
+      return "Deleted User";
+    }
+    if (Array.isArray(users) && users.length > 0) {
+      if (r?.inspector_email) {
+        const found = users.find(u => u.email && u.email.toLowerCase() === r.inspector_email.toLowerCase());
+        if (found?.name) return found.name;
+      }
+      if (r?.inspector_badge) {
+        const found = users.find(u => u.badge && u.badge.toLowerCase() === r.inspector_badge.toLowerCase());
+        if (found?.name) return found.name;
+      }
+      if (raw && raw !== "—") {
+        const found = users.find(u => u.name && u.name.toLowerCase() === raw.toLowerCase());
+        if (found?.name) return found.name;
+      }
+    }
+    return raw || "—";
+  };
 
   const handleDownloadPdf = async (r) => {
     const cno = r.case_number || r.id;
@@ -4643,9 +4714,11 @@ function Reports({ onOpenInspection }) {
   const filteredReports = reportsList.filter((r) => {
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
+      const resolvedInspector = resolveInspectorName(r).toLowerCase();
       const match = (r.case_number && r.case_number.toLowerCase().includes(q)) ||
                     (r.product_name && r.product_name.toLowerCase().includes(q)) ||
                     (r.product && r.product.toLowerCase().includes(q)) ||
+                    resolvedInspector.includes(q) ||
                     (r.inspector_name && r.inspector_name.toLowerCase().includes(q)) ||
                     (r.inspector && r.inspector.toLowerCase().includes(q));
       if (!match) return false;
@@ -4829,7 +4902,7 @@ function Reports({ onOpenInspection }) {
                         {r.product_name || r.product}
                       </td>
                       <td className="px-5 py-2.5 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
-                        {r.inspector_name || r.inspector}
+                        {resolveInspectorName(r)}
                       </td>
                       <td className="px-5 py-2.5 border-b text-left" style={{ borderColor: C.line, color: C.slate }}>
                         <span className="flex items-center gap-1.5">
@@ -5960,7 +6033,7 @@ export default function App() {
           const { error: inspEmailErr } = await supabase
             .from("inspections")
             .update({ inspector_name: newName })
-            .eq("inspector_email", targetEmail);
+            .ilike("inspector_email", targetEmail);
           if (inspEmailErr) console.warn("Supabase inspections email update note:", inspEmailErr);
 
           // B. Update inspections table by old inspector_name
@@ -5968,25 +6041,17 @@ export default function App() {
             const { error: inspNameErr } = await supabase
               .from("inspections")
               .update({ inspector_name: newName })
-              .eq("inspector_name", oldName);
+              .ilike("inspector_name", oldName);
             if (inspNameErr) console.warn("Supabase inspections name update note:", inspNameErr);
 
-            // C. Update reports table by inspector_name / inspector
+            // C. Update reports table: column is generated_by
             try {
               await supabase
                 .from("reports")
-                .update({ inspector_name: newName })
-                .eq("inspector_name", oldName);
+                .update({ generated_by: newName })
+                .ilike("generated_by", oldName);
             } catch (rErr) {
-              console.warn("Supabase reports inspector_name update note:", rErr);
-            }
-            try {
-              await supabase
-                .from("reports")
-                .update({ inspector: newName })
-                .eq("inspector", oldName);
-            } catch (rErr) {
-              console.warn("Supabase reports inspector update note:", rErr);
+              console.warn("Supabase reports generated_by update note:", rErr);
             }
           }
         }
@@ -6009,39 +6074,31 @@ export default function App() {
         const { error } = await supabase
           .from("officer_users")
           .delete()
-          .eq("email", targetEmail);
+          .ilike("email", targetEmail);
         if (error) console.error("Supabase delete error:", error);
 
         // 2. Mark officer name as "Deleted User" in inspections table in Supabase
         const { error: inspEmailErr } = await supabase
           .from("inspections")
           .update({ inspector_name: "Deleted User" })
-          .eq("inspector_email", targetEmail);
+          .ilike("inspector_email", targetEmail);
         if (inspEmailErr) console.warn("Supabase inspections delete update email note:", inspEmailErr);
 
         if (deletedName) {
           const { error: inspNameErr } = await supabase
             .from("inspections")
             .update({ inspector_name: "Deleted User" })
-            .eq("inspector_name", deletedName);
+            .ilike("inspector_name", deletedName);
           if (inspNameErr) console.warn("Supabase inspections delete update name note:", inspNameErr);
 
           // 3. Mark officer name as "Deleted User" in reports table in Supabase
           try {
             await supabase
               .from("reports")
-              .update({ inspector_name: "Deleted User" })
-              .eq("inspector_name", deletedName);
+              .update({ generated_by: "Deleted User" })
+              .ilike("generated_by", deletedName);
           } catch (rErr) {
-            console.warn("Supabase reports delete inspector_name note:", rErr);
-          }
-          try {
-            await supabase
-              .from("reports")
-              .update({ inspector: "Deleted User" })
-              .eq("inspector", deletedName);
-          } catch (rErr) {
-            console.warn("Supabase reports delete inspector note:", rErr);
+            console.warn("Supabase reports delete generated_by note:", rErr);
           }
         }
       } catch (err) {
@@ -6204,6 +6261,7 @@ export default function App() {
         )}
         {page === "inspections" && (
           <InspectionsList
+            users={users}
             onOpen={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
             onNew={() => navigateTo("new-inspection")}
           />
@@ -6222,9 +6280,10 @@ export default function App() {
             }}
           />
         )}
-        {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} />}
+        {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} users={users} />}
         {page === "products" && (
           <Products
+            users={users}
             onOpenInspection={async (i) => {
               let fullObj = i;
               if (i?.case_number) {
@@ -6245,6 +6304,7 @@ export default function App() {
         {page === "rules" && <Rules />}
         {page === "reports" && (
           <Reports
+            users={users}
             onOpenInspection={(i) => {
               setSelectedInspection(i);
               localStorage.setItem("legallens_current_inspection", JSON.stringify(i));
