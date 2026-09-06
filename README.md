@@ -26,7 +26,7 @@
 <br/>
 
 > **⚠️ Important**
-> Metria is an **enforcement-assistance system**, not an autonomous legal decision-maker. Every AI output carries a confidence score, uncertain findings are flagged **`REQUIRES MANUAL VERIFICATION`**, and the final legal determination always rests with the authorized enforcement officer.
+> Legal-Lens is an **enforcement-assistance system**, not an autonomous legal decision-maker. Every AI output carries a confidence score, uncertain findings are flagged **`REQUIRES MANUAL VERIFICATION`**, and the final legal determination always rests with the authorized enforcement officer.
 
 <br/>
 
@@ -55,7 +55,7 @@
 
 Packaged commodities sold in Indian retail, supermarket, and e-commerce channels must carry mandatory declarations — manufacturer/packer/importer details, product name, net quantity, MRP, dates of manufacture/packing, country of origin, and consumer-care information — as prescribed under the **Legal Metrology (Packaged Commodities) Rules, 2011** and subsequent amendments.
 
-Manual inspection of these declarations at scale is slow, inconsistent, and hard to audit. **Metria** gives enforcement officers an AI-assisted toolkit to scan product labels, automatically extract declarations, validate them against a versioned rule set, and generate defensible, evidence-backed inspection reports — without ever letting the AI make the final legal call.
+Manual inspection of these declarations at scale is slow, inconsistent, and hard to audit. **Legal-Lens** gives enforcement officers an AI-assisted toolkit to scan product labels, automatically extract declarations, validate them against a versioned rule set, and generate defensible, evidence-backed inspection reports — without ever letting the AI make the final legal call.
 
 <br/>
 
@@ -303,7 +303,7 @@ docker-compose up --build
 
 ## ⚠️ Disclaimer
 
-Metria is a **prototype built for Smart India Hackathon 2026**. All rule IDs used during development that are not sourced from verified official notifications are **clearly marked as placeholders**. Automated findings are AI-assisted evidence, not legal conclusions — final compliance determinations require review by an authorized Legal Metrology enforcement officer.
+Legal-Lens is a **prototype built for Smart India Hackathon 2026**. All rule IDs used during development that are not sourced from verified official notifications are **clearly marked as placeholders**. Automated findings are AI-assisted evidence, not legal conclusions — final compliance determinations require review by an authorized Legal Metrology enforcement officer.
 
 <br/>
 
@@ -318,4 +318,3 @@ Licensed under the [MIT License](LICENSE).
 **Built with love for Smart India Hackathon 2026**
 
 </div>
-burnit🔥🔥🔥
