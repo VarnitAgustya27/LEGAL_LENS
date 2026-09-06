@@ -443,613 +443,1142 @@ const PIPELINE_STAGES = [
   "Compliance validation", "Evidence mapping", "Report generation",
 ];
 
-/* ============================== LOGIN / HOMEPAGE ============================== */
+/* ============================== NEW MARKETING LANDING & OFFICER LOGIN ============================== */
 
-function Login({ onLogin, users, isDark, toggleTheme, loadingDb }) {
-  const [officerId, setOfficerId] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [signingIn, setSigningIn] = useState(false);
+function Icon({ name, size = 20 }) {
+  const icons = {
+    logo: (
+      <>
+        <path d="M12 3v18" />
+        <path d="M5 7h14" />
+        <path d="M7 7 4 17h6L7 7Z" />
+        <path d="m17 7-3 10h6l-3-10Z" />
+        <path d="M4 21h16" />
+      </>
+    ),
 
-  const matchedUser = users.find((u) => u.badge?.toLowerCase() === officerId?.trim().toLowerCase());
-  const [matchedAvatar, setMatchedAvatar] = useState("");
+    arrow: (
+      <>
+        <path d="M5 12h14" />
+        <path d="m13 6 6 6-6 6" />
+      </>
+    ),
 
-  useEffect(() => {
-    if (!matchedUser?.badge) {
-      setMatchedAvatar("");
-      return;
-    }
-    const getAvatarMap = () => {
-      try { return JSON.parse(localStorage.getItem("legallens_avatars") || "{}"); } catch { return {}; }
-    };
-    const badge = matchedUser.badge.trim();
-    const cached = getAvatarMap()[badge] || getAvatarMap()[matchedUser.badge] || "";
-    setMatchedAvatar(cached);
+    scan: (
+      <>
+        <path d="M4 8V5a1 1 0 0 1 1-1h3" />
+        <path d="M16 4h3a1 1 0 0 1 1 1v3" />
+        <path d="M20 16v3a1 1 0 0 1-1 1h-3" />
+        <path d="M8 20H5a1 1 0 0 1-1-1v-3" />
+        <path d="M7 12h10" />
+      </>
+    ),
 
-    if (isSupabaseConfigured() && supabase) {
-      supabase
-        .from("officer_avatars")
-        .select("avatar_url")
-        .ilike("badge", badge)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (!error && data?.avatar_url) {
-            setMatchedAvatar(data.avatar_url);
-            const map = getAvatarMap();
-            map[badge] = data.avatar_url;
-            localStorage.setItem("legallens_avatars", JSON.stringify(map));
-          }
-        })
-        .catch(() => { });
-    }
-  }, [matchedUser?.badge]);
+    search: (
+      <>
+        <circle cx="11" cy="11" r="6" />
+        <path d="m20 20-4.2-4.2" />
+      </>
+    ),
 
-  const handleBadgeClick = (badge) => {
-    setOfficerId(badge);
-    setError("");
-  };
+    shield: (
+      <>
+        <path d="M12 3 20 6v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-3Z" />
+        <path d="m9 12 2 2 4-4" />
+      </>
+    ),
 
-  const handleSignIn = async (e) => {
-    e?.preventDefault?.();
-    const badge = officerId.trim();
-    if (!badge) {
-      setError("Please enter your official Officer Badge ID.");
-      return;
-    }
-    if (!password) {
-      setError("Please enter your security key / password.");
-      return;
-    }
+    text: (
+      <>
+        <path d="M5 5h14" />
+        <path d="M12 5v14" />
+        <path d="M8 19h8" />
+      </>
+    ),
 
-    setSigningIn(true);
-    setError("");
+    file: (
+      <>
+        <path d="M6 3h8l4 4v14H6z" />
+        <path d="M14 3v5h5" />
+        <path d="M9 13h6" />
+        <path d="M9 17h6" />
+      </>
+    ),
 
-    try {
-      if (isSupabaseConfigured() && supabase) {
-        const { data, error: queryError } = await supabase
-          .from("officer_users")
-          .select(`${OFFICER_PUBLIC_COLUMNS}, pass`)
-          .ilike("badge", badge)
-          .maybeSingle();
+    chart: (
+      <>
+        <path d="M4 20V10" />
+        <path d="M10 20V4" />
+        <path d="M16 20v-7" />
+        <path d="M22 20H2" />
+      </>
+    ),
 
-        if (queryError) {
-          setError(queryError.message || "Could not verify credentials against officer registry.");
-          return;
-        }
-        if (!data) {
-          setError("Invalid badge ID or password.");
-          return;
-        }
-        if (!passwordsMatch(data.pass, password)) {
-          setError("Invalid badge ID or password.");
-          return;
-        }
-        if (data.active === false) {
-          setError("This officer account is disabled. Contact an administrator.");
-          return;
-        }
+    check: (
+      <>
+        <path d="m5 12 4 4L19 6" />
+      </>
+    ),
 
-        onLogin(publicOfficerProfile(data));
-        return;
-      }
+    warning: (
+      <>
+        <path d="M12 3 22 20H2L12 3Z" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+      </>
+    ),
 
-      const localUser = users.find((u) => u.badge?.toLowerCase() === badge.toLowerCase());
-      if (!localUser || !passwordsMatch(localUser.pass || LOCAL_DEMO_PASSWORD, password)) {
-        setError("Invalid badge ID or password.");
-        return;
-      }
-      if (localUser.active === false) {
-        setError("This officer account is disabled. Contact an administrator.");
-        return;
-      }
-      onLogin(publicOfficerProfile(localUser));
-    } catch (err) {
-      setError(err?.message || "Sign-in failed. Please try again.");
-    } finally {
-      setSigningIn(false);
-    }
+    upload: (
+      <>
+        <path d="M12 16V4" />
+        <path d="m7 9 5-5 5 5" />
+        <path d="M5 20h14" />
+      </>
+    ),
+
+    lock: (
+      <>
+        <rect x="5" y="10" width="14" height="10" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </>
+    ),
+
+    eye: (
+      <>
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+        <circle cx="12" cy="12" r="2.5" />
+      </>
+    ),
+
+    eyeOff: (
+      <>
+        <path d="m3 3 18 18" />
+        <path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a18 18 0 0 1-3.2 3.8" />
+        <path d="M6.2 6.2A18 18 0 0 0 2 12s3.5 6 10 6c1.1 0 2.1-.2 3-.5" />
+        <path d="M9.5 9.5a3.5 3.5 0 0 0 5 5" />
+      </>
+    ),
+
+    database: (
+      <>
+        <ellipse cx="12" cy="5" rx="7" ry="3" />
+        <path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5" />
+        <path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7" />
+      </>
+    ),
   };
 
   return (
-    <div
-      className={`min-h-screen w-full flex flex-col justify-between transition-colors duration-300 relative overflow-x-hidden ${isDark ? "dark" : ""}`}
-      style={{
-        background: isDark
-          ? "radial-gradient(ellipse at 20% 20%, #112038 0%, #080E1A 50%, #040810 100%)"
-          : "radial-gradient(ellipse at 15% 15%, #FBF8EE 0%, #F3EFE4 45%, #E9E3D3 100%)",
-        color: isDark ? "#F1F5F9" : "#1E293B",
-      }}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      {/* Ambient background glow & grid lines */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 z-0"
-        style={{
-          backgroundImage: isDark
-            ? "linear-gradient(rgba(229,184,66,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(229,184,66,0.06) 1px, transparent 1px)"
-            : "linear-gradient(rgba(19,34,56,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(19,34,56,0.04) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
+      {icons[name]}
+    </svg>
+  );
+}
 
-      {/* SPREAD SCALES OF JUSTICE WATERMARK SVG (ULTRA-FAINT AMBIENT ON LEFT) */}
-      <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none select-none -z-10 overflow-hidden" style={{ zIndex: 0 }}>
-        <svg viewBox="0 0 500 500" className="w-[820px] h-[820px] max-w-none opacity-[0.045] dark:opacity-[0.06] transform -translate-x-[12%] md:-translate-x-[6%] lg:translate-x-[0%] animate-float" style={{ color: isDark ? "#E5B842" : "#96742E" }}>
-          {/* Outer dashed circle */}
-          <circle cx="250" cy="250" r="220" fill="none" stroke="currentColor" strokeWidth="1.8" strokeDasharray="6 6" />
-          {/* Inner solid circle */}
-          <circle cx="250" cy="250" r="170" fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.7" />
-          {/* Axis lines with 4 node points */}
-          <line x1="250" y1="20" x2="250" y2="480" stroke="currentColor" strokeWidth="1.4" />
-          <line x1="20" y1="250" x2="480" y2="250" stroke="currentColor" strokeWidth="1.4" />
-          <circle cx="250" cy="20" r="6" fill="currentColor" />
-          <circle cx="250" cy="480" r="6" fill="currentColor" />
-          <circle cx="20" cy="250" r="6" fill="currentColor" />
-          <circle cx="480" cy="250" r="6" fill="currentColor" />
 
-          {/* Center Vertical Pillar */}
-          <rect x="243" y="125" width="14" height="230" rx="3" fill="currentColor" />
-          <rect x="165" y="345" width="170" height="20" rx="4" fill="currentColor" />
-          <circle cx="250" cy="125" r="16" fill="currentColor" />
+function LandingPageView({ onAccessConsole }) {
+  return (
+<div className="legal-lens-app">
 
-          {/* Balance Beam (Curved arc) */}
-          <path d="M 85 158 Q 250 140 415 158" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+      {/* NAVIGATION */}
 
-          {/* Left Pan Chains & Dish */}
-          <line x1="85" y1="158" x2="45" y2="255" stroke="currentColor" strokeWidth="2.2" />
-          <line x1="85" y1="158" x2="125" y2="255" stroke="currentColor" strokeWidth="2.2" />
-          <path d="M 35 255 Q 85 295 135 255 Z" fill="currentColor" opacity="0.9" />
+      <header className="main-navbar">
+        <div className="navbar-inner">
+          <button className="brand-button main-brand">
+            <span className="brand-mark">
+              <Icon name="logo" size={25} />
+            </span>
 
-          {/* Right Pan Chains & Dish */}
-          <line x1="415" y1="158" x2="375" y2="255" stroke="currentColor" strokeWidth="2.2" />
-          <line x1="415" y1="158" x2="455" y2="255" stroke="currentColor" strokeWidth="2.2" />
-          <path d="M 365 255 Q 415 295 465 255 Z" fill="currentColor" opacity="0.9" />
-        </svg>
-      </div>
+            <span className="brand-copy">
+              <strong>LEGAL LENS</strong>
+              <small>AI COMPLIANCE PLATFORM</small>
+            </span>
+          </button>
 
-      {/* ── TOP NAVIGATION BAR ── */}
-      <header className="relative z-10 w-full px-5 sm:px-8 lg:px-12 py-4 border-b flex items-center justify-between backdrop-blur-md transition-colors duration-300"
-        style={{
-          borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(19,34,56,0.08)",
-          background: isDark ? "rgba(7,11,18,0.78)" : "rgba(251,250,246,0.85)",
-        }}
-      >
-        <div className="flex items-center gap-3.5">
-          <motion.div
-            whileHover={{ scale: 1.08, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 300, damping: 15 }}
-            className="flex items-center justify-center w-10 h-10 rounded-xl border shadow-sm"
-            style={{
-              borderColor: isDark ? "rgba(229,184,66,0.4)" : "rgba(150,116,46,0.3)",
-              background: isDark ? "rgba(229,184,66,0.12)" : "rgba(150,116,46,0.08)",
-              color: isDark ? "#E5B842" : "#96742E",
-            }}
-          >
-            <Scale size={22} strokeWidth={2.2} />
-          </motion.div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.18em", color: isDark ? "#E5B842" : "#96742E", fontWeight: 700 }}>
-                LEGAL METROLOGY DIVISION
-              </span>
-              <span className="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full border"
-                style={{
-                  background: isDark ? "rgba(229,184,66,0.12)" : "rgba(150,116,46,0.1)",
-                  borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(150,116,46,0.25)",
-                  color: isDark ? "#E5B842" : "#96742E",
-                }}
-              >
-                GOVT OF INDIA • SIH 2026
-              </span>
-            </div>
-            <div style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: isDark ? "#F8FAFC" : "#132238" }}>
-              Legal-Lens Portal
-            </div>
-          </div>
-        </div>
+          <nav className="nav-menu">
+            <a href="#platform">Platform</a>
+            <a href="#capabilities">Capabilities</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#mission">Mission</a>
+          </nav>
 
-        <div className="flex items-center gap-3">
           <button
-            type="button"
-            onClick={toggleTheme}
-            className="ll-focus flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 hover:scale-110 shadow-xs"
-            style={{
-              borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(19,34,56,0.2)",
-              background: isDark ? "rgba(229,184,66,0.15)" : "rgba(255,255,255,0.8)",
-              color: isDark ? "#E5B842" : "#132238",
-              boxShadow: isDark ? "0 0 14px rgba(229,184,66,0.25)" : "0 2px 6px rgba(0,0,0,0.05)",
-            }}
-            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            aria-label="Toggle theme"
+            className="nav-access-button"
+            onClick={onAccessConsole}
           >
-            {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-slate-700" />}
+            Officer Access
+            <Icon name="arrow" size={16} />
           </button>
         </div>
       </header>
 
-      {/* ── MAIN HERO & AUTH GRID ── */}
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
-      >
+      <main>
 
-        {/* ── LEFT SHOWCASE COLUMN (7 cols on lg) ── */}
-        <motion.div
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="lg:col-span-7 flex flex-col space-y-6"
-        >
+        {/* HERO */}
 
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-3 shadow-xs"
-              style={{
-                background: isDark ? "rgba(229,184,66,0.12)" : "rgba(150,116,46,0.1)",
-                borderColor: isDark ? "rgba(229,184,66,0.3)" : "rgba(150,116,46,0.25)",
-                color: isDark ? "#E5B842" : "#96742E",
-              }}
-            >
-              <ShieldCheck size={14} />
-              <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>
-                STATUTORY COMPLIANCE AUTOMATION
-              </span>
+        <section className="premium-hero" id="platform">
+          <div className="hero-pattern"></div>
+
+          <div className="hero-inner">
+
+            <div className="hero-left">
+
+              <div className="official-tag">
+                <span className="official-dot"></span>
+                LEGAL METROLOGY COMPLIANCE INTELLIGENCE
+              </div>
+
+              <h1>
+                Intelligent compliance
+                <br />
+                <span>for packaged commodities.</span>
+              </h1>
+
+              <p className="hero-text">
+                LEGAL LENS is an AI-powered inspection platform designed to
+                analyze product packaging, labels and images for compliance
+                with mandatory declarations under the{" "}
+                <strong>
+                  Legal Metrology Act, 2009 and the Legal Metrology
+                  (Packaged Commodities) Rules, 2011.
+                </strong>
+              </p>
+
+              <div className="hero-actions">
+                <button
+                  className="hero-primary"
+                  onClick={onAccessConsole}
+                >
+                  <Icon name="scan" size={19} />
+                  Launch Compliance Console
+                  <Icon name="arrow" size={18} />
+                </button>
+
+                <a href="#capabilities" className="hero-secondary">
+                  Explore Capabilities
+                </a>
+              </div>
+
+              <div className="technology-strip">
+                <div>
+                  <strong>AI + OCR</strong>
+                  <span>Intelligent Extraction</span>
+                </div>
+
+                <div className="strip-divider"></div>
+
+                <div>
+                  <strong>RULE ENGINE</strong>
+                  <span>Compliance Validation</span>
+                </div>
+
+                <div className="strip-divider"></div>
+
+                <div>
+                  <strong>DIGITAL REPORTS</strong>
+                  <span>Evidence & Inspection History</span>
+                </div>
+              </div>
             </div>
 
-            <h1
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight"
-              style={{
-                ...FONT.display,
-                color: isDark ? "#F8FAFC" : "#132238",
-              }}
-            >
-              Automated AI Inspection for{" "}
-              <span style={{ color: isDark ? "#E5B842" : "#96742E" }}>
-                Packaged Commodities
-              </span>
-            </h1>
+            {/* DASHBOARD PREVIEW */}
 
-            <p className="mt-3 text-sm sm:text-base leading-relaxed max-w-2xl"
-              style={{ color: isDark ? "#94A3B8" : "#475569", ...FONT.body }}
-            >
-              Real-time multi-angle OCR vision analysis, mandatory statutory declaration validation under the <strong>Legal Metrology Act, 2009</strong> & the <strong>Packaged Commodities Rules, 2011</strong>, and instant prosecution dossier generation.
+            <div className="compliance-console">
+
+              <div className="console-top">
+                <div>
+                  <span className="console-eyebrow">
+                    LIVE COMPLIANCE ANALYSIS
+                  </span>
+
+                  <h3>Package Inspection</h3>
+                </div>
+
+                <div className="console-live">
+                  <span></span>
+                  ANALYSIS READY
+                </div>
+              </div>
+
+              <div className="console-body">
+
+                <div className="product-preview">
+
+                  <div className="preview-label">
+                    PRODUCT IMAGE
+                  </div>
+
+                  <div className="package-visual">
+
+                    <div className="package-corner corner-one"></div>
+                    <div className="package-corner corner-two"></div>
+                    <div className="package-corner corner-three"></div>
+                    <div className="package-corner corner-four"></div>
+
+                    <div className="package-mockup">
+                      <div className="mockup-band"></div>
+
+                      <div className="mockup-title">
+                        PACKAGED
+                        <br />
+                        PRODUCT
+                      </div>
+
+                      <div className="mockup-lines">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+
+                      <div className="mockup-footer"></div>
+                    </div>
+
+                    <div className="detected-box detect-one">
+                      <span className="green-dot"></span>
+                      MRP
+                    </div>
+
+                    <div className="detected-box detect-two">
+                      <span className="green-dot"></span>
+                      NET QUANTITY
+                    </div>
+
+                    <div className="detected-box detect-three">
+                      <span className="amber-dot"></span>
+                      FONT CHECK
+                    </div>
+
+                  </div>
+                </div>
+
+                <div className="analysis-panel">
+
+                  <div className="analysis-heading">
+                    <span>DETECTED DECLARATIONS</span>
+                    <strong>6 / 7</strong>
+                  </div>
+
+                  <div className="declaration-list">
+
+                    <div className="declaration-item success-item">
+                      <span>
+                        <Icon name="check" size={14} />
+                      </span>
+                      Manufacturer / Packer
+                    </div>
+
+                    <div className="declaration-item success-item">
+                      <span>
+                        <Icon name="check" size={14} />
+                      </span>
+                      Net Quantity
+                    </div>
+
+                    <div className="declaration-item success-item">
+                      <span>
+                        <Icon name="check" size={14} />
+                      </span>
+                      Maximum Retail Price
+                    </div>
+
+                    <div className="declaration-item success-item">
+                      <span>
+                        <Icon name="check" size={14} />
+                      </span>
+                      Month & Year
+                    </div>
+
+                    <div className="declaration-item warning-item">
+                      <span>
+                        <Icon name="warning" size={14} />
+                      </span>
+                      Font Size Verification
+                    </div>
+
+                  </div>
+
+                  <div className="score-card">
+                    <div>
+                      <span>COMPLIANCE SCORE</span>
+                      <strong>86%</strong>
+                    </div>
+
+                    <div className="score-bar">
+                      <span></span>
+                    </div>
+
+                    <small>Review recommended before closure</small>
+                  </div>
+
+                </div>
+              </div>
+
+              <div className="console-footer">
+
+                <div>
+                  <span className="footer-status-dot"></span>
+                  AI ENGINE READY
+                </div>
+
+                <span>LEGAL LENS ANALYSIS ENGINE v1.0</span>
+
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+
+        {/* TRUST BAR */}
+
+        <section className="trust-bar">
+          <div>
+            <Icon name="scan" size={20} />
+            <span>
+              <strong>PRODUCT SCANNING</strong>
+              Image & Label Analysis
+            </span>
+          </div>
+
+          <div>
+            <Icon name="search" size={20} />
+            <span>
+              <strong>DECLARATION EXTRACTION</strong>
+              AI + OCR Processing
+            </span>
+          </div>
+
+          <div>
+            <Icon name="shield" size={20} />
+            <span>
+              <strong>RULE VALIDATION</strong>
+              Compliance Intelligence
+            </span>
+          </div>
+
+          <div>
+            <Icon name="file" size={20} />
+            <span>
+              <strong>DIGITAL REPORTING</strong>
+              Inspection Evidence
+            </span>
+          </div>
+        </section>
+
+
+        {/* CAPABILITIES */}
+
+        <section className="capabilities-section" id="capabilities">
+
+          <div className="section-intro">
+            <div>
+              <span className="section-kicker">
+                PLATFORM CAPABILITIES
+              </span>
+
+              <h2>
+                Built for intelligent
+                <br />
+                compliance enforcement.
+              </h2>
+            </div>
+
+            <p>
+              LEGAL LENS transforms the traditional inspection workflow into a
+              scalable digital system for scanning, extracting, validating and
+              reporting packaged commodity compliance.
             </p>
           </div>
 
-          {/* ── 3 ENFORCEMENT PILLARS CARDS ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            {[
-              {
-                icon: ScanLine,
-                title: "Vision OCR Core",
-                tag: "Real-time",
-                desc: "Multi-angle bounding box segmentation detecting MRP, Net Weight, Dates & Addresses."
-              },
-              {
-                icon: Scale,
-                title: "Statutory Rules Matrix",
-                tag: "PCR 2011",
-                desc: "Rule 6(1) automated cross-referencing, unit validations & area font ratio checks."
-              },
-              {
-                icon: FileText,
-                title: "Case Dossier & Summons",
-                tag: "Section 39",
-                desc: "1-click generation of official bilingual legal notice PDFs and evidentiary audit logs."
-              },
-            ].map((p, idx) => (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -4, transition: { duration: 0.18 } }}
-                className="p-4 rounded-xl border transition-all shadow-sm"
-                style={{
-                  background: isDark ? "rgba(19,34,56,0.45)" : "rgba(255,255,255,0.85)",
-                  borderColor: isDark ? "rgba(229,184,66,0.18)" : "rgba(19,34,56,0.08)",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <p.icon size={16} style={{ color: isDark ? "#E5B842" : "#96742E" }} />
-                    <span className="text-xs font-bold" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>{p.title}</span>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border whitespace-nowrap flex-shrink-0 font-semibold"
-                    style={{
-                      background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                      borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
-                      color: isDark ? "#94A3B8" : "#64748B",
-                    }}
-                  >
-                    {p.tag}
-                  </span>
-                </div>
-                <p className="text-[11px] leading-relaxed" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
-                  {p.desc}
-                </p>
-              </motion.div>
-            ))}
-          </div>
+          <div className="premium-feature-grid">
 
-          {/* ── KEY METRICS BAR ── */}
-          <div className="pt-3 border-t flex flex-wrap items-center justify-between gap-4 text-xs font-mono"
-            style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(19,34,56,0.1)" }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>1,284+</span>
-              <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Inspections Logged</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-emerald-500">63%</span>
-              <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>First-Pass Compliance</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-amber-500">8</span>
-              <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Active Rule Sets</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-cyan-500">&lt; 1.2s</span>
-              <span style={{ color: isDark ? "#94A3B8" : "#64748B" }}>Pipeline Latency</span>
-            </div>
-          </div>
+            <article className="premium-feature">
+              <div className="feature-number">01</div>
 
-        </motion.div>
-
-        {/* ── RIGHT AUTHENTICATION CONSOLE (5 cols on lg) ── */}
-        <motion.div
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="lg:col-span-5 w-full flex justify-center"
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden transition-all"
-            style={{
-              background: isDark ? "rgba(13, 21, 36, 0.88)" : "rgba(255, 255, 255, 0.96)",
-              borderColor: isDark ? "rgba(229, 184, 66, 0.28)" : "rgba(19, 34, 56, 0.15)",
-              boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.85)" : "0 25px 50px -12px rgba(19,34,56,0.14)",
-            }}
-          >
-            {/* Top gold animated accent line */}
-            <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500 origin-left"
-            />
-
-            <div className="mb-6 text-left">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Shield size={16} className="text-amber-500" />
-                <span style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: isDark ? "#E5B842" : "#96742E", fontWeight: 700 }}>
-                  OFFICER AUTHENTICATION
-                </span>
+              <div className="premium-icon">
+                <Icon name="scan" size={23} />
               </div>
-              <h2 style={{ ...FONT.display, fontSize: 22, fontWeight: 700, color: isDark ? "#F8FAFC" : "#132238" }}>
-                Access Enforcement Console
-              </h2>
-              <p className="text-xs mt-1" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>
-                Sign in with your official Legal Metrology officer credentials.
+
+              <h3>Product & Label Scanning</h3>
+
+              <p>
+                Analyze packaged commodities using uploaded images, product
+                labels and visual evidence.
+              </p>
+
+              <div className="feature-bottom">
+                <span>VISUAL INSPECTION</span>
+                <Icon name="arrow" size={17} />
+              </div>
+            </article>
+
+            <article className="premium-feature">
+              <div className="feature-number">02</div>
+
+              <div className="premium-icon">
+                <Icon name="search" size={23} />
+              </div>
+
+              <h3>AI Declaration Extraction</h3>
+
+              <p>
+                Automatically detect and extract manufacturer details, MRP,
+                quantity, dates and consumer information.
+              </p>
+
+              <div className="feature-bottom">
+                <span>AI + OCR</span>
+                <Icon name="arrow" size={17} />
+              </div>
+            </article>
+
+            <article className="premium-feature">
+              <div className="feature-number">03</div>
+
+              <div className="premium-icon">
+                <Icon name="shield" size={23} />
+              </div>
+
+              <h3>Rule-Based Validation</h3>
+
+              <p>
+                Validate declarations against applicable Legal Metrology
+                requirements and packaged commodity rules.
+              </p>
+
+              <div className="feature-bottom">
+                <span>RULE ENGINE</span>
+                <Icon name="arrow" size={17} />
+              </div>
+            </article>
+
+            <article className="premium-feature">
+              <div className="feature-number">04</div>
+
+              <div className="premium-icon">
+                <Icon name="text" size={23} />
+              </div>
+
+              <h3>Font & Readability Analysis</h3>
+
+              <p>
+                Evaluate declaration readability, visibility and prescribed
+                font-size requirements.
+              </p>
+
+              <div className="feature-bottom">
+                <span>VISUAL VALIDATION</span>
+                <Icon name="arrow" size={17} />
+              </div>
+            </article>
+
+            <article className="premium-feature">
+              <div className="feature-number">05</div>
+
+              <div className="premium-icon">
+                <Icon name="file" size={23} />
+              </div>
+
+              <h3>Compliance Reports</h3>
+
+              <p>
+                Generate compliance reports, violation summaries and digital
+                evidence for inspection records.
+              </p>
+
+              <div className="feature-bottom">
+                <span>REPORT GENERATION</span>
+                <Icon name="arrow" size={17} />
+              </div>
+            </article>
+
+            <article className="premium-feature">
+              <div className="feature-number">06</div>
+
+              <div className="premium-icon">
+                <Icon name="database" size={23} />
+              </div>
+
+              <h3>Inspection Repository</h3>
+
+              <p>
+                Maintain scanned product records, compliance history,
+                photographs and supporting evidence.
+              </p>
+
+              <div className="feature-bottom">
+                <span>DATA REPOSITORY</span>
+                <Icon name="arrow" size={17} />
+              </div>
+            </article>
+
+          </div>
+        </section>
+
+
+        {/* WORKFLOW */}
+
+        <section className="workflow-section" id="workflow">
+
+          <div className="workflow-header">
+            <span>INTELLIGENT INSPECTION WORKFLOW</span>
+
+            <h2>
+              From product image
+              <br />
+              to compliance decision.
+            </h2>
+          </div>
+
+          <div className="workflow-line">
+
+            <div className="workflow-step">
+              <div className="step-index">01</div>
+              <div className="step-icon">
+                <Icon name="upload" size={23} />
+              </div>
+
+              <h3>Upload</h3>
+
+              <p>
+                Upload product images, labels or supporting inspection
+                information.
               </p>
             </div>
 
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <Field label="Officer ID / Badge" required={true}>
-                <div className="relative">
-                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: isDark ? "#94A3B8" : "#64748B" }} />
-                  <input
-                    className="ll-focus rounded-md w-full transition-all"
-                    autoComplete="username"
-                    style={{
-                      ...inputStyle,
-                      paddingLeft: 38,
-                      fontWeight: 600,
-                      borderRadius: 6,
-                      background: isDark ? "#0A101C" : "#FFFFFF",
-                      borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(19,34,56,0.15)",
-                    }}
-                    value={officerId}
-                    placeholder="e.g. LMD-DL-0412"
-                    onChange={(e) => { setOfficerId(e.target.value); setError(""); }}
-                  />
-                  {matchedUser && (
-                    <CheckCircle2 size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-500" />
-                  )}
-                </div>
-              </Field>
+            <div className="workflow-connector"></div>
 
-              <Field label="Security Key / Password" required={true}>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: isDark ? "#94A3B8" : "#64748B" }} />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    className="ll-focus rounded-md w-full transition-all"
-                    autoComplete="current-password"
-                    style={{
-                      ...inputStyle,
-                      paddingLeft: 38,
-                      paddingRight: 40,
-                      borderRadius: 6,
-                      background: isDark ? "#0A101C" : "#FFFFFF",
-                      borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(19,34,56,0.15)",
-                    }}
-                    value={password}
-                    placeholder="Enter assigned password"
-                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                  />
-                  <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-200 transition-colors"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <Eye size={15} /> : <EyeOff size={15} />}
-                </button>
-                </div>
-              </Field>
-
-              {error && (
-                <div className="p-3 rounded-lg border text-xs flex items-start gap-2 animate-shake"
-                  style={{ background: "rgba(239, 68, 68, 0.12)", borderColor: "rgba(239, 68, 68, 0.3)", color: "#EF4444" }}
-                >
-                  <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {/* Live Matched User Preview Card */}
-              {matchedUser && (
-                <div
-                  className="p-3.5 rounded-xl border flex items-center gap-3 transition-all"
-                  style={{
-                    background: isDark ? "rgba(16, 185, 129, 0.1)" : "rgba(58, 107, 53, 0.08)",
-                    borderColor: isDark ? "rgba(16, 185, 129, 0.35)" : "rgba(58, 107, 53, 0.3)",
-                  }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm overflow-hidden border"
-                    style={{
-                      background: isDark ? "#E5B842" : "#132238",
-                      color: isDark ? "#090E17" : "#F7F5EF",
-                      borderColor: isDark ? "rgba(229,184,66,0.5)" : "rgba(19,34,56,0.3)",
-                      ...FONT.display,
-                    }}
-                  >
-                    {matchedAvatar ? (
-                      <img src={matchedAvatar} alt={matchedUser.name} className="w-full h-full object-cover" />
-                    ) : (
-                      matchedUser.initials || (matchedUser.name ? matchedUser.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "OF")
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1 text-left">
-                    <div className="text-xs font-bold truncate" style={{ color: isDark ? "#F8FAFC" : "#132238" }}>
-                      {matchedUser.name}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5 text-[11px]">
-                      <span className="px-1.5 py-0.5 rounded font-bold text-[10px]"
-                        style={{
-                          background: matchedUser.role === "Admin" ? "rgba(239,68,68,0.2)" : "rgba(229,184,66,0.2)",
-                          color: matchedUser.role === "Admin" ? "#F87171" : "#E5B842",
-                        }}
-                      >
-                        {matchedUser.role}
-                      </span>
-                      <span className="truncate text-slate-400">{matchedUser.jurisdiction || "National Directorate"}</span>
-                    </div>
-                  </div>
-                  <CheckCircle2 size={16} className="text-emerald-500 flex-shrink-0" />
-                </div>
-              )}
-
-              <Button
-                className="w-full mt-2 py-3 rounded-md font-semibold text-sm shadow-md transition-all hover:scale-[1.01]"
-                type="submit"
-                disabled={signingIn}
-              >
-                {signingIn ? <Loader2 size={16} className="animate-spin" /> : null}
-                {signingIn ? "Verifying Credentials…" : `Sign in${matchedUser?.name ? ` as ${matchedUser.name}` : ""}`}
-                {!signingIn && <ArrowRight size={16} />}
-              </Button>
-            </form>
-
-            {/* ── HIGH-CONTRAST QUICK START BADGE SELECTOR ── */}
-            <div
-              className="mt-6 p-4 rounded-xl border text-left"
-              style={{
-                borderColor: isDark ? "rgba(229,184,66,0.2)" : "rgba(19,34,56,0.1)",
-                background: isDark ? "rgba(10,16,28,0.7)" : "#F5F2E8",
-              }}
-            >
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: isDark ? "#E5B842" : "#96742E" }}>
-                  <Info size={14} />
-                  <span>Quick-Start Officer Badges</span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-mono">1-click select</span>
+            <div className="workflow-step">
+              <div className="step-index">02</div>
+              <div className="step-icon">
+                <Icon name="search" size={23} />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {loadingDb ? (
-                  Array.from({ length: 4 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="animate-pulse h-[34px] rounded-md border flex items-center justify-between px-2.5"
-                      style={{
-                        background: isDark ? "rgba(19,32,52,0.4)" : "#EAE6D9",
-                        borderColor: isDark ? "rgba(229,184,66,0.15)" : "rgba(19,34,56,0.1)",
-                      }}
-                    >
-                      <div className="flex items-center gap-1.5 w-2/3">
-                        <div className="w-2 h-2 rounded-full bg-slate-500/50" />
-                        <div className="h-3 bg-slate-500/40 rounded w-16" />
-                      </div>
-                      <div className="h-2.5 bg-slate-500/30 rounded w-10" />
-                    </div>
-                  ))
-                ) : (
-                  users.map((u) => {
-                    const isSelected = officerId?.trim().toLowerCase() === u.badge?.toLowerCase();
-                    const roleLabel = u.role === "Enforcement Officer" ? "Officer" : u.role;
-                    return (
-                      <motion.button
-                        key={u.id || u.badge}
-                        type="button"
-                        whileHover={{ scale: 1.02, y: -1 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleBadgeClick(u.badge)}
-                        className="ll-focus text-xs font-mono px-2.5 py-2 rounded-md border cursor-pointer shadow-sm flex items-center justify-between gap-1.5 transition-colors duration-150"
-                        style={{
-                          background: isSelected
-                            ? (isDark ? "#E5B842" : "#132238")
-                            : (isDark ? "#132034" : "#FFFFFF"),
-                          borderColor: isSelected
-                            ? (isDark ? "#E5B842" : "#132238")
-                            : (isDark ? "rgba(229,184,66,0.35)" : "rgba(19,34,56,0.2)"),
-                          color: isSelected
-                            ? (isDark ? "#090E17" : "#FFFFFF")
-                            : (isDark ? "#F1F5F9" : "#132238"),
-                          fontWeight: isSelected ? 700 : 600,
-                          boxShadow: isSelected ? "0 0 12px rgba(229,184,66,0.4)" : "none",
-                        }}
-                        title={`Sign in as ${u.name} (${u.role})`}
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0 flex-shrink-0">
-                          <span className="w-2 h-2 rounded-full flex-shrink-0"
-                            style={{
-                              background: u.role === "Admin" ? "#EF4444" : u.role === "Reviewer" ? "#F59E0B" : "#10B981",
-                            }}
-                          />
-                          <span className="font-semibold whitespace-nowrap">{u.badge}</span>
-                        </div>
-                        <span className="text-[10.5px] opacity-75 font-sans font-normal whitespace-nowrap flex-shrink-0">({roleLabel})</span>
-                      </motion.button>
-                    );
-                  })
-                )}
+              <h3>Extract</h3>
+
+              <p>
+                AI and OCR identify mandatory declarations from the packaging.
+              </p>
+            </div>
+
+            <div className="workflow-connector"></div>
+
+            <div className="workflow-step">
+              <div className="step-index">03</div>
+              <div className="step-icon">
+                <Icon name="shield" size={23} />
               </div>
+
+              <h3>Validate</h3>
+
+              <p>
+                Extracted information is evaluated against compliance rules.
+              </p>
+            </div>
+
+            <div className="workflow-connector"></div>
+
+            <div className="workflow-step">
+              <div className="step-index">04</div>
+              <div className="step-icon">
+                <Icon name="chart" size={23} />
+              </div>
+
+              <h3>Report</h3>
+
+              <p>
+                Generate compliance status, violations and inspection reports.
+              </p>
             </div>
 
           </div>
-        </motion.div>
+        </section>
 
-      </motion.main>
 
-      {/* ── FOOTER ── */}
-      <footer className="relative z-10 w-full px-6 py-3 border-t text-center text-[11px] font-mono backdrop-blur-md"
-        style={{
-          borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(19,34,56,0.08)",
-          background: isDark ? "rgba(7,11,18,0.85)" : "rgba(247,245,239,0.9)",
-          color: isDark ? "#64748B" : "#64748B",
-        }}
-      >
-        <span>PROTOTYPE • SMART INDIA HACKATHON 2026 • LEGAL METROLOGY ACT, 2009 & PCR 2011 ENFORCEMENT SYSTEM</span>
+        {/* MISSION */}
+
+        <section className="mission-section" id="mission">
+
+          <div className="mission-left">
+            <span>THE PROBLEM WE ADDRESS</span>
+
+            <h2>
+              Manual inspection cannot scale with modern commerce.
+            </h2>
+          </div>
+
+          <div className="mission-right">
+
+            <p>
+              Packaged commodities are sold through retail stores,
+              supermarkets and e-commerce platforms across India. Every product
+              is required to display mandatory declarations such as
+              manufacturer details, net quantity, MRP, dates and consumer care
+              information.
+            </p>
+
+            <p>
+              Manual inspection of these declarations is time-consuming and
+              resource intensive. LEGAL LENS introduces artificial intelligence,
+              OCR and rule-based validation to help enforcement teams identify
+              missing, misleading or non-compliant declarations faster and more
+              consistently.
+            </p>
+
+            <div className="mission-tags">
+              <span>LEGAL METROLOGY ACT, 2009</span>
+              <span>PACKAGED COMMODITIES RULES, 2011</span>
+            </div>
+
+          </div>
+        </section>
+
+
+        {/* CTA */}
+
+        <section className="enterprise-cta">
+
+          <div className="cta-inner">
+
+            <span>LEGAL LENS • AI COMPLIANCE INTELLIGENCE</span>
+
+            <h2>
+              Modernize packaged commodity
+              <br />
+              compliance inspection.
+            </h2>
+
+            <p>
+              A unified platform for scanning products, validating
+              declarations and generating actionable compliance intelligence.
+            </p>
+
+            <button
+              className="cta-button"
+              onClick={onAccessConsole}
+            >
+              Access Compliance Console
+              <Icon name="arrow" size={18} />
+            </button>
+
+          </div>
+
+        </section>
+
+      </main>
+
+
+      {/* FOOTER */}
+
+      <footer className="main-footer">
+
+        <div className="footer-inner">
+
+          <div className="footer-brand">
+            <div className="footer-logo">
+              <Icon name="logo" size={22} />
+            </div>
+
+            <div>
+              <strong>LEGAL LENS</strong>
+              <span>AI COMPLIANCE PLATFORM</span>
+            </div>
+          </div>
+
+          <div className="footer-description">
+            Software System for Compliance Checking of Packaged Commodities
+          </div>
+
+          <div className="footer-meta">
+            SMART INDIA HACKATHON 2026
+          </div>
+
+        </div>
+
       </footer>
+
     </div>
   );
 }
 
-/* ============================== CROP PHOTO MODAL ============================== */
 
+
+function LegalLoginPage({ onLogin, users = [], onBackToPortal }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [loginMessage, setLoginMessage] = useState("");
+
+  const handleLogin = async (e) => {
+    e?.preventDefault();
+    setLoginError("");
+    setLoginMessage("");
+
+    const identifier = email.trim();
+    if (!identifier || !password) {
+      setLoginError("Please enter your official Officer ID or Email and password.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 1. Try Supabase officer_users table
+      if (isSupabaseConfigured() && supabase) {
+        let query = supabase
+          .from("officer_users")
+          .select(`${OFFICER_PUBLIC_COLUMNS}, pass`);
+
+        if (identifier.includes("@")) {
+          query = query.ilike("email", identifier);
+        } else {
+          query = query.or(`badge.ilike.${identifier},email.ilike.${identifier}`);
+        }
+
+        const { data, error } = await query.maybeSingle();
+
+        if (!error && data) {
+          if (data.active === false) {
+            setLoginError("This officer account is disabled. Contact an administrator.");
+            setLoading(false);
+            return;
+          }
+          if (!passwordsMatch(data.pass, password)) {
+            setLoginError("Invalid security key / password.");
+            setLoading(false);
+            return;
+          }
+
+          onLogin(publicOfficerProfile(data));
+          return;
+        }
+      }
+
+      // 2. Try local users list fallback
+      const localUser = (users || []).find(
+        (u) =>
+          u.badge?.toLowerCase() === identifier.toLowerCase() ||
+          u.email?.toLowerCase() === identifier.toLowerCase()
+      );
+
+      if (localUser && passwordsMatch(localUser.pass || LOCAL_DEMO_PASSWORD, password)) {
+        if (localUser.active === false) {
+          setLoginError("This officer account is disabled. Contact an administrator.");
+          setLoading(false);
+          return;
+        }
+        onLogin(publicOfficerProfile(localUser));
+        return;
+      }
+
+      setLoginError("Invalid Officer ID / Email or security password.");
+    } catch (err) {
+      console.error("Login verification error:", err);
+      setLoginError(err?.message || "Sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = () => {
+    if (!email.trim()) {
+      setLoginError("Enter your official email or badge first, then click Forgot password.");
+      return;
+    }
+    setLoginMessage("Official security reset instruction dispatched to administrator registry.");
+  };
+
+  return (
+    <div className="legal-login-page">
+      {/* Animated Background */}
+      <div className="login-bg-grid"></div>
+      <div className="login-orb orb-one"></div>
+      <div className="login-orb orb-two"></div>
+      <div className="login-orb orb-three"></div>
+
+      {/* LEFT SIDE */}
+      <div className="login-showcase">
+        {/* Navbar */}
+        <div className="login-topbar">
+          <button
+            type="button"
+            className="legal-logo"
+            onClick={onBackToPortal}
+          >
+            <div className="logo-symbol">
+              ⚖
+            </div>
+            <div>
+              <h3>LEGAL LENS</h3>
+              <span>COMPLIANCE INTELLIGENCE</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="back-portal-btn"
+            onClick={onBackToPortal}
+          >
+            ← Back to Portal
+          </button>
+        </div>
+
+        {/* Main Left Content */}
+        <div className="login-showcase-content">
+          <div className="live-security-badge">
+            <span className="pulse-dot"></span>
+            SECURE ENFORCEMENT NETWORK
+          </div>
+
+          <h1>
+            See compliance.
+            <br />
+            <span>Detect violations.</span>
+            <br />
+            Act with confidence.
+          </h1>
+
+          <p>
+            LEGAL LENS helps enforcement officers intelligently analyze
+            packaged commodities, detect regulatory violations and generate
+            evidence-backed compliance reports under PCR 2011.
+          </p>
+
+          {/* Scanner Visual */}
+          <div className="scanner-preview">
+            <div className="scanner-header">
+              <div>
+                <span className="scanner-label">
+                  AI COMPLIANCE ANALYSIS
+                </span>
+                <h4>Packaged Commodity Inspection</h4>
+              </div>
+
+              <div className="scanner-live">
+                <span></span>
+                LIVE VALIDATION
+              </div>
+            </div>
+
+            <div className="scanner-body">
+              <div className="product-box">
+                <span className="package-icon">📦</span>
+                <div className="scan-line"></div>
+                <div className="corner top-left"></div>
+                <div className="corner top-right"></div>
+                <div className="corner bottom-left"></div>
+                <div className="corner bottom-right"></div>
+              </div>
+
+              <div className="scan-results">
+                <div className="result-item success">
+                  <span>✓</span>
+                  <strong>MRP (Inclusive of Taxes)</strong>
+                </div>
+
+                <div className="result-item success">
+                  <span>✓</span>
+                  <strong>Net Quantity Declared</strong>
+                </div>
+
+                <div className="result-item warning">
+                  <span>!</span>
+                  <strong>Manufacturer Address Details</strong>
+                </div>
+
+                <div className="result-item danger">
+                  <span>✕</span>
+                  <strong>Consumer Care Phone Missing</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="scanner-footer">
+              <div>
+                <span>REGULATORY ACT</span>
+                <strong>Legal Metrology PCR 2011</strong>
+              </div>
+
+              <div className="compliance-score">
+                <span>ESTIMATED COMPLIANCE</span>
+                <strong>84% VERIFIED</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Features */}
+          <div className="login-feature-row">
+            <div className="login-feature">
+              <div className="feature-icon">🔍</div>
+              <div>
+                <strong>Optical Detection</strong>
+                <span>Multi-angle vision</span>
+              </div>
+            </div>
+
+            <div className="login-feature">
+              <div className="feature-icon">⚖</div>
+              <div>
+                <strong>Rule Engine</strong>
+                <span>Deterministic statutory checks</span>
+              </div>
+            </div>
+
+            <div className="login-feature">
+              <div className="feature-icon">▣</div>
+              <div>
+                <strong>Evidence Reports</strong>
+                <span>Court-ready audit trail</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="login-bottom-status">
+          <div>
+            <span className="secure-dot"></span>
+            SECURE SYSTEM CONNECTION
+          </div>
+          <span>LEGAL METROLOGY COMPLIANCE PLATFORM</span>
+        </div>
+      </div>
+
+      {/* RIGHT SIDE LOGIN */}
+      <div className="login-panel">
+        <div className="login-form-container">
+          <div className="login-form-header">
+            <div className="officer-shield">🛡</div>
+            <div>
+              <span>AUTHORIZED ACCESS</span>
+              <h2>Officer Login</h2>
+            </div>
+          </div>
+
+          <p className="login-subtitle">
+            Access your secure enforcement workspace and compliance
+            monitoring dashboard.
+          </p>
+
+          <form className="premium-login-form" onSubmit={handleLogin}>
+            {/* Email / Badge */}
+            <div className="premium-input-group">
+              <label>Officer ID / Official Email</label>
+              <div className="premium-input">
+                <span className="input-symbol">👤</span>
+                <input
+                  type="text"
+                  placeholder="e.g. LM-DL-842 or official email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="username"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="premium-input-group">
+              <div className="password-heading">
+                <label>Password</label>
+                <button
+                  type="button"
+                  onClick={handlePasswordReset}
+                  disabled={loading}
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              <div className="premium-input">
+                <span className="input-symbol">🔒</span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your security password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="show-password-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+
+            {loginError && (
+              <div className="mb-4 p-3 rounded-lg border text-xs flex items-center gap-2 bg-red-500/10 border-red-500/30 text-red-500">
+                <span>⚠</span>
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            {loginMessage && (
+              <div className="mb-4 p-3 rounded-lg border text-xs flex items-center gap-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-600">
+                <span>✓</span>
+                <span>{loginMessage}</span>
+              </div>
+            )}
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              className="premium-login-btn"
+              disabled={loading}
+              aria-busy={loading}
+            >
+              <span>{loading ? "Authenticating..." : "Access Enforcement Console"}</span>
+              <span className="login-arrow">→</span>
+            </button>
+          </form>
+
+          {/* Security Card */}
+          <div className="login-security-card">
+            <span className="security-card-icon">🏛</span>
+            <div>
+              <strong>Authorized Personnel Only</strong>
+              <p>
+                All access, inspections and report queries are recorded under
+                the statutory enforcement audit log of Legal Metrology.
+              </p>
+            </div>
+          </div>
+
+          <div className="login-line">
+            <span></span>
+            <small>STATUTORY VERIFICATION SYSTEM</small>
+            <span></span>
+          </div>
+
+          <div className="login-help">
+            <p>Need technical or operational assistance?</p>
+            <button type="button" onClick={onBackToPortal}>
+              Return to Public Portal Overview
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ============================== MODALS & APPLICATION COMPONENTS ============================== */
 function CropPhotoModal({
   imageSrc,
   onClose,
@@ -6204,23 +6733,43 @@ export default function App() {
     setCurrentUser(found);
   };
 
-  if (page === "login" || !currentUser) {
-    return (
-      <div className={`ll-root min-h-screen ${isDark ? "dark" : ""}`}>
-        <GlobalStyle />
-        <Login
+  
+  const [showLogin, setShowLogin] = useState(() => {
+    return localStorage.getItem("legallens_show_login") === "true";
+  });
+
+  const handleSetShowLogin = (val) => {
+    setShowLogin(val);
+    localStorage.setItem("legallens_show_login", val ? "true" : "false");
+  };
+
+  if (!currentUser) {
+    if (showLogin || page === "login") {
+      return (
+        <LegalLoginPage
           users={users}
-          isDark={isDark}
-          toggleTheme={toggleTheme}
-          loadingDb={loadingDb}
           onLogin={(user) => {
             const sessionUser = publicOfficerProfile(user);
             setCurrentUser(sessionUser);
             localStorage.setItem("legallens_current_user", JSON.stringify(sessionUser));
+            handleSetShowLogin(false);
             navigateTo("dashboard");
           }}
+          onBackToPortal={() => {
+            handleSetShowLogin(false);
+            navigateTo("portal");
+          }}
         />
-      </div>
+      );
+    }
+
+    return (
+      <LandingPageView
+        onAccessConsole={() => {
+          handleSetShowLogin(true);
+          navigateTo("login");
+        }}
+      />
     );
   }
 
@@ -6237,6 +6786,8 @@ export default function App() {
         isDbConnected={isDbConnected}
         onSignOut={() => {
           setCurrentUser(null);
+          localStorage.removeItem("legallens_current_user");
+          handleSetShowLogin(true);
           navigateTo("login");
         }}
       >
