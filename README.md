@@ -303,7 +303,7 @@ docker-compose up --build
 
 ## ⚠️ Disclaimer
 
-Metria is a **prototype built for Smart India Hackathon 2026**. All rule IDs used during development that are not sourced from verified official notifications are **clearly marked as placeholders**. Automated findings are AI-assisted evidence, not legal conclusions — final compliance determinations require review by an authorized Legal Metrology enforcement officer.
+Legal-Lens is a **prototype built for Smart India Hackathon 2026**. All rule IDs used during development that are not sourced from verified official notifications are **clearly marked as placeholders**. Automated findings are AI-assisted evidence, not legal conclusions — final compliance determinations require review by an authorized Legal Metrology enforcement officer.
 
 <br/>
 
