@@ -1,6 +1,4 @@
 import ApiService from "./services/api.js";
-import { RULE_BOOK_DATA } from "./components/rulebook/ruleBookData.js";
-import RuleBookPanel from "./components/rulebook/RuleBookPanel.jsx";
 import { saveInspection, fetchInspections, fetchInspectionByCase, mapSupabaseRowToInspection, mapBackendInspectionToFrontend, fetchDashboardStats, fetchReportsFromSupabase } from "./services/supabaseInspectionService.js";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -1900,7 +1898,7 @@ const NAV = [
   { key: "inspections", label: "Inspections", Icon: ClipboardList },
   { key: "new-inspection", label: "New Inspection", Icon: FilePlus2 },
   { key: "products", label: "Products", Icon: Package },
-  { key: "rules", label: "Rule Repository", Icon: ScrollText },
+  { key: "rules", label: "Knowledge Centre", Icon: ScrollText },
   { key: "reports", label: "Reports", Icon: FileText },
   { key: "settings", label: "Users & Settings", Icon: Settings },
 ];
@@ -1911,7 +1909,7 @@ const PAGE_TITLES = {
   "new-inspection": ["NEW CASE", "New Inspection"],
   "inspection-detail": ["CASE FILE", "Inspection Result"],
   products: ["CATALOGUE", "Products"],
-  rules: ["LEGAL FRAMEWORK", "Rule Repository"],
+  rules: ["LEGAL METROLOGY", "Knowledge Centre"],
   reports: ["ARCHIVE", "Inspection Reports"],
   settings: ["ADMINISTRATION", "Users & Settings"],
 };
@@ -5071,12 +5069,11 @@ function Rules() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 520 }}>
-          Rules are versioned so amendments to the Packaged Commodities Rules can be added without changing application code. The deterministic engine always evaluates against the currently active version.
-        </p>
-        <Button onClick={() => setShowAdd(true)}><Plus size={15} /> Add Rule</Button>
+         A one-stop Legal Metrology Knowledge Centre for enforcement officers to find applicable rules, inspection requirements, legal references, amendments, and official sources.
+         </p>
       </div>
 
-      <RuleBookPanel rules={RULES} />
+      
 
       <Card padded={false} className="overflow-x-auto rounded-xl shadow-sm">
         <table className="w-full" style={{ fontSize: 12.5 }}>
