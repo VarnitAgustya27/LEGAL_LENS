@@ -17,3 +17,12 @@ class RuleOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RuleSourceSummaryOut(BaseModel):
+    verified_source_count: int
+    status: str
+
+
+class RuleDetailOut(RuleOut):
+    source_summary: RuleSourceSummaryOut

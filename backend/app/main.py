@@ -14,6 +14,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.reports import router as reports_router
 from app.api.demo import router as demo_router
 from app.api.products import router as products_router
+from app.api.legal_documents import router as legal_documents_router
 
 # Initialize database tables and seed records
 init_database()
@@ -81,6 +82,7 @@ app.include_router(inspections_router, prefix=settings.API_V1_STR)
 app.include_router(products_router, prefix=settings.API_V1_STR)
 app.include_router(declarations_router, prefix=settings.API_V1_STR)
 app.include_router(rules_router, prefix=settings.API_V1_STR)
+app.include_router(legal_documents_router, prefix=settings.API_V1_STR)
 app.include_router(dashboard_router, prefix=settings.API_V1_STR)
 app.include_router(reports_router, prefix=settings.API_V1_STR)
 app.include_router(demo_router, prefix=settings.API_V1_STR)
