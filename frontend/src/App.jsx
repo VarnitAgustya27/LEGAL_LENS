@@ -5064,88 +5064,73 @@ function Products({ onOpenInspection, onNewInspection, users = [] }) {
 /* ============================== RULES ============================== */
 
 function Rules() {
-  const [showAdd, setShowAdd] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [documentType, setDocumentType] = useState("ALL");
+  const [verificationStatus, setVerificationStatus] = useState("VERIFIED");
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setDocumentType("ALL");
+    setVerificationStatus("VERIFIED");
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 520 }}>
-         A one-stop Legal Metrology Knowledge Centre for enforcement officers to find applicable rules, inspection requirements, legal references, amendments, and official sources.
-         </p>
+    <div className="space-y-5">
+      <div>
+        <SectionLabel eyebrow="OFFICER REFERENCE" title="Legal Metrology Knowledge Centre" />
+        <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 680, marginTop: -8 }}>
+          An evidence and reference centre for Legal Metrology rules and official sources. It supports officer review and does not make legal decisions.
+        </p>
       </div>
 
-      
+      <Card className="rounded-xl shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto] gap-3 items-end">
+          <Field label="Search official references">
+            <div className="relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
+              <input
+                style={{ ...inputStyle, paddingLeft: 34 }}
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search rules, documents, citations..."
+              />
+            </div>
+          </Field>
 
-      <Card padded={false} className="overflow-x-auto rounded-xl shadow-sm">
-        <table className="w-full" style={{ fontSize: 12.5 }}>
-          <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
-              {["RULE CODE", "NAME", "APPLICABLE CATEGORY", "SEVERITY", "VERSION", "EFFECTIVE FROM", "STATUS"].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {RULES.map((r) => {
-              const sevColor = r.severity === "HIGH" ? C.violation : r.severity === "MEDIUM" ? C.review : C.slate;
-              const sevBg = r.severity === "HIGH" ? C.violationBg : r.severity === "MEDIUM" ? C.reviewBg : "var(--ll-bg-paper-deep)";
-              const sevBd = r.severity === "HIGH" ? C.violationBd : r.severity === "MEDIUM" ? C.reviewBd : C.line;
-              return (
-                <tr key={r.code} className="ll-tr">
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontWeight: 700, color: C.ink }}>{r.code}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, fontWeight: 600 }}>{r.name}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.category}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
-                    <span style={{ color: sevColor, background: sevBg, border: `1px solid ${sevBd}`, fontWeight: 700, fontSize: 10.5, padding: "2px 8px", borderRadius: 9999 }}>{r.severity}</span>
-                  </td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5 }}>{r.version}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.effective}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
-                    <span className="inline-flex items-center gap-1.5" style={{
-                      fontSize: 10.5, fontWeight: 700, padding: "2px 10px", borderRadius: 9999,
-                      background: r.status === "ACTIVE" ? "var(--ll-compliant-bg)" : "var(--ll-bg-paper-deep)",
-                      color: r.status === "ACTIVE" ? "var(--ll-compliant)" : C.slate,
-                      border: r.status === "ACTIVE" ? "1px solid var(--ll-compliant-bd)" : `1px solid ${C.line}`,
-                    }}>
-                      {r.status === "ACTIVE" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
-                      {r.status}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+          <Field label="Document type">
+            <select style={inputStyle} value={documentType} onChange={(event) => setDocumentType(event.target.value)}>
+              <option value="ALL">All types</option>
+              <option value="ACT">Act</option>
+              <option value="RULES">Rules</option>
+              <option value="AMENDMENT">Amendment</option>
+              <option value="NOTIFICATION">Notification</option>
+              <option value="GUIDANCE">Guidance</option>
+            </select>
+          </Field>
+
+          <Field label="Verification status">
+            <select style={inputStyle} value={verificationStatus} onChange={(event) => setVerificationStatus(event.target.value)}>
+              <option value="VERIFIED">Verified</option>
+              <option value="DRAFT">Draft</option>
+              <option value="UNVERIFIED">Unverified</option>
+            </select>
+          </Field>
+
+          <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>
+        </div>
       </Card>
 
-      {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-xs" style={{ background: "var(--ll-modal-overlay)" }} onClick={() => setShowAdd(false)}>
-          <Card className="ll-rise max-w-lg w-full rounded-2xl shadow-2xl">
-            <div onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-start justify-between mb-4">
-                <SectionLabel eyebrow="RULE REPOSITORY" title="Add New Rule Version" />
-                <button onClick={() => setShowAdd(false)} className="ll-focus p-1 rounded-full text-slate-400 hover:text-slate-200"><X size={18} /></button>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4">
-                <Field label="Rule Code"><input style={inputStyle} placeholder="e.g. PCR-MRP-001" /></Field>
-                <Field label="Severity">
-                  <select style={inputStyle}><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select>
-                </Field>
-                <Field label="Rule Name" ><input style={inputStyle} placeholder="Short descriptive name" /></Field>
-                <Field label="Version"><input style={inputStyle} placeholder="e.g. 2026.2" /></Field>
-                <Field label="Effective From"><input style={inputStyle} type="date" /></Field>
-                <Field label="Applicable Category">
-                  <select style={inputStyle}><option>All Categories</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
-                </Field>
-              </div>
-              <Field label="Description & Source"><textarea style={{ ...inputStyle, minHeight: 60 }} placeholder="Legal text reference / gazette citation" /></Field>
-              <div className="flex justify-end gap-2 mt-4 pt-3 border-t" style={{ borderColor: C.line }}>
-                <Button variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
-                <Button onClick={() => setShowAdd(false)}>Save Rule</Button>
-              </div>
-            </div>
-          </Card>
+      <Card className="rounded-xl shadow-sm">
+        <div className="flex flex-col items-center text-center py-10 px-5">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: "var(--ll-bg-paper-deep)", color: C.slate }}>
+            <Info size={19} />
+          </div>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>No verified official documents yet</h2>
+          <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 470, marginTop: 6 }}>
+            Verified official Legal Metrology documents and their linked references will appear here.
+          </p>
         </div>
-      )}
+      </Card>
     </div>
   );
 }
