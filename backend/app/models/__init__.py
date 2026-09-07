@@ -7,3 +7,5 @@ from app.models.rule import Rule
 from app.models.violation import Violation
 from app.models.report import Report
 from app.models.audit_log import AuditLog
+from app.models.legal_document import LegalDocument
+from app.models.rule_document_reference import RuleDocumentReference

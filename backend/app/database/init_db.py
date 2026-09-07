@@ -8,6 +8,8 @@ from app.models.rule import Rule
 from app.models.inspection import Inspection
 from app.models.declaration import Declaration
 from app.models.violation import Violation
+from app.models.legal_document import LegalDocument
+from app.models.rule_document_reference import RuleDocumentReference
 from app.auth.security import get_password_hash
 
 def init_database():
