@@ -1350,12 +1350,6 @@ function LegalLoginPage({ onLogin, users = [], onBackToPortal }) {
             Act with confidence.
           </h1>
 
-          <p>
-            LEGAL LENS helps enforcement officers intelligently analyze
-            packaged commodities, detect regulatory violations and generate
-            evidence-backed compliance reports under PCR 2011.
-          </p>
-
           {/* Scanner Visual */}
           <div className="scanner-preview">
             <div className="scanner-header">
