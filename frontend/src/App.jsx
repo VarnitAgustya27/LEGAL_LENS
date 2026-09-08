@@ -643,15 +643,7 @@ function LandingPageView({ onAccessConsole }) {
                 <span>for packaged commodities.</span>
               </h1>
 
-              <p className="hero-text">
-                LEGAL LENS is an AI-powered inspection platform designed to
-                analyze product packaging, labels and images for compliance
-                with mandatory declarations under the{" "}
-                <strong>
-                  Legal Metrology Act, 2009 and the Legal Metrology
-                  (Packaged Commodities) Rules, 2011.
-                </strong>
-              </p>
+            
 
               <div className="hero-actions">
                 <button
@@ -1349,6 +1341,12 @@ function LegalLoginPage({ onLogin, users = [], onBackToPortal }) {
             <br />
             Act with confidence.
           </h1>
+
+          <p>
+          LEGAL LENS helps enforcement officers intelligently analyze packaged
+          commodities, detect regulatory violations and generate evidence-backed
+          compliance reports under PCR 2011.
+          </p>
 
           {/* Scanner Visual */}
           <div className="scanner-preview">
