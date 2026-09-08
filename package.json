@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@zxing/browser": "^0.2.1"
+  }
+}
