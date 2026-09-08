@@ -17,6 +17,7 @@ import {
   LineChart, Line,
 } from "recharts";
 import { supabase, isSupabaseConfigured } from "./supabaseClient";
+import { BrowserMultiFormatReader } from "@zxing/browser";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -2274,29 +2275,6 @@ function StatCard({ label, value, Icon, color, loading }) {
   );
 }
 
-
-
-function FuturisticPageHero({ eyebrow, title, subtitle, Icon, accent = "cyan", meta }) {
-  return (
-    <div className={`fut-page-hero fut-accent-${accent}`}>
-      <div className="fut-hero-orb fut-orb-one" />
-      <div className="fut-hero-orb fut-orb-two" />
-      <div className="fut-hero-grid" />
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-5">
-        <div className="flex items-start gap-4">
-          <div className="fut-hero-icon"><Icon size={24} strokeWidth={1.8} /></div>
-          <div>
-            <div className="fut-eyebrow"><span className="fut-live-dot" /> {eyebrow}</div>
-            <h2>{title}</h2>
-            <p>{subtitle}</p>
-          </div>
-        </div>
-        {meta && <div className="fut-hero-meta">{meta}</div>}
-      </div>
-    </div>
-  );
-}
-
 function Dashboard({ onOpenInspection, isDark }) {
   const shouldReduceMotion = useReducedMotion();
   const [dbData, setDbData] = useState(null);
@@ -2399,12 +2377,9 @@ function Dashboard({ onOpenInspection, isDark }) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6 fut-page fut-dashboard"
+      className="space-y-6"
     >
-      <motion.div variants={itemVariants}>
-        <FuturisticPageHero eyebrow="INTELLIGENCE OVERVIEW" title="Compliance Command Center" subtitle="A real-time operational view of inspections, anomalies and enforcement signals." Icon={LayoutDashboard} accent="cyan" meta={<><span>LIVE SYSTEM</span><b>{stats?.total || 0} cases tracked</b></>} />
-      </motion.div>
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 fut-kpi-grid">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Inspections" value={stats ? stats.total.toLocaleString() : ""} Icon={ClipboardList} color={C.ink} loading={loading} />
         <StatCard label="Compliant" value={stats ? stats.compliant.toLocaleString() : ""} Icon={ShieldCheck} color={C.compliant} loading={loading} />
         <StatCard label="Non-Compliant" value={stats ? stats.nonCompliant.toLocaleString() : ""} Icon={ShieldAlert} color={C.violation} loading={loading} />
@@ -2687,9 +2662,8 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-4 fut-page fut-inspections"
+      className="space-y-4"
     >
-      <FuturisticPageHero eyebrow="CASE NETWORK" title="Inspection Intelligence" subtitle="Search, filter and investigate every compliance case from one operational surface." Icon={ClipboardList} accent="violet" meta={<><span>CASE DATABASE</span><b>{rows?.length ?? 0} visible</b></>} />
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -2906,11 +2880,159 @@ function evaluateImageQuality(file, callback) {
   reader.readAsDataURL(file);
 }
 
-function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemove, heightClass = "h-48", showAddButtons = true }) {
+
+function MobileCodeScanner({ open, onClose, onDetected }) {
+  const videoRef = useRef(null);
+  const controlsRef = useRef(null);
+  const [error, setError] = useState("");
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+
+  const stopScanner = () => {
+    try { controlsRef.current?.stop?.(); } catch (_) {}
+    controlsRef.current = null;
+    const video = videoRef.current;
+    if (video?.srcObject) {
+      video.srcObject.getTracks().forEach((track) => track.stop());
+      video.srcObject = null;
+    }
+  };
+
+  useEffect(() => {
+    if (!open) {
+      stopScanner();
+      return undefined;
+    }
+
+    let cancelled = false;
+    setError("");
+    setTorchOn(false);
+
+    const startScanner = async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("Camera access is not available in this browser.");
+        }
+
+        const reader = new BrowserMultiFormatReader();
+        const constraints = {
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        };
+
+        const controls = await reader.decodeFromConstraints(
+          constraints,
+          videoRef.current,
+          (result) => {
+            if (!result || cancelled) return;
+            const value = result.getText?.() || String(result);
+            if (!value) return;
+            cancelled = true;
+            navigator.vibrate?.(120);
+            stopScanner();
+            onDetected?.(value);
+          }
+        );
+
+        if (cancelled) {
+          controls.stop?.();
+          return;
+        }
+
+        controlsRef.current = controls;
+        const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
+        const capabilities = track?.getCapabilities?.();
+        setTorchSupported(Boolean(capabilities?.torch));
+      } catch (err) {
+        if (!cancelled) {
+          const message = err?.name === "NotAllowedError"
+            ? "Camera permission was denied. Allow camera access and try again."
+            : err?.message || "Unable to start the camera scanner.";
+          setError(message);
+        }
+      }
+    };
+
+    startScanner();
+    return () => {
+      cancelled = true;
+      stopScanner();
+    };
+  }, [open]);
+
+  const toggleTorch = async () => {
+    try {
+      const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
+      if (!track) return;
+      const next = !torchOn;
+      await track.applyConstraints({ advanced: [{ torch: next }] });
+      setTorchOn(next);
+    } catch (_) {
+      setTorchSupported(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm">
+      <div className="w-full max-w-xl rounded-2xl overflow-hidden border shadow-2xl" style={{ background: "#0b1220", borderColor: "rgba(34,211,238,0.35)" }}>
+        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(148,163,184,0.18)" }}>
+          <div>
+            <div className="flex items-center gap-2 text-sm font-bold text-white">
+              <ScanLine size={18} className="text-cyan-400" /> Live QR & Barcode Scanner
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">Point the rear camera at a QR code or product barcode.</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white" title="Close scanner">
+            <X size={19} />
+          </button>
+        </div>
+
+        <div className="relative aspect-[3/4] sm:aspect-video bg-black overflow-hidden">
+          <video ref={videoRef} className="w-full h-full object-cover" muted playsInline autoPlay />
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="w-[72%] max-w-[340px] aspect-square border-2 border-cyan-300/90 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.22)] relative">
+              <span className="absolute left-0 right-0 top-1/2 h-px bg-cyan-300 shadow-[0_0_18px_3px_rgba(34,211,238,0.8)] animate-pulse" />
+            </div>
+          </div>
+          {error && (
+            <div className="absolute inset-0 flex items-center justify-center p-6 text-center bg-slate-950/90">
+              <div>
+                <AlertTriangle className="mx-auto mb-3 text-amber-400" size={30} />
+                <p className="text-sm text-slate-200">{error}</p>
+                <p className="text-xs text-slate-500 mt-2">On iPhone and Android, open this site over HTTPS and allow camera permission.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <span className="text-[11px] text-slate-400">QR • EAN • UPC • Code 128 and other supported formats</span>
+          <div className="flex gap-2">
+            {torchSupported && (
+              <button type="button" onClick={toggleTorch} className="px-3 py-2 rounded-lg border text-xs font-semibold text-amber-300 border-amber-400/30 hover:bg-amber-400/10">
+                {torchOn ? "Flash Off" : "Flash On"}
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/15">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemove, onBarcodeDetected, heightClass = "h-48", showAddButtons = true }) {
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
   const handleFile = (file) => {
@@ -3019,11 +3141,11 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   type="button"
-                  onClick={() => cameraInputRef.current?.click()}
+                  onClick={() => setShowScanner(true)}
                   className="px-2 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md cursor-pointer"
-                  title="Capture with camera"
+                  title="Open QR / barcode scanner"
                 >
-                  <Camera size={13} /> Camera
+                  <ScanLine size={13} /> Scan Code
                 </motion.button>
               </div>
             </div>
@@ -3093,18 +3215,27 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  cameraInputRef.current?.click();
+                  setShowScanner(true);
                 }}
                 className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
-                title="Open mobile / tablet camera directly"
+                title="Open live QR / barcode scanner"
               >
-                <Camera size={13} /> Camera
+                <ScanLine size={13} /> Scan QR / Barcode
               </motion.button>
             </div>
           </div>
         )}
       </motion.div>
+
+      <MobileCodeScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onDetected={(value) => {
+          setShowScanner(false);
+          onBarcodeDetected?.(value);
+        }}
+      />
 
       {showCropModal && imageData?.previewUrl && (
         <CropPhotoModal
@@ -3320,8 +3451,7 @@ function dataURItoBlob(dataURI) {
   };
 
   return (
-    <div className="w-full max-w-5xl fut-page fut-new-inspection">
-      <FuturisticPageHero eyebrow="FIELD PROTOCOL" title="Create a New Inspection" subtitle="Capture product evidence, run intelligent validation and build a complete enforcement record." Icon={FilePlus2} accent="cyan" meta={<><span>SECURE WORKFLOW</span><b>Guided analysis</b></>} />
+    <div className="w-full max-w-5xl">
 
       {/* SIH Golden Demo Presets (1-Click Compliance Test) - temporarily commented out for demo
       <div className="mb-6 p-4 rounded-sm border" style={{ background: "var(--ll-bg-card)", borderColor: C.gold }}>
@@ -3456,6 +3586,19 @@ function dataURItoBlob(dataURI) {
             </div>
           )}
 
+          {metadata.barcode && (
+            <div className="mt-4 mb-1 flex items-center justify-between gap-3 p-3 rounded-lg border" style={{ background: "rgba(34,211,238,0.08)", borderColor: "rgba(34,211,238,0.28)" }}>
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckCircle2 size={16} className="text-cyan-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-wider text-cyan-300 font-mono">Code detected</div>
+                  <div className="text-sm font-semibold truncate" style={{ color: C.ink }}>{metadata.barcode}</div>
+                </div>
+              </div>
+              <button type="button" onClick={() => setMetadata((prev) => ({ ...prev, barcode: "" }))} className="text-xs text-slate-400 hover:text-red-400">Clear</button>
+            </div>
+          )}
+
           {/* Primary 2-Panel Upload (Front & Back) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
             <Dropzone
@@ -3468,6 +3611,7 @@ function dataURItoBlob(dataURI) {
                 setStepError("");
               }}
               onRemove={() => setImages((prev) => ({ ...prev, front: null }))}
+              onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
             />
             <Dropzone
               label="Back Panel (Mandatory Declarations)"
@@ -3479,6 +3623,7 @@ function dataURItoBlob(dataURI) {
                 setStepError("");
               }}
               onRemove={() => setImages((prev) => ({ ...prev, back: null }))}
+              onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
             />
           </div>
 
@@ -3501,6 +3646,7 @@ function dataURItoBlob(dataURI) {
                       imageData={angle.data}
                       onImageChange={(data) => updateExtraAngle(angle.id, data)}
                       onRemove={() => updateExtraAngle(angle.id, null)}
+                      onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
                     />
                     <button
                       type="button"
@@ -3581,6 +3727,7 @@ function dataURItoBlob(dataURI) {
                   imageData={images.ecommerce}
                   onImageChange={(data) => setImages((prev) => ({ ...prev, ecommerce: data }))}
                   onRemove={() => setImages((prev) => ({ ...prev, ecommerce: null }))}
+                  onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
                   heightClass="h-44 sm:h-48"
                 />
               </div>
@@ -3652,6 +3799,7 @@ function dataURItoBlob(dataURI) {
             {[
               ["Images Attached", `${uploadedImagesCount} packaging photo${uploadedImagesCount === 1 ? "" : "s"} attached`],
               ["Product Category", metadata.category || "Packaged Food"],
+              ["Scanned QR / Barcode", metadata.barcode || "Not scanned"],
               ["Extraction Mode", "Autonomous Gemini Vision AI + Dual-Pass OCR"],
               ["Officer Remarks", metadata.notes ? (metadata.notes.length > 30 ? metadata.notes.slice(0, 30) + "..." : metadata.notes) : "None recorded"],
             ].map(([k, v]) => (
@@ -4966,9 +5114,8 @@ function Products({ onOpenInspection, onNewInspection, users = [] }) {
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-6 fut-page fut-products"
+      className="space-y-6"
     >
-      <FuturisticPageHero eyebrow="PRODUCT GRAPH" title="Commodity Intelligence" subtitle="Explore packaged commodities, inspection history and emerging compliance patterns." Icon={Package} accent="emerald" meta={<><span>PRODUCT INDEX</span><b>{productsList.length} tracked</b></>} />
       <Card padded={false} className="rounded-xl overflow-hidden shadow-sm">
         {/* Header & Filter Toolbar */}
         <div className="p-6 border-b space-y-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
@@ -5142,8 +5289,7 @@ function Products({ onOpenInspection, onNewInspection, users = [] }) {
 function Rules() {
   const [showAdd, setShowAdd] = useState(false);
   return (
-    <div className="space-y-4 fut-page fut-rules">
-      <FuturisticPageHero eyebrow="REGULATORY CORE" title="Rule Repository" subtitle="Versioned legal intelligence powering deterministic compliance decisions." Icon={ScrollText} accent="amber" meta={<><span>RULE ENGINE</span><b>{RULES.length} active rules</b></>} />
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 520 }}>
           Rules are versioned so amendments to the Packaged Commodities Rules can be added without changing application code. The deterministic engine always evaluates against the currently active version.
@@ -5402,9 +5548,8 @@ function Reports({ onOpenInspection, users = [] }) {
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-6 fut-page fut-reports"
+      className="space-y-6"
     >
-      <FuturisticPageHero eyebrow="EVIDENCE OUTPUT" title="Reports & Evidence" subtitle="Generate, review and trace compliance evidence from every completed inspection." Icon={FileText} accent="violet" meta={<><span>REPORT VAULT</span><b>{reportsList.length} records</b></>} />
       <Card padded={false} className="overflow-x-auto ll-scroll relative rounded-xl shadow-sm">
         {/* Header & Filter Toolbar */}
         <div className="p-6 border-b space-y-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
@@ -5631,8 +5776,7 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
   };
 
   return (
-    <div className="space-y-6 fut-page fut-settings">
-      <FuturisticPageHero eyebrow="ACCESS CONTROL" title="Users & System Settings" subtitle="Manage officer access, roles, database state and operational security." Icon={Settings} accent="violet" meta={<><span>CONTROL PLANE</span><b>{users.length} identities</b></>} />
+    <div className="space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
         <div
