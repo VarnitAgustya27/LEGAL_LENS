@@ -1,4 +1,6 @@
 import ApiService from "./services/api.js";
+import { RULE_BOOK_DATA } from "./components/rulebook/ruleBookData.js";
+import RuleBookPanel from "./components/rulebook/RuleBookPanel.jsx";
 import { saveInspection, fetchInspections, fetchInspectionByCase, mapSupabaseRowToInspection, mapBackendInspectionToFrontend, fetchDashboardStats, fetchReportsFromSupabase } from "./services/supabaseInspectionService.js";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -5296,6 +5298,8 @@ function Rules() {
         </p>
         <Button onClick={() => setShowAdd(true)}><Plus size={15} /> Add Rule</Button>
       </div>
+
+      <RuleBookPanel rules={RULES} />
 
       <Card padded={false} className="overflow-x-auto rounded-xl shadow-sm">
         <table className="w-full" style={{ fontSize: 12.5 }}>
