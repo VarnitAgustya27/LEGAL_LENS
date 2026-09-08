@@ -3372,3 +3372,131 @@ a {
   }
 
 }
+
+
+/* =========================================================
+   LEGAL LENS — APPLE-INSPIRED DASHBOARD REFINEMENT
+   App functionality is unchanged; these rules only improve UI.
+========================================================= */
+
+.ll-root {
+  background:
+    radial-gradient(circle at 88% 0%, rgba(255,255,255,0.96), transparent 30%),
+    linear-gradient(180deg, #f7f7f9 0%, #f3f3f5 100%) !important;
+}
+
+.ll-root main {
+  background:
+    radial-gradient(circle at 92% 0%, rgba(255,255,255,0.92), transparent 28%),
+    #f5f5f7 !important;
+}
+
+.ll-root aside {
+  background: linear-gradient(180deg, #17191f 0%, #101217 100%) !important;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 1px 0 0 rgba(255,255,255,0.02) !important;
+}
+
+.ll-root header {
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.ll-root .border.rounded-xl,
+.ll-root .rounded-xl {
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.ll-root table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ll-root table thead {
+  background: rgba(245,245,247,.72);
+}
+
+.ll-root table th {
+  font-weight: 700 !important;
+}
+
+.ll-root table tbody tr {
+  transition: background .18s ease;
+}
+
+.ll-root table tbody tr:hover {
+  background: rgba(0,122,255,.035) !important;
+}
+
+.ll-root input,
+.ll-root select,
+.ll-root textarea {
+  border-radius: 12px !important;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease !important;
+}
+
+.ll-root input:focus,
+.ll-root select:focus,
+.ll-root textarea:focus {
+  border-color: rgba(0,122,255,.55) !important;
+  box-shadow: 0 0 0 4px rgba(0,122,255,.10) !important;
+}
+
+.ll-root button:not(:disabled) {
+  transition: transform .2s ease, opacity .2s ease, box-shadow .2s ease !important;
+}
+
+.recharts-wrapper {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+}
+
+.ll-root ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.ll-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ll-root ::-webkit-scrollbar-thumb {
+  background: rgba(60,60,67,.18);
+  border-radius: 999px;
+}
+
+.ll-root ::-webkit-scrollbar-thumb:hover {
+  background: rgba(60,60,67,.32);
+}
+
+.ll-root.dark {
+  background:
+    radial-gradient(circle at 88% 0%, rgba(50,55,70,.20), transparent 30%),
+    #0b0c10 !important;
+}
+
+.ll-root.dark main {
+  background: #0b0c10 !important;
+}
+
+/* =========================================================
+   LEGAL LENS — FUTURISTIC OPERATIONS UI
+========================================================= */
+.ll-root.dark main{background:radial-gradient(circle at 70% -10%,rgba(55,130,255,.10),transparent 32%),radial-gradient(circle at 15% 30%,rgba(0,224,190,.055),transparent 28%),#080c14!important}
+.ll-root.dark main:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;background-image:linear-gradient(rgba(117,148,190,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(117,148,190,.035) 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(to bottom,black,transparent 70%)}
+.fut-page{position:relative;padding-bottom:28px}.fut-page-hero{position:relative;overflow:hidden;border:1px solid rgba(139,169,215,.16);border-radius:28px;padding:28px 30px;min-height:150px;background:linear-gradient(135deg,rgba(15,23,37,.94),rgba(9,15,25,.88));box-shadow:0 24px 80px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.045)}
+.fut-hero-grid{position:absolute;inset:0;opacity:.4;background-image:linear-gradient(rgba(130,165,220,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(130,165,220,.07) 1px,transparent 1px);background-size:24px 24px;mask-image:linear-gradient(110deg,black,transparent 72%)}
+.fut-hero-orb{position:absolute;border-radius:999px;filter:blur(10px);pointer-events:none}.fut-orb-one{width:300px;height:300px;right:-90px;top:-160px;background:radial-gradient(circle,rgba(51,190,255,.25),transparent 68%)}.fut-orb-two{width:230px;height:230px;right:20%;bottom:-170px;background:radial-gradient(circle,rgba(100,86,255,.15),transparent 68%)}
+.fut-hero-icon{width:56px;height:56px;display:grid;place-items:center;border-radius:19px;color:#8ee7ff;background:linear-gradient(145deg,rgba(60,198,255,.16),rgba(65,85,255,.06));border:1px solid rgba(94,206,255,.25);box-shadow:0 0 0 6px rgba(55,177,255,.035),0 12px 40px rgba(0,150,255,.12)}
+.fut-eyebrow{display:flex;align-items:center;gap:8px;font-family:"SF Mono",Consolas,monospace;font-size:10px;letter-spacing:.18em;color:#8ba1bf;font-weight:800}.fut-live-dot{width:7px;height:7px;border-radius:50%;background:#54e0be;box-shadow:0 0 14px rgba(84,224,190,.9)}
+.fut-page-hero h2{margin:6px 0 7px!important;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif!important;font-size:30px!important;letter-spacing:-.04em!important;font-weight:750!important;color:#f6f8fc!important}.fut-page-hero p{max-width:720px;margin:0!important;color:#9aabc2!important;font-size:13px!important;line-height:1.65!important}.fut-hero-meta{display:flex;flex-direction:column;gap:4px;min-width:155px;padding:12px 14px;border-radius:16px;background:rgba(4,8,15,.38);border:1px solid rgba(255,255,255,.08);font-family:"SF Mono",Consolas,monospace}.fut-hero-meta span{font-size:9px;letter-spacing:.14em;color:#70839e}.fut-hero-meta b{font-size:12px;color:#dce7f6;font-weight:700}
+.fut-accent-violet .fut-hero-icon{color:#c3b8ff;border-color:rgba(154,130,255,.26);background:linear-gradient(145deg,rgba(122,91,255,.18),rgba(90,55,180,.06))}.fut-accent-violet .fut-orb-one{background:radial-gradient(circle,rgba(132,91,255,.25),transparent 68%)}.fut-accent-emerald .fut-hero-icon{color:#82f0c6;border-color:rgba(69,220,164,.25);background:linear-gradient(145deg,rgba(40,210,155,.15),rgba(25,100,80,.06))}.fut-accent-emerald .fut-orb-one{background:radial-gradient(circle,rgba(43,221,161,.20),transparent 68%)}.fut-accent-amber .fut-hero-icon{color:#ffd78b;border-color:rgba(246,187,74,.25);background:linear-gradient(145deg,rgba(255,186,58,.16),rgba(125,83,16,.06))}.fut-accent-amber .fut-orb-one{background:radial-gradient(circle,rgba(241,175,55,.18),transparent 68%)}
+/* Glass operational surfaces */
+.ll-root.dark .fut-page .rounded-xl,.ll-root.dark .fut-page .rounded-2xl{border-color:rgba(139,169,215,.14)!important;background:linear-gradient(145deg,rgba(16,24,38,.86),rgba(10,16,27,.92))!important;box-shadow:0 18px 55px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025)!important}.ll-root.dark .fut-page table thead{background:rgba(6,12,21,.56)!important}.ll-root.dark .fut-page table tbody tr{border-color:rgba(139,169,215,.10)!important}.ll-root.dark .fut-page table tbody tr:hover{background:linear-gradient(90deg,rgba(42,188,255,.055),rgba(120,85,255,.04))!important;box-shadow:inset 3px 0 0 rgba(79,208,255,.7)}
+.ll-root.dark .fut-kpi-grid>div{position:relative;overflow:hidden;border-color:rgba(123,166,230,.16)!important;background:linear-gradient(145deg,rgba(18,28,45,.96),rgba(10,17,28,.94))!important}.ll-root.dark .fut-kpi-grid>div:after{content:"";position:absolute;left:18px;right:18px;bottom:0;height:2px;background:linear-gradient(90deg,transparent,rgba(82,213,255,.85),transparent);box-shadow:0 0 16px rgba(82,213,255,.6)}
+.ll-root.dark .fut-page input,.ll-root.dark .fut-page select,.ll-root.dark .fut-page textarea{background:rgba(4,10,18,.62)!important;border-color:rgba(130,164,210,.16)!important;color:#eaf2ff!important}.ll-root.dark .fut-page input:focus,.ll-root.dark .fut-page select:focus,.ll-root.dark .fut-page textarea:focus{border-color:rgba(75,203,255,.65)!important;box-shadow:0 0 0 4px rgba(53,185,255,.09),0 0 24px rgba(53,185,255,.06)!important}
+/* Make forms and step workflows feel like a control interface */
+.fut-new-inspection .flex.items-center.mb-8{padding:14px 16px;border:1px solid rgba(120,163,220,.13);border-radius:22px;background:rgba(8,14,24,.46);backdrop-filter:blur(18px)}.fut-new-inspection .border.rounded-xl{border-color:rgba(120,163,220,.16)!important}.fut-rules>div:nth-of-type(2),.fut-inspections>div:nth-of-type(2){padding:14px 16px;border:1px solid rgba(120,163,220,.12);border-radius:20px;background:rgba(8,14,24,.44)}
+/* Sidebar and header polish */
+.ll-root.dark aside{background:linear-gradient(180deg,#0a101b,#080c14)!important;border-right:1px solid rgba(126,160,210,.10)}.ll-root.dark aside nav button{border-radius:14px!important}.ll-root.dark aside nav button:hover{background:rgba(72,174,255,.07)!important}.ll-root.dark header{background:rgba(8,12,20,.74)!important;backdrop-filter:blur(22px);border-color:rgba(126,160,210,.11)!important}
+@media(max-width:720px){.fut-page-hero{padding:22px 20px;border-radius:22px}.fut-page-hero h2{font-size:24px!important}.fut-hero-meta{width:100%;flex-direction:row;justify-content:space-between}.fut-page{padding-bottom:16px}}
