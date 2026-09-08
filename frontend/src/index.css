@@ -3500,3 +3500,374 @@ a {
 /* Sidebar and header polish */
 .ll-root.dark aside{background:linear-gradient(180deg,#0a101b,#080c14)!important;border-right:1px solid rgba(126,160,210,.10)}.ll-root.dark aside nav button{border-radius:14px!important}.ll-root.dark aside nav button:hover{background:rgba(72,174,255,.07)!important}.ll-root.dark header{background:rgba(8,12,20,.74)!important;backdrop-filter:blur(22px);border-color:rgba(126,160,210,.11)!important}
 @media(max-width:720px){.fut-page-hero{padding:22px 20px;border-radius:22px}.fut-page-hero h2{font-size:24px!important}.fut-hero-meta{width:100%;flex-direction:row;justify-content:space-between}.fut-page{padding-bottom:16px}}
+
+/* =========================================================
+   LEGAL LENS — MOBILE + DESKTOP RESPONSIVE OVERRIDE
+   Add this at the END of index.css
+========================================================= */
+
+/* Prevent horizontal overflow */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.ll-root {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+/* Desktop main content */
+.ll-root > main {
+  min-width: 0;
+  width: 100%;
+  flex: 1;
+}
+
+.ll-root > main > .flex-1 {
+  min-width: 0;
+}
+
+/* Images and media */
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* Tables */
+.ll-root table {
+  max-width: 100%;
+}
+
+.ll-root .overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Touch devices */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  button {
+    touch-action: manipulation;
+  }
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1024px) {
+  .ll-root > aside {
+    width: 220px !important;
+  }
+
+  .ll-root > main > .flex-1 {
+    padding: 20px !important;
+  }
+
+  .ll-root > main > header {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  .ll-dashboard-hero {
+    padding: 24px !important;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    overscroll-behavior-x: none;
+  }
+
+  .ll-root {
+    display: block !important;
+    min-height: 100dvh !important;
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+
+  /* Hide desktop sidebar on mobile */
+  .ll-root > aside {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+
+    width: 100% !important;
+    height: calc(72px + env(safe-area-inset-bottom)) !important;
+    min-height: 72px !important;
+
+    z-index: 9999 !important;
+
+    display: block !important;
+
+    border-right: none !important;
+    border-top: 1px solid rgba(255,255,255,.10) !important;
+
+    overflow: visible !important;
+
+    padding-bottom: env(safe-area-inset-bottom) !important;
+
+    background:
+      rgba(8, 12, 22, .96) !important;
+
+    backdrop-filter: blur(22px) !important;
+    -webkit-backdrop-filter: blur(22px) !important;
+
+    box-shadow:
+      0 -12px 40px rgba(0,0,0,.35) !important;
+  }
+
+  /* Hide sidebar branding */
+  .ll-root > aside > div:first-child {
+    display: none !important;
+  }
+
+  /* Navigation becomes bottom navigation */
+  .ll-root > aside nav {
+    width: 100% !important;
+    height: 72px !important;
+
+    padding: 8px 6px !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: space-around !important;
+
+    gap: 2px !important;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+
+    scrollbar-width: none !important;
+
+    background: transparent !important;
+  }
+
+  .ll-root > aside nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Navigation buttons */
+  .ll-root > aside nav button {
+    flex: 0 0 auto !important;
+
+    min-width: 58px !important;
+    height: 56px !important;
+
+    padding: 6px 8px !important;
+
+    border-radius: 16px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 3px !important;
+
+    font-size: 9px !important;
+
+    white-space: nowrap !important;
+  }
+
+  /* Navigation icon */
+  .ll-root > aside nav button svg {
+    width: 19px !important;
+    height: 19px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Main */
+  .ll-root > main {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Header */
+  .ll-root > main > header {
+    position: sticky !important;
+    top: 0 !important;
+
+    z-index: 100 !important;
+
+    min-height: 68px !important;
+
+    padding:
+      calc(12px + env(safe-area-inset-top))
+      16px
+      12px
+      16px !important;
+  }
+
+  /* Main content */
+  .ll-root > main > .flex-1 {
+    width: 100% !important;
+
+    padding: 16px !important;
+
+    padding-bottom:
+      calc(100px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Dashboard hero */
+  .ll-dashboard-hero {
+    padding: 22px !important;
+    min-height: auto !important;
+    border-radius: 22px !important;
+  }
+
+  .ll-dashboard-hero h1,
+  .ll-dashboard-hero h2 {
+    font-size: clamp(26px, 8vw, 38px) !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Cards */
+  .ll-root .grid {
+    min-width: 0;
+  }
+
+  /* Buttons */
+  .ll-root button {
+    max-width: 100%;
+  }
+
+  /* Forms */
+  .ll-root input,
+  .ll-root select,
+  .ll-root textarea {
+    width: 100%;
+    font-size: 16px !important;
+  }
+
+  /* Prevent iOS zoom */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Tables */
+  .ll-root table {
+    min-width: 650px;
+  }
+
+  /* Modal support */
+  .fixed.inset-0 {
+    padding:
+      calc(12px + env(safe-area-inset-top))
+      12px
+      calc(12px + env(safe-area-inset-bottom))
+      12px !important;
+  }
+
+  /* Scanner camera */
+  video {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 70dvh !important;
+    object-fit: cover !important;
+    border-radius: 18px !important;
+  }
+
+  /* Charts */
+  .recharts-responsive-container {
+    min-width: 0 !important;
+  }
+}
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .ll-root > main > .flex-1 {
+    padding: 12px !important;
+    padding-bottom:
+      calc(98px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .ll-root > main > header {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .ll-dashboard-hero {
+    padding: 18px !important;
+    border-radius: 18px !important;
+  }
+
+  /* Bottom navigation */
+  .ll-root > aside nav {
+    justify-content: flex-start !important;
+  }
+
+  .ll-root > aside nav button {
+    min-width: 56px !important;
+    font-size: 8px !important;
+  }
+
+  /* Make action groups wrap */
+  .ll-root .flex.items-center.justify-between {
+    gap: 10px;
+  }
+
+  /* Mobile cards */
+  .ll-root [class*="rounded"] {
+    max-width: 100%;
+  }
+}
+
+/* =========================================================
+   LARGE DESKTOP
+========================================================= */
+
+@media (min-width: 1440px) {
+
+  .ll-root > main > .flex-1 {
+    padding: 32px !important;
+  }
+
+  .ll-dashboard-hero {
+    padding: 36px !important;
+  }
+}
+
+/* iPhone safe areas */
+@supports (padding: max(0px)) {
+
+  .ll-root > main > header {
+    padding-top:
+      max(12px, env(safe-area-inset-top)) !important;
+  }
+
+  .ll-root > aside {
+    padding-bottom:
+      max(0px, env(safe-area-inset-bottom)) !important;
+  }
+}
