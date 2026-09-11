@@ -5289,12 +5289,50 @@ function Products({ onOpenInspection, onNewInspection, users = [] }) {
 function Rules() {
   const [searchQuery, setSearchQuery] = useState("");
   const [documentType, setDocumentType] = useState("ALL");
-  const [verificationStatus, setVerificationStatus] = useState("VERIFIED");
+  const [documents, setDocuments] = useState([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(true);
+  const [documentsError, setDocumentsError] = useState("");
+
+  const loadDocuments = async () => {
+    setLoadingDocuments(true);
+    setDocumentsError("");
+    try {
+      const data = await ApiService.getLegalDocuments({
+        q: searchQuery,
+        document_type: documentType,
+      });
+      setDocuments(
+        Array.isArray(data)
+          ? data.filter((document) => document.verification_status === "VERIFIED")
+          : []
+      );
+    } catch (error) {
+      console.warn("Legal document fetch failed:", error);
+      setDocuments([]);
+      setDocumentsError("Verified legal documents could not be loaded. Please try again.");
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(loadDocuments, 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchQuery, documentType]);
 
   const clearFilters = () => {
     setSearchQuery("");
     setDocumentType("ALL");
-    setVerificationStatus("VERIFIED");
+  };
+
+  const formatDocumentDate = (value) => {
+    if (!value) return null;
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   return (
@@ -5332,27 +5370,78 @@ function Rules() {
           </Field>
 
           <Field label="Verification status">
-            <select style={inputStyle} value={verificationStatus} onChange={(event) => setVerificationStatus(event.target.value)}>
-              <option value="VERIFIED">Verified</option>
-              <option value="DRAFT">Draft</option>
-              <option value="UNVERIFIED">Unverified</option>
-            </select>
+            <div
+              style={{ ...inputStyle, display: "flex", alignItems: "center", color: C.compliant, fontWeight: 700 }}
+              aria-label="Verification status: Verified"
+            >
+              <ShieldCheck size={15} className="mr-2" /> Verified only
+            </div>
           </Field>
 
           <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>
         </div>
       </Card>
 
-      <Card className="rounded-xl shadow-sm">
-        <div className="flex flex-col items-center text-center py-10 px-5">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: "var(--ll-bg-paper-deep)", color: C.slate }}>
-            <Info size={19} />
+      <Card className="rounded-xl shadow-sm" padded={false}>
+        {loadingDocuments ? (
+          <div className="flex flex-col items-center text-center py-10 px-5">
+            <Loader2 size={22} className="animate-spin mb-3" style={{ color: C.slate }} />
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>Loading verified official documents</h2>
+            <p style={{ fontSize: 12.5, color: C.slate, marginTop: 6 }}>Retrieving the current official reference library.</p>
           </div>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>No verified official documents yet</h2>
-          <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 470, marginTop: 6 }}>
-            Verified official Legal Metrology documents and their linked references will appear here.
-          </p>
-        </div>
+        ) : documentsError ? (
+          <div className="flex flex-col items-center text-center py-10 px-5">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: C.violationBg, color: C.violation }}>
+              <AlertTriangle size={19} />
+            </div>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>Documents unavailable</h2>
+            <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 470, marginTop: 6 }}>{documentsError}</p>
+            <Button className="mt-4" variant="ghost" onClick={loadDocuments}><RefreshCw size={14} /> Retry</Button>
+          </div>
+        ) : documents.length === 0 ? (
+          <div className="flex flex-col items-center text-center py-10 px-5">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: "var(--ll-bg-paper-deep)", color: C.slate }}>
+              <Info size={19} />
+            </div>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>No verified official documents found</h2>
+            <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 470, marginTop: 6 }}>
+              Try changing the search or document type filter. Only verified official documents are shown.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y" style={{ borderColor: C.line }}>
+            {documents.map((document) => (
+              <div key={document.id} className="p-5 sm:p-6 ll-tr">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span style={{ ...FONT.mono, fontSize: 11, fontWeight: 700, color: C.inkSoft }}>{document.document_code}</span>
+                      <span className="rounded-full border px-2 py-0.5" style={{ fontSize: 10.5, fontWeight: 700, color: C.slate, borderColor: C.line, background: "var(--ll-bg-paper)" }}>
+                        {document.document_type}
+                      </span>
+                      <span className="inline-flex items-center gap-1" style={{ fontSize: 10.5, fontWeight: 700, color: C.compliant }}>
+                        <ShieldCheck size={13} /> VERIFIED
+                      </span>
+                    </div>
+                    <h2 style={{ ...FONT.display, fontSize: 18, fontWeight: 700, color: C.ink }}>{document.title}</h2>
+                    <p style={{ fontSize: 12.5, color: C.slate, marginTop: 5 }}>{document.issuing_authority}</p>
+                    {document.citation && <p style={{ fontSize: 12, color: C.slate, marginTop: 8 }}>{document.citation}</p>}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3" style={{ fontSize: 11.5, color: C.slate }}>
+                      {formatDocumentDate(document.published_on) && <span>Published: {formatDocumentDate(document.published_on)}</span>}
+                      {formatDocumentDate(document.effective_from) && <span>Effective: {formatDocumentDate(document.effective_from)}</span>}
+                      {formatDocumentDate(document.effective_until) && <span>Until: {formatDocumentDate(document.effective_until)}</span>}
+                    </div>
+                  </div>
+                  {document.official_url && (
+                    <a href={document.official_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 whitespace-nowrap" style={{ fontSize: 12, fontWeight: 700, color: C.inkSoft }}>
+                      Official source <ArrowUpRight size={14} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -1,3 +1,4 @@
+from datetime import date
 import json
 import os
 from sqlalchemy.orm import Session
@@ -12,9 +13,33 @@ from app.models.legal_document import LegalDocument
 from app.models.rule_document_reference import RuleDocumentReference
 from app.auth.security import get_password_hash
 
+
+PCR_CONSOLIDATED_DOCUMENT_CODE = "LM-PCR-2011-CONSOLIDATED"
+
+
 def init_database():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
+
+    document = (
+        db.query(LegalDocument)
+        .filter(LegalDocument.document_code == PCR_CONSOLIDATED_DOCUMENT_CODE)
+        .first()
+    )
+    if not document:
+        document = LegalDocument(
+                document_code=PCR_CONSOLIDATED_DOCUMENT_CODE,
+                title="The Legal Metrology (Packaged Commodities) Rules, 2011 with all amendments",
+                document_type="RULES",
+                issuing_authority="Department of Consumer Affairs, Government of India",
+                official_url="https://consumeraffairs.nic.in/sites/default/files/file-uploads/latestnews/LM_PCR_All_Amendements.pdf",
+                citation="Legal Metrology (Packaged Commodities) Rules, 2011, as amended",
+                published_on=date(2011, 3, 7),
+                verification_status="VERIFIED",
+            )
+        db.add(document)
+        db.commit()
+
     try:
         # 1. Seed Essential System Users (Admin, Inspector, Reviewer)
         if db.query(User).count() == 0:

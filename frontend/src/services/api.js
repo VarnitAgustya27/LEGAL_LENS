@@ -298,6 +298,22 @@ class ApiService {
     }
   }
 
+  // 5b. Verified legal documents
+  static async getLegalDocuments(params = {}) {
+    const queryParams = new URLSearchParams({ verification_status: 'VERIFIED' });
+    if (params.q?.trim()) queryParams.set('q', params.q.trim());
+    if (params.document_type && params.document_type !== 'ALL') {
+      queryParams.set('document_type', params.document_type);
+    }
+
+    const res = await fetch(`${API_BASE}/legal-documents?${queryParams.toString()}`, {
+      headers: this.getHeaders()
+    });
+    this.handleUnauthorized(res);
+    if (!res.ok) throw new Error('Failed to fetch verified legal documents');
+    return await res.json();
+  }
+
   // 6. Demo Test Cases
   static async seedDemoCase(caseKey) {
     const res = await fetch(`${API_BASE}/demo/seed/${caseKey}`, {
