@@ -17,6 +17,7 @@ import {
   LineChart, Line,
 } from "recharts";
 import { supabase, isSupabaseConfigured } from "./supabaseClient";
+import { BrowserMultiFormatReader } from "@zxing/browser";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -80,9 +81,9 @@ const C = {
 };
 
 const FONT = {
-  display: { fontFamily: "'Source Serif 4', Georgia, serif" },
-  body: { fontFamily: "'IBM Plex Sans', 'Segoe UI', sans-serif" },
-  mono: { fontFamily: "'IBM Plex Mono', 'Courier New', monospace" },
+  display: { fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif' },
+  body: { fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif' },
+  mono: { fontFamily: '"SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace' },
 };
 
 const GlobalStyle = () => (
@@ -90,34 +91,34 @@ const GlobalStyle = () => (
     @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
     
     :root {
-      --ll-bg-paper: #F4F2EC;
-      --ll-bg-paper-deep: #EAE6DA;
-      --ll-bg-card: #FFFFFF;
-      --ll-bg-header: #FBFAF6;
-      --ll-bg-sidebar: #132238;
-      --ll-color-ink: #132238;
-      --ll-color-ink-soft: #1E3453;
-      --ll-color-charcoal: #22252A;
-      --ll-color-slate: #5B6470;
-      --ll-color-gold: #96742E;
-      --ll-color-line: #DAD4C2;
-      --ll-tr-hover: #F7F5EF;
-      --ll-input-bg: #FFFFFF;
-      --ll-input-text: #22252A;
-      --ll-table-head-bg: #FAF8F2;
-      --ll-button-primary-bg: #132238;
+      --ll-bg-paper: #F5F5F7;
+      --ll-bg-paper-deep: #ECECF0;
+      --ll-bg-card: rgba(255,255,255,0.82);
+      --ll-bg-header: rgba(255,255,255,0.78);
+      --ll-bg-sidebar: #111318;
+      --ll-color-ink: #1D1D1F;
+      --ll-color-ink-soft: #3A3A3C;
+      --ll-color-charcoal: #1D1D1F;
+      --ll-color-slate: #6E6E73;
+      --ll-color-gold: #A67C35;
+      --ll-color-line: rgba(60,60,67,0.14);
+      --ll-tr-hover: rgba(0,122,255,0.045);
+      --ll-input-bg: rgba(255,255,255,0.90);
+      --ll-input-text: #1D1D1F;
+      --ll-table-head-bg: rgba(245,245,247,0.90);
+      --ll-button-primary-bg: #1D1D1F;
       --ll-button-primary-color: #FFFFFF;
-      --ll-compliant: #3A6B35;
-      --ll-compliant-bg: #E7EFE1;
-      --ll-compliant-bd: #B9CDAE;
-      --ll-violation: #9B2C2C;
-      --ll-violation-bg: #F6E7E5;
-      --ll-violation-bd: #E0B7B2;
-      --ll-review: #966A16;
-      --ll-review-bg: #FAF0DA;
-      --ll-review-bd: #E7CE9C;
-      --ll-modal-overlay: rgba(19,34,56,0.65);
-      --ll-hatch-line: rgba(19,34,56,0.05);
+      --ll-compliant: #248A3D;
+      --ll-compliant-bg: rgba(52,199,89,0.10);
+      --ll-compliant-bd: rgba(52,199,89,0.22);
+      --ll-violation: #D92D20;
+      --ll-violation-bg: rgba(255,69,58,0.10);
+      --ll-violation-bd: rgba(255,69,58,0.22);
+      --ll-review: #B7791F;
+      --ll-review-bg: rgba(255,159,10,0.11);
+      --ll-review-bd: rgba(255,159,10,0.24);
+      --ll-modal-overlay: rgba(0,0,0,0.45);
+      --ll-hatch-line: rgba(29,29,31,0.035);
     }
 
     .ll-root.dark, .dark {
@@ -259,14 +260,23 @@ function VerdictStamp({ status, caseNo }) {
 
 function Card({ children, className = "", style, padded = true, hoverEffect = false, ...props }) {
   const shouldReduceMotion = useReducedMotion();
+
   return (
     <motion.div
-      whileHover={hoverEffect && !shouldReduceMotion ? { y: -3, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)", transition: { duration: 0.2 } } : {}}
-      className={`border rounded-xl transition-all shadow-sm ${className}`}
+      whileHover={
+        hoverEffect && !shouldReduceMotion
+          ? { y: -4, transition: { duration: 0.25, ease: "easeOut" } }
+          : {}
+      }
+      className={`border rounded-[22px] transition-all duration-300 ${className}`}
       style={{
         background: "var(--ll-bg-card)",
         borderColor: "var(--ll-color-line)",
         color: "var(--ll-color-charcoal)",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.02), 0 10px 30px rgba(0,0,0,0.045)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        overflow: "hidden",
         ...style
       }}
       {...props}
@@ -278,10 +288,35 @@ function Card({ children, className = "", style, padded = true, hoverEffect = fa
 
 function SectionLabel({ eyebrow, title, right }) {
   return (
-    <div className="flex items-end justify-between mb-4">
+    <div className="flex items-end justify-between mb-5">
       <div>
-        {eyebrow && <div style={{ ...FONT.mono, fontSize: 11, letterSpacing: "0.14em", color: C.gold, fontWeight: 700 }}>{eyebrow}</div>}
-        <h2 style={{ ...FONT.display, fontSize: 21, color: C.ink, fontWeight: 700, letterSpacing: "-0.01em" }}>{title}</h2>
+        {eyebrow && (
+          <div
+            style={{
+              ...FONT.body,
+              fontSize: 10,
+              letterSpacing: "0.12em",
+              color: C.slate,
+              fontWeight: 700,
+              marginBottom: 6,
+              textTransform: "uppercase",
+            }}
+          >
+            {eyebrow}
+          </div>
+        )}
+        <h2
+          style={{
+            ...FONT.display,
+            fontSize: 24,
+            lineHeight: 1.15,
+            color: C.ink,
+            fontWeight: 700,
+            letterSpacing: "-0.035em",
+          }}
+        >
+          {title}
+        </h2>
       </div>
       {right}
     </div>
@@ -642,16 +677,6 @@ function LandingPageView({ onAccessConsole }) {
                 <br />
                 <span>for packaged commodities.</span>
               </h1>
-
-              <p className="hero-text">
-                LEGAL LENS is an AI-powered inspection platform designed to
-                analyze product packaging, labels and images for compliance
-                with mandatory declarations under the{" "}
-                <strong>
-                  Legal Metrology Act, 2009 and the Legal Metrology
-                  (Packaged Commodities) Rules, 2011.
-                </strong>
-              </p>
 
               <div className="hero-actions">
                 <button
@@ -1351,9 +1376,9 @@ function LegalLoginPage({ onLogin, users = [], onBackToPortal }) {
           </h1>
 
           <p>
-            LEGAL LENS helps enforcement officers intelligently analyze
-            packaged commodities, detect regulatory violations and generate
-            evidence-backed compliance reports under PCR 2011.
+          LEGAL LENS helps enforcement officers intelligently analyze packaged
+          commodities, detect regulatory violations and generate evidence-backed
+          compliance reports under PCR 2011.
           </p>
 
           {/* Scanner Visual */}
@@ -1971,7 +1996,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
   return (
     <div className={`ll-root min-h-screen flex ${isDark ? "dark" : ""}`} style={{ background: "var(--ll-bg-paper)", ...FONT.body }}>
       <GlobalStyle />
-      <aside className="w-64 flex-shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden shadow-xl" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
+      <aside className="w-64 flex-shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
 
         {/* Top Brand Header with Dark Mode Toggle */}
         <div className="relative flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
@@ -2190,38 +2215,61 @@ function StatCard({ label, value, Icon, color, loading }) {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <Card hoverEffect className="relative overflow-hidden group">
+    <Card hoverEffect className="relative overflow-hidden group" style={{ minHeight: 148 }}>
       <div className="flex items-start justify-between relative z-10">
         <div>
-          <div style={{ ...FONT.body, fontSize: 11.5, color: C.slate, fontWeight: 700, letterSpacing: "0.04em" }}>
+          <div
+            style={{
+              ...FONT.body,
+              fontSize: 10,
+              color: C.slate,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+            }}
+          >
             {label.toUpperCase()}
           </div>
           {loading ? (
-            <div className="h-8 w-20 bg-slate-700/30 animate-pulse rounded mt-2" />
+            <div className="h-9 w-20 bg-slate-400/20 animate-pulse rounded-xl mt-3" />
           ) : (
             <motion.div
-              initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-              style={{ ...FONT.display, fontSize: 32, fontWeight: 800, color: C.ink, marginTop: 6 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              style={{
+                ...FONT.display,
+                fontSize: 38,
+                lineHeight: 1,
+                fontWeight: 700,
+                letterSpacing: "-0.045em",
+                color: C.ink,
+                marginTop: 14,
+              }}
             >
               {value}
             </motion.div>
           )}
         </div>
+
         <motion.div
-          whileHover={shouldReduceMotion ? {} : { rotate: 8, scale: 1.15 }}
-          transition={{ type: "spring", stiffness: 300, damping: 15 }}
-          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs border"
-          style={{ background: color + "1A", borderColor: color + "33" }}
+          whileHover={shouldReduceMotion ? {} : { scale: 1.06, rotate: 4 }}
+          transition={{ type: "spring", stiffness: 300, damping: 18 }}
+          className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{
+            background: `${color}12`,
+            color,
+            border: `1px solid ${color}18`,
+          }}
         >
-          <Icon size={20} style={{ color }} />
+          <Icon size={20} strokeWidth={1.8} />
         </motion.div>
       </div>
-      {/* Pulsing ambient corner glow */}
+
       <div
-        className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full opacity-10 pointer-events-none transition-transform group-hover:scale-150 duration-500 blur-sm"
-        style={{ background: color }}
+        className="absolute left-0 right-0 bottom-0 h-[3px]"
+        style={{
+          background: `linear-gradient(90deg, ${color}00, ${color}45, ${color}00)`,
+        }}
       />
     </Card>
   );
@@ -2832,11 +2880,159 @@ function evaluateImageQuality(file, callback) {
   reader.readAsDataURL(file);
 }
 
-function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemove, heightClass = "h-48", showAddButtons = true }) {
+
+function MobileCodeScanner({ open, onClose, onDetected }) {
+  const videoRef = useRef(null);
+  const controlsRef = useRef(null);
+  const [error, setError] = useState("");
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+
+  const stopScanner = () => {
+    try { controlsRef.current?.stop?.(); } catch (_) {}
+    controlsRef.current = null;
+    const video = videoRef.current;
+    if (video?.srcObject) {
+      video.srcObject.getTracks().forEach((track) => track.stop());
+      video.srcObject = null;
+    }
+  };
+
+  useEffect(() => {
+    if (!open) {
+      stopScanner();
+      return undefined;
+    }
+
+    let cancelled = false;
+    setError("");
+    setTorchOn(false);
+
+    const startScanner = async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("Camera access is not available in this browser.");
+        }
+
+        const reader = new BrowserMultiFormatReader();
+        const constraints = {
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        };
+
+        const controls = await reader.decodeFromConstraints(
+          constraints,
+          videoRef.current,
+          (result) => {
+            if (!result || cancelled) return;
+            const value = result.getText?.() || String(result);
+            if (!value) return;
+            cancelled = true;
+            navigator.vibrate?.(120);
+            stopScanner();
+            onDetected?.(value);
+          }
+        );
+
+        if (cancelled) {
+          controls.stop?.();
+          return;
+        }
+
+        controlsRef.current = controls;
+        const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
+        const capabilities = track?.getCapabilities?.();
+        setTorchSupported(Boolean(capabilities?.torch));
+      } catch (err) {
+        if (!cancelled) {
+          const message = err?.name === "NotAllowedError"
+            ? "Camera permission was denied. Allow camera access and try again."
+            : err?.message || "Unable to start the camera scanner.";
+          setError(message);
+        }
+      }
+    };
+
+    startScanner();
+    return () => {
+      cancelled = true;
+      stopScanner();
+    };
+  }, [open]);
+
+  const toggleTorch = async () => {
+    try {
+      const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
+      if (!track) return;
+      const next = !torchOn;
+      await track.applyConstraints({ advanced: [{ torch: next }] });
+      setTorchOn(next);
+    } catch (_) {
+      setTorchSupported(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm">
+      <div className="w-full max-w-xl rounded-2xl overflow-hidden border shadow-2xl" style={{ background: "#0b1220", borderColor: "rgba(34,211,238,0.35)" }}>
+        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(148,163,184,0.18)" }}>
+          <div>
+            <div className="flex items-center gap-2 text-sm font-bold text-white">
+              <ScanLine size={18} className="text-cyan-400" /> Live QR & Barcode Scanner
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">Point the rear camera at a QR code or product barcode.</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white" title="Close scanner">
+            <X size={19} />
+          </button>
+        </div>
+
+        <div className="relative aspect-[3/4] sm:aspect-video bg-black overflow-hidden">
+          <video ref={videoRef} className="w-full h-full object-cover" muted playsInline autoPlay />
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="w-[72%] max-w-[340px] aspect-square border-2 border-cyan-300/90 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.22)] relative">
+              <span className="absolute left-0 right-0 top-1/2 h-px bg-cyan-300 shadow-[0_0_18px_3px_rgba(34,211,238,0.8)] animate-pulse" />
+            </div>
+          </div>
+          {error && (
+            <div className="absolute inset-0 flex items-center justify-center p-6 text-center bg-slate-950/90">
+              <div>
+                <AlertTriangle className="mx-auto mb-3 text-amber-400" size={30} />
+                <p className="text-sm text-slate-200">{error}</p>
+                <p className="text-xs text-slate-500 mt-2">On iPhone and Android, open this site over HTTPS and allow camera permission.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <span className="text-[11px] text-slate-400">QR • EAN • UPC • Code 128 and other supported formats</span>
+          <div className="flex gap-2">
+            {torchSupported && (
+              <button type="button" onClick={toggleTorch} className="px-3 py-2 rounded-lg border text-xs font-semibold text-amber-300 border-amber-400/30 hover:bg-amber-400/10">
+                {torchOn ? "Flash Off" : "Flash On"}
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/15">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemove, onBarcodeDetected, heightClass = "h-48", showAddButtons = true }) {
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
   const handleFile = (file) => {
@@ -2945,11 +3141,11 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   type="button"
-                  onClick={() => cameraInputRef.current?.click()}
+                  onClick={() => setShowScanner(true)}
                   className="px-2 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md cursor-pointer"
-                  title="Capture with camera"
+                  title="Open QR / barcode scanner"
                 >
-                  <Camera size={13} /> Camera
+                  <ScanLine size={13} /> Scan Code
                 </motion.button>
               </div>
             </div>
@@ -3019,18 +3215,27 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  cameraInputRef.current?.click();
+                  setShowScanner(true);
                 }}
                 className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
-                title="Open mobile / tablet camera directly"
+                title="Open live QR / barcode scanner"
               >
-                <Camera size={13} /> Camera
+                <ScanLine size={13} /> Scan QR / Barcode
               </motion.button>
             </div>
           </div>
         )}
       </motion.div>
+
+      <MobileCodeScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onDetected={(value) => {
+          setShowScanner(false);
+          onBarcodeDetected?.(value);
+        }}
+      />
 
       {showCropModal && imageData?.previewUrl && (
         <CropPhotoModal
@@ -3381,6 +3586,19 @@ function dataURItoBlob(dataURI) {
             </div>
           )}
 
+          {metadata.barcode && (
+            <div className="mt-4 mb-1 flex items-center justify-between gap-3 p-3 rounded-lg border" style={{ background: "rgba(34,211,238,0.08)", borderColor: "rgba(34,211,238,0.28)" }}>
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckCircle2 size={16} className="text-cyan-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-wider text-cyan-300 font-mono">Code detected</div>
+                  <div className="text-sm font-semibold truncate" style={{ color: C.ink }}>{metadata.barcode}</div>
+                </div>
+              </div>
+              <button type="button" onClick={() => setMetadata((prev) => ({ ...prev, barcode: "" }))} className="text-xs text-slate-400 hover:text-red-400">Clear</button>
+            </div>
+          )}
+
           {/* Primary 2-Panel Upload (Front & Back) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
             <Dropzone
@@ -3393,6 +3611,7 @@ function dataURItoBlob(dataURI) {
                 setStepError("");
               }}
               onRemove={() => setImages((prev) => ({ ...prev, front: null }))}
+              onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
             />
             <Dropzone
               label="Back Panel (Mandatory Declarations)"
@@ -3404,6 +3623,7 @@ function dataURItoBlob(dataURI) {
                 setStepError("");
               }}
               onRemove={() => setImages((prev) => ({ ...prev, back: null }))}
+              onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
             />
           </div>
 
@@ -3426,6 +3646,7 @@ function dataURItoBlob(dataURI) {
                       imageData={angle.data}
                       onImageChange={(data) => updateExtraAngle(angle.id, data)}
                       onRemove={() => updateExtraAngle(angle.id, null)}
+                      onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
                     />
                     <button
                       type="button"
@@ -3506,6 +3727,7 @@ function dataURItoBlob(dataURI) {
                   imageData={images.ecommerce}
                   onImageChange={(data) => setImages((prev) => ({ ...prev, ecommerce: data }))}
                   onRemove={() => setImages((prev) => ({ ...prev, ecommerce: null }))}
+                  onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
                   heightClass="h-44 sm:h-48"
                 />
               </div>
@@ -3577,6 +3799,7 @@ function dataURItoBlob(dataURI) {
             {[
               ["Images Attached", `${uploadedImagesCount} packaging photo${uploadedImagesCount === 1 ? "" : "s"} attached`],
               ["Product Category", metadata.category || "Packaged Food"],
+              ["Scanned QR / Barcode", metadata.barcode || "Not scanned"],
               ["Extraction Mode", "Autonomous Gemini Vision AI + Dual-Pass OCR"],
               ["Officer Remarks", metadata.notes ? (metadata.notes.length > 30 ? metadata.notes.slice(0, 30) + "..." : metadata.notes) : "None recorded"],
             ].map(([k, v]) => (
