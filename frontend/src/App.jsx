@@ -2462,9 +2462,9 @@ function Dashboard({ onOpenInspection, isDark }) {
           </div>
           <table className="w-full" style={{ fontSize: 12.5 }}>
             <thead>
-              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
                 {["CASE NO.", "PRODUCT", "STATUS", "DATE"].map((h) => (
-                  <th key={h} className="text-left font-semibold px-5 py-2 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                  <th key={h} className="text-left font-semibold px-5 py-2.5 border-b" style={{ borderColor: C.line }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -2717,9 +2717,9 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
       <Card padded={false} className="overflow-x-auto ll-scroll rounded-xl">
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
               {["CASE NO.", "PRODUCT", "CATEGORY", "MANUFACTURER", "STATUS", "INSPECTOR", "DATE", "SOURCE", ""].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-2.5 border-t border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
+                <th key={h} className="text-left font-semibold px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -4833,9 +4833,9 @@ function InspectionDetail({ inspection, users = [] }) {
           <div className="p-5 pb-0"><SectionLabel eyebrow="RULE-BY-RULE" title="Compliance Checklist" /></div>
           <table className="w-full" style={{ fontSize: 12.5 }}>
             <thead>
-              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
                 {["REQUIREMENT", "RULE", "STATUS", "CONFIDENCE", ""].map((h) => (
-                  <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                  <th key={h} className="text-left font-semibold px-5 py-3 border-b" style={{ borderColor: C.line }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -5494,48 +5494,6 @@ function Rules() {
       </div>
 
       <RuleBookPanel rules={RULES} />
-
-      <Card padded={false} className="overflow-x-auto rounded-xl shadow-sm">
-        <table className="w-full" style={{ fontSize: 12.5 }}>
-          <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
-              {["RULE CODE", "NAME", "APPLICABLE CATEGORY", "SEVERITY", "VERSION", "EFFECTIVE FROM", "STATUS"].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {RULES.map((r) => {
-              const sevColor = r.severity === "HIGH" ? C.violation : r.severity === "MEDIUM" ? C.review : C.slate;
-              const sevBg = r.severity === "HIGH" ? C.violationBg : r.severity === "MEDIUM" ? C.reviewBg : "var(--ll-bg-paper-deep)";
-              const sevBd = r.severity === "HIGH" ? C.violationBd : r.severity === "MEDIUM" ? C.reviewBd : C.line;
-              return (
-                <tr key={r.code} className="ll-tr">
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontWeight: 700, color: C.ink }}>{r.code}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, fontWeight: 600 }}>{r.name}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.category}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
-                    <span style={{ color: sevColor, background: sevBg, border: `1px solid ${sevBd}`, fontWeight: 700, fontSize: 10.5, padding: "2px 8px", borderRadius: 9999 }}>{r.severity}</span>
-                  </td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5 }}>{r.version}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.effective}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
-                    <span className="inline-flex items-center gap-1.5" style={{
-                      fontSize: 10.5, fontWeight: 700, padding: "2px 10px", borderRadius: 9999,
-                      background: r.status === "ACTIVE" ? "var(--ll-compliant-bg)" : "var(--ll-bg-paper-deep)",
-                      color: r.status === "ACTIVE" ? "var(--ll-compliant)" : C.slate,
-                      border: r.status === "ACTIVE" ? "1px solid var(--ll-compliant-bd)" : `1px solid ${C.line}`,
-                    }}>
-                      {r.status === "ACTIVE" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
-                      {r.status}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </Card>
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-xs" style={{ background: "var(--ll-modal-overlay)" }} onClick={() => setShowAdd(false)}>
@@ -6876,9 +6834,9 @@ export default function App() {
   const [loadingDb, setLoadingDb] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
 
-  // Theme state: dark / light
+  // Theme state: dark / light (defaults to dark to match obsidian outer portal)
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("Legal-Lens_theme") || "light";
+    return localStorage.getItem("Legal-Lens_theme") || "dark";
   });
 
   const isDark = theme === "dark";
