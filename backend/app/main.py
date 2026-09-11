@@ -60,6 +60,13 @@ async def get_uploaded_file(file_path: str):
     if full_path.startswith(uploads_dir) and os.path.exists(full_path) and os.path.isfile(full_path):
         return FileResponse(full_path)
 
+    # 2b. Check if filename exists anywhere inside uploads_dir or subdirectories
+    for root, _, files in os.walk(uploads_dir):
+        if filename in files:
+            target_file = os.path.join(root, filename)
+            if os.path.isfile(target_file):
+                return FileResponse(target_file)
+
     # 3. Clean fallback SVG placeholder so browser/terminal never encounters a 404
     fallback_svg = (
         "<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'>"

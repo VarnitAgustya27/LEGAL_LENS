@@ -115,11 +115,12 @@
         "COSMETICS",
         "ALL"
       ],
+      "is_mandatory": false,
       "is_mandatory_when_imported": true,
       "is_mandatory_when_domestic": false,
       "severity": "HIGH",
       "validation_type": "PRESENCE",
-      "description": "Country of origin must be prominently declared on imported packaged commodities.",
+      "description": "Country of origin is mandatory on imported packaged commodities (Rule 6(1)(f)) and all e-commerce listings (Rule 6(10)). For domestic physical packaging, verified manufacturer address satisfies origin identification unless import status requires verification.",
       "expected_terms": [
         "Country of Origin",
         "Made in",

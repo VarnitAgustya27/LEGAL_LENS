@@ -56,9 +56,10 @@ class RuleEngine:
                     is_mandatory = rule.get("is_mandatory", True)
             else:
                 # Check import applicability for Country of Origin
-                if rule.get("is_mandatory_when_imported") and not is_imported and not rule.get("is_mandatory", True):
-                    continue
-                is_mandatory = rule.get("is_mandatory", True)
+                if field == "country_of_origin":
+                    is_mandatory = True if is_imported else False
+                else:
+                    is_mandatory = rule.get("is_mandatory", True)
 
             decl = declarations.get(field, {})
             is_detected = decl.get("detected", False)
@@ -68,8 +69,25 @@ class RuleEngine:
             bbox = decl.get("bbox")
             image_id = decl.get("image_id")
 
-            # If optional declaration is not detected, skip without failing
+            # If optional / domestic declaration is not detected
             if not is_mandatory and not is_detected:
+                if field == "country_of_origin" and not is_imported:
+                    total_applicable += 1
+                    eval_res = {
+                        "rule_code": code,
+                        "field": field,
+                        "label": label,
+                        "status": "REVIEW",
+                        "severity": "LOW",
+                        "message": "Country of origin not declared on package label. Requires officer verification: Exempt under Rule 6(1)(f) PCR 2011 if manufactured domestically in India; mandatory if imported.",
+                        "expected": "Declaration of Country of Origin (if imported) or Domestic Manufacturer Address (Rule 6(1)(a))",
+                        "detected": "NOT DETECTED (Domestic/Unverified)",
+                        "statutory_reference": stat_ref,
+                        "confidence": 0.90,
+                        "evidence_image_id": image_id
+                    }
+                    evaluations.append(eval_res)
+                    review_count += 1
                 continue
 
             total_applicable += 1

@@ -663,9 +663,17 @@ async def ecom_scan_url(
                 })
 
     # 2. Save scraped / downloaded product gallery images
+    gallery_urls = scraped.get("gallery_images", [])
     for idx, local_img_path in enumerate(scraped.get("downloaded_paths", [])):
         fname = os.path.basename(local_img_path)
         angle_label = f"GALLERY_PHOTO_{idx+1}"
+        
+        # Copy to root uploads_dir for direct static serving
+        try:
+            shutil.copyfile(local_img_path, os.path.join(uploads_dir, fname))
+        except Exception:
+            pass
+
         img_obj = InspectionImage(
             inspection_id=inspection.id,
             image_type=angle_label,
@@ -678,17 +686,22 @@ async def ecom_scan_url(
         db.commit()
         db.refresh(img_obj)
 
-        web_url = local_img_path
+        original_cdn_url = gallery_urls[idx] if idx < len(gallery_urls) else None
+        web_url = f"/uploads/{fname}"
         try:
             from app.utils.supabase_uploader import upload_image_to_supabase_storage
             pub_url = upload_image_to_supabase_storage(local_img_path, fname)
-            fallback_supabase = f"{settings.SUPABASE_URL.rstrip('/')}/storage/v1/object/public/product-images/{fname}"
-            web_url = pub_url or fallback_supabase
+            if pub_url:
+                web_url = pub_url
+            elif original_cdn_url and original_cdn_url.startswith("http"):
+                web_url = original_cdn_url
             img_obj.original_path = web_url
             img_obj.image_url = web_url
             db.commit()
         except Exception as e:
             print(f"[Supabase] Image upload notice: {e}")
+            if original_cdn_url and original_cdn_url.startswith("http"):
+                web_url = original_cdn_url
 
         saved_images_list.append({
             "id": f"img_{img_obj.id}",

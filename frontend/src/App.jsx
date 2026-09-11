@@ -4276,6 +4276,11 @@ function InspectionDetail({ inspection, users = [] }) {
         detectedVal = hasValue ? String(rawTextVal) : "Exempt under Rule 6(10) PCR 2011 (Digital Listing)";
         confVal = 98;
         reasonVal = reasonVal || "Exempt from mandatory digital display under Rule 6(10) Legal Metrology (PCR 2011).";
+      } else if (d.status === "REVIEW" || (!isEcom && fieldKey === "country_of_origin" && !hasValue && !insp.is_imported && !insp.product?.is_imported)) {
+        statusVal = "REVIEW";
+        detectedVal = hasValue ? String(rawTextVal) : "Requires Verification (Rule 6(1)(f))";
+        confVal = 90;
+        reasonVal = reasonVal || "Exempt under Rule 6(1)(f) PCR 2011 if manufactured domestically in India; mandatory if imported.";
       } else if (isDetected || hasValue) {
         statusVal = (d.status === "COMPLIANT" || d.status === "PASS" || d.is_compliant === true) ? "PASS" : (d.status || "PASS");
         detectedVal = String(rawTextVal);
@@ -4296,7 +4301,7 @@ function InspectionDetail({ inspection, users = [] }) {
       return {
         key: fieldKey,
         label: fieldLabel,
-        rule: d.rule || d.rule_citation || (isExempt ? "Rule 6(10) PCR 2011" : "Rule 6(1) PCR 2011"),
+        rule: d.rule || d.rule_citation || (isExempt ? "Rule 6(10) PCR 2011" : (statusVal === "REVIEW" ? "Rule 6(1)(f) PCR 2011" : "Rule 6(1) PCR 2011")),
         status: statusVal,
         confidence: confVal,
         detected: detectedVal,
@@ -4325,16 +4330,16 @@ function InspectionDetail({ inspection, users = [] }) {
   const avgConf = Math.round(reqs.reduce((s, r) => s + (r.confidence || 90), 0) / (reqs.length || 1));
 
   // 3-Tier Classification:
-  // 1. All mandatory pass (failCount === 0 && passCount > 0) -> COMPLIANT
+  // 1. All mandatory pass (failCount === 0 && passCount > 0) -> COMPLIANT (or REVIEW if verification items exist)
   // 2. < 50% pass ratio of mandatory -> NON_COMPLIANT
   // 3. Otherwise -> REVIEW / NON_COMPLIANT
   const mandatoryCount = mandatoryReqs.length;
   const passRatio = mandatoryCount > 0 ? passCount / mandatoryCount : (passCount / (reqs.length || 1));
   const computedStatus = (failCount === 0 && passCount > 0)
-    ? "COMPLIANT"
+    ? (reviewCount > 0 ? "REVIEW" : "COMPLIANT")
     : (passRatio < 0.50 ? "NON_COMPLIANT" : (failCount > 0 ? "NON_COMPLIANT" : "REVIEW"));
 
-  const inspectionStatus = (insp.status && insp.status !== "REVIEW") ? insp.status : computedStatus;
+  const inspectionStatus = (insp.status && insp.status !== "REVIEW" && !((insp.status === "NON_COMPLIANT" || insp.status === "NON-COMPLIANT") && failCount === 0)) ? insp.status : computedStatus;
 
   const extractedMfr = insp.declarations?.find(d => d.field === "manufacturer")?.value;
   const manufacturerVal = extractedMfr || insp.manufacturer || (typeof insp.product === "object" && insp.product?.category) || "Registered Food Manufacturer";
@@ -4374,7 +4379,14 @@ function InspectionDetail({ inspection, users = [] }) {
 
   if (insp.uploaded_images && typeof insp.uploaded_images === "object" && Object.keys(insp.uploaded_images).length > 0) {
     Object.entries(insp.uploaded_images).forEach(([key, val], idx) => {
-      const url = val?.previewUrl || val?.url || (typeof val === "string" ? val : null);
+      let url = val?.previewUrl || val?.url || (typeof val === "string" ? val : null);
+      if (url && typeof url === 'string') {
+        if (url.startsWith('/uploads/')) {
+          url = `${ApiService.getApiBase()}${url}`;
+        } else if (url.startsWith('uploads/')) {
+          url = `${ApiService.getApiBase()}/${url}`;
+        }
+      }
       if (url && !seenUrls.has(url)) {
         seenUrls.add(url);
         initialPhotos.push({
@@ -4386,13 +4398,12 @@ function InspectionDetail({ inspection, users = [] }) {
     });
   } else if (insp.images && Array.isArray(insp.images) && insp.images.length > 0) {
     insp.images.forEach((img, idx) => {
-      let url = img.supabase_url || img.image_url || img.url || img.original_path;
-      if (url && typeof url === 'string' && url.includes('/uploads/')) {
-        const supabaseBase = import.meta.env.VITE_SUPABASE_URL;
-        if (supabaseBase && supabaseBase.startsWith('https://')) {
-          const filename = url.split('/').pop();
-          const bucket = url.includes('/reports/') ? 'reports' : 'product-images';
-          url = `${supabaseBase.replace(/\/+$/, '')}/storage/v1/object/public/${bucket}/${filename}`;
+      let url = img.url || img.image_url || img.supabase_url || img.original_path;
+      if (url && typeof url === 'string') {
+        if (url.startsWith('/uploads/')) {
+          url = `${ApiService.getApiBase()}${url}`;
+        } else if (url.startsWith('uploads/')) {
+          url = `${ApiService.getApiBase()}/${url}`;
         }
       }
       if (url && !seenUrls.has(url)) {
@@ -4881,13 +4892,7 @@ function InspectionDetail({ inspection, users = [] }) {
             <p style={{ fontSize: 11.5, color: C.slate, lineHeight: 1.5, marginBottom: 10 }}>
               The finding above is AI-assisted. Confirm, override, or flag for further review before it becomes the final determination.
             </p>
-            <select style={{ ...inputStyle, marginBottom: 10 }} defaultValue="">
-              <option value="" disabled>Select determination</option>
-              <option>Confirm AI finding ? Non-Compliant</option>
-              <option>Override ? mark Compliant</option>
-              <option>Escalate for senior review</option>
-            </select>
-            <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks?" />
+            <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks…" />
             <div className="flex gap-2">
               <Button
                 size="sm"

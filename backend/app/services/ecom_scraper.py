@@ -37,7 +37,7 @@ class ECommerceScraperService:
             return "Blinkit"
         elif "zepto" in domain:
             return "Zepto"
-        elif "amazon" in domain:
+        elif "amazon" in domain or "amzn" in domain:
             return "Amazon"
         elif "flipkart" in domain:
             return "Flipkart"
@@ -58,7 +58,18 @@ class ECommerceScraperService:
         os.makedirs(output_dir, exist_ok=True)
 
         html = ""
-        async with httpx.AsyncClient(timeout=25.0, headers=cls.HEADERS, follow_redirects=True) as client:
+        request_headers = {
+            **cls.HEADERS,
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Referer": "https://www.google.com/",
+            "Accept-Language": "en-IN,en;q=0.9"
+        }
+
+        async with httpx.AsyncClient(timeout=25.0, headers=request_headers, follow_redirects=True) as client:
             try:
                 resp = await client.get(url)
                 html = resp.text
@@ -82,13 +93,11 @@ class ECommerceScraperService:
             if prid_match:
                 prid = prid_match.group(1)
                 specifications["Blinkit Product ID"] = prid
-                # Add known Grofers CDN product angles
+                # Add verified Grofers CDN high-resolution product angles
                 gallery_images.extend([
                     f"https://cdn.grofers.com/app/images/products/full_screen/pro_{prid}.jpg",
-                    f"https://cdn.grofers.com/app/images/products/sliding_image/{prid}a.jpg",
-                    f"https://cdn.grofers.com/app/images/products/sliding_image/{prid}b.jpg",
-                    f"https://cdn.grofers.com/app/images/products/sliding_image/{prid}c.jpg",
-                    f"https://cdn.grofers.com/app/images/products/large/pro_{prid}.jpg",
+                    f"https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=85,metadata=none,w=900/app/images/products/full_screen/pro_{prid}.jpg",
+                    f"https://cdn.grofers.com/app/images/products/normal/pro_{prid}.jpg",
                 ])
                 specifications["Platform"] = "Blinkit Quick Commerce"
                 specifications["Verified Digital Listing"] = "Rule 6(10) PCR 2011"
@@ -103,11 +112,16 @@ class ECommerceScraperService:
             specifications["Verified Digital Listing"] = "Rule 6(10) PCR 2011"
 
         elif platform == "Amazon":
-            amazon_slug_m = re.search(r'amazon\.[a-z.]+/([^/]+)/dp/([A-Z0-9]+)', url)
-            if amazon_slug_m:
-                extracted_slug_name = amazon_slug_m.group(1).replace("-", " ").strip().title()
-                if extracted_slug_name and not extracted_slug_name.startswith("Dp"):
-                    product_name = extracted_slug_name
+            # Support all Amazon URL formats: /dp/ASIN, /product-name/dp/ASIN, /gp/product/ASIN, /d/ASIN
+            asin_match = re.search(r'/(?:dp|product|gp/product|d)/([A-Za-z0-9]{10})', url) or re.search(r'[?&]asin=([A-Za-z0-9]{10})', url)
+            slug_match = re.search(r'amazon\.[a-z.]+/([^/]+)/(?:dp|gp/product|d)/', url)
+            if slug_match:
+                candidate_slug = slug_match.group(1).replace("-", " ").replace("_", " ").strip().title()
+                if candidate_slug and not candidate_slug.lower().startswith("dp") and len(candidate_slug) > 3:
+                    product_name = candidate_slug
+            if asin_match:
+                asin = asin_match.group(1)
+                specifications["Amazon ASIN"] = asin
             specifications["Platform"] = "Amazon India Marketplace"
             specifications["Verified Digital Listing"] = "Rule 6(10) PCR 2011"
 
@@ -248,6 +262,17 @@ class ECommerceScraperService:
                 if title_m:
                     product_name = title_m.group(1).strip()
 
+            # 1. data-a-dynamic-image JSON
+            for dyn_match in re.findall(r'data-a-dynamic-image=["\'](\{[\s\S]*?\})["\']', html):
+                unescaped = dyn_match.replace("&quot;", '"').replace("&amp;", "&")
+                try:
+                    dyn_data = json.loads(unescaped)
+                    if isinstance(dyn_data, dict):
+                        gallery_images.extend(dyn_data.keys())
+                except Exception:
+                    pass
+
+            # 2. colorImages initial JSON
             img_block_m = re.search(r'\'colorImages\':\s*\{\s*\'initial\':\s*(\[[\s\S]*?\])\s*\},', html)
             if img_block_m:
                 raw_json_str = img_block_m.group(1)
@@ -255,6 +280,14 @@ class ECommerceScraperService:
                 if not hi_res_urls:
                     hi_res_urls = re.findall(r'"large":\s*"([^"]+)"', raw_json_str)
                 gallery_images.extend(hi_res_urls)
+
+            # 3. data-old-hires, data-main-image-url, and landingImage tags
+            for direct_img in re.findall(r'(?:data-old-hires|data-main-image-url|data-zoom-hires)=["\'](https://[^\s"\']*(?:media-amazon|ssl-images-amazon)[^\s"\']*\.(?:jpg|png|jpeg|webp))["\']', html):
+                gallery_images.append(direct_img)
+
+            # 4. All media-amazon image URLs in HTML
+            all_media_imgs = re.findall(r'https://(?:m\.media-amazon\.com|images-(?:na|eu)\.ssl-images-amazon\.com)/images/I/[a-zA-Z0-9%_+.-]+\.(?:jpg|png|jpeg|webp)', html)
+            gallery_images.extend(all_media_imgs)
 
             spec_rows = re.findall(r'<th[^>]*class="[^"]*prodDetSectionEntry[^"]*"[^>]*>([\s\S]*?)</th>[\s\S]*?<td[^>]*class="[^"]*prodDetAttrValue[^"]*"[^>]*>([\s\S]*?)</td>', html)
             for k, v in spec_rows:
@@ -329,10 +362,15 @@ class ECommerceScraperService:
         clean_gallery = []
         for raw_url in gallery_images:
             u = raw_url.replace("&amp;", "&").strip()
+            
+            # Convert Amazon thumbnails into full-resolution product packaging photos
+            if "media-amazon" in u or "ssl-images-amazon" in u:
+                u = re.sub(r'\._[A-Za-z0-9_,]+_\.', '.', u)
+
             lower_u = u.lower()
-            if any(bad in lower_u for bad in ["icon", "logo", "sprite", "rating", "star", "avatar", "badge", "delivery", "payment", "svg", "tracker", "analytics"]):
+            if any(bad in lower_u for bad in ["icon", "logo", "sprite", "rating", "star", "avatar", "badge", "delivery", "payment", "svg", "tracker", "analytics", "transparent-pixel"]):
                 continue
-            if u not in clean_gallery:
+            if u not in clean_gallery and u.startswith("http"):
                 clean_gallery.append(u)
 
         print(f"[Scraper] Found {len(clean_gallery)} candidate product photos for {platform}: {clean_gallery[:3]}")
@@ -341,23 +379,45 @@ class ECommerceScraperService:
         # 6. DOWNLOAD ALL PRODUCT GALLERY IMAGES
         # =========================================================================
         downloaded_paths = []
-        async with httpx.AsyncClient(timeout=20.0, headers=cls.HEADERS) as img_client:
+        platform_domain = urlparse(url).netloc or "blinkit.com"
+        custom_img_headers = {
+            **cls.HEADERS,
+            "Referer": f"https://{platform_domain}/",
+            "Origin": f"https://{platform_domain}"
+        }
+
+        async with httpx.AsyncClient(timeout=20.0, headers=custom_img_headers) as img_client:
             for idx, img_url in enumerate(clean_gallery[:6]):  # Top product packaging photos
                 try:
                     img_resp = await img_client.get(img_url)
                     if img_resp.status_code == 200 and len(img_resp.content) > 3000:
+                        # Reject XML error messages such as S3 AccessDenied
+                        if b"AccessDenied" in img_resp.content or b"<Error>" in img_resp.content:
+                            continue
+
+                        # Verify valid image format with PIL
+                        import io
+                        from PIL import Image as PILImage
+                        try:
+                            test_img = PILImage.open(io.BytesIO(img_resp.content))
+                            test_img.verify()
+                        except Exception:
+                            # Not a valid image file
+                            continue
+
                         file_ext = ".jpg"
                         if ".png" in img_url.lower():
                             file_ext = ".png"
                         elif ".webp" in img_url.lower():
                             file_ext = ".webp"
+
                         local_name = f"ecom_{uuid.uuid4().hex[:8]}_p{idx+1}{file_ext}"
                         local_path = os.path.join(output_dir, local_name)
                         with open(local_path, "wb") as f:
                             f.write(img_resp.content)
                         downloaded_paths.append(local_path)
                 except Exception as e:
-                    print(f"[Scraper] Failed to download {img_url}: {e}")
+                    print(f"[Scraper] Note downloading {img_url}: {e}")
 
         print(f"[Scraper] Successfully downloaded {len(downloaded_paths)} product gallery photos into {output_dir}")
 
