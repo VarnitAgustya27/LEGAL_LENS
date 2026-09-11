@@ -149,7 +149,7 @@ export default function RuleBookPanel({ rules = [] }) {
 
   return (
     <div
-      className="rounded-2xl border transition-all duration-200 overflow-hidden shadow-xl"
+      className="rounded-2xl border transition-all duration-200 overflow-hidden shadow-sm"
       style={{
         background: "var(--ll-bg-card)",
         borderColor: "var(--ll-color-line)"
@@ -157,10 +157,10 @@ export default function RuleBookPanel({ rules = [] }) {
     >
       {/* ── TOP HEADER ── */}
       <div
-        className="p-6 border-b space-y-4"
+        className="p-5 sm:p-6 border-b space-y-4"
         style={{
           borderColor: "var(--ll-color-line)",
-          background: "linear-gradient(135deg, rgba(16, 27, 43, 0.95), rgba(9, 14, 23, 0.98))"
+          background: "var(--ll-table-head-bg)"
         }}
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -171,7 +171,7 @@ export default function RuleBookPanel({ rules = [] }) {
                 style={{
                   background: "rgba(229, 184, 66, 0.12)",
                   color: "var(--ll-color-gold)",
-                  borderColor: "rgba(229, 184, 66, 0.28)"
+                  borderColor: "rgba(229, 184, 66, 0.3)"
                 }}
               >
                 <Scale size={11} />
@@ -182,7 +182,7 @@ export default function RuleBookPanel({ rules = [] }) {
                 style={{
                   color: "var(--ll-color-slate)",
                   borderColor: "var(--ll-color-line)",
-                  background: "rgba(255,255,255,0.02)"
+                  background: "var(--ll-bg-paper)"
                 }}
               >
                 Gazette Version 2026.1
@@ -190,7 +190,7 @@ export default function RuleBookPanel({ rules = [] }) {
             </div>
 
             <h2
-              className="text-2xl font-bold tracking-tight"
+              className="text-xl sm:text-2xl font-bold tracking-tight"
               style={{ color: "var(--ll-color-ink)" }}
             >
               Product Rule Book & Regulatory Matrix
@@ -206,15 +206,17 @@ export default function RuleBookPanel({ rules = [] }) {
 
           <div className="flex items-center gap-3">
             <div
-              className="px-3.5 py-2 rounded-xl border flex items-center gap-2.5"
+              className="px-3.5 py-2 rounded-xl border flex items-center gap-2.5 shadow-2xs"
               style={{
-                background: "rgba(10, 16, 27, 0.8)",
+                background: "var(--ll-bg-paper)",
                 borderColor: "var(--ll-color-line)"
               }}
             >
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <div className="text-left font-mono">
-                <div className="text-[10px] text-slate-400 uppercase tracking-wider">Active Rules</div>
+                <div className="text-[10px] uppercase tracking-wider font-medium" style={{ color: "var(--ll-color-slate)" }}>
+                  Active Rules
+                </div>
                 <div className="text-sm font-bold" style={{ color: "var(--ll-color-gold)" }}>
                   {filteredRules.length} / {rules.length}
                 </div>
@@ -224,7 +226,7 @@ export default function RuleBookPanel({ rules = [] }) {
         </div>
 
         {/* Quick Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2">
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           {categories.map((cat) => {
             const isActive = selectedCategory === cat.value;
             return (
@@ -234,16 +236,16 @@ export default function RuleBookPanel({ rules = [] }) {
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer"
                 style={{
                   background: isActive
-                    ? "linear-gradient(135deg, rgba(229,184,66,0.22), rgba(229,184,66,0.08))"
-                    : "rgba(255, 255, 255, 0.03)",
+                    ? "rgba(229, 184, 66, 0.16)"
+                    : "var(--ll-bg-paper)",
                   color: isActive ? "var(--ll-color-gold)" : "var(--ll-color-slate)",
                   border: isActive
-                    ? "1px solid rgba(229,184,66,0.4)"
+                    ? "1px solid rgba(229, 184, 66, 0.45)"
                     : "1px solid var(--ll-color-line)",
-                  boxShadow: isActive ? "0 0 12px rgba(229,184,66,0.15)" : "none"
+                  boxShadow: isActive ? "0 0 10px rgba(229, 184, 66, 0.12)" : "none"
                 }}
               >
-                <Layers size={12} className={isActive ? "text-amber-400" : "opacity-50"} />
+                <Layers size={12} className={isActive ? "text-amber-500" : "opacity-50"} />
                 {cat.label}
               </button>
             );
@@ -251,12 +253,13 @@ export default function RuleBookPanel({ rules = [] }) {
         </div>
 
         {/* ── FILTER TOOLBAR ── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1">
           {/* Search */}
           <div className="md:col-span-5 relative">
             <Search
               size={14}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: "var(--ll-color-slate)" }}
             />
             <input
               type="text"
@@ -265,10 +268,10 @@ export default function RuleBookPanel({ rules = [] }) {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 rounded-xl text-xs outline-none transition-all"
               style={{
-                background: "rgba(8, 14, 24, 0.75)",
+                background: "var(--ll-input-bg)",
                 borderColor: "var(--ll-color-line)",
                 borderWidth: 1,
-                color: "var(--ll-color-ink)"
+                color: "var(--ll-input-text)"
               }}
             />
           </div>
@@ -280,14 +283,14 @@ export default function RuleBookPanel({ rules = [] }) {
               onChange={(e) => handleCategoryChange(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl text-xs outline-none cursor-pointer transition-all"
               style={{
-                background: "rgba(8, 14, 24, 0.75)",
+                background: "var(--ll-input-bg)",
                 borderColor: "var(--ll-color-line)",
                 borderWidth: 1,
-                color: "var(--ll-color-ink)"
+                color: "var(--ll-input-text)"
               }}
             >
               {categories.map((c) => (
-                <option key={c.value} value={c.value} className="bg-slate-900 text-slate-200">
+                <option key={c.value} value={c.value} style={{ background: "var(--ll-bg-card)", color: "var(--ll-color-ink)" }}>
                   {c.label}
                 </option>
               ))}
@@ -302,17 +305,17 @@ export default function RuleBookPanel({ rules = [] }) {
               disabled={selectedCategory === "ALL" || !products.length}
               className="w-full px-3.5 py-2.5 rounded-xl text-xs outline-none cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
-                background: "rgba(8, 14, 24, 0.75)",
+                background: "var(--ll-input-bg)",
                 borderColor: "var(--ll-color-line)",
                 borderWidth: 1,
-                color: "var(--ll-color-ink)"
+                color: "var(--ll-input-text)"
               }}
             >
-              <option value="" className="bg-slate-900 text-slate-200">
+              <option value="" style={{ background: "var(--ll-bg-card)", color: "var(--ll-color-ink)" }}>
                 {selectedCategory === "ALL" ? "All Products" : "Filter Product..."}
               </option>
               {products.map((p) => (
-                <option key={p.name} value={p.name} className="bg-slate-900 text-slate-200">
+                <option key={p.name} value={p.name} style={{ background: "var(--ll-bg-card)", color: "var(--ll-color-ink)" }}>
                   {p.name}
                 </option>
               ))}
@@ -326,16 +329,16 @@ export default function RuleBookPanel({ rules = [] }) {
               onChange={(e) => setSeverityFilter(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl text-xs outline-none cursor-pointer transition-all"
               style={{
-                background: "rgba(8, 14, 24, 0.75)",
+                background: "var(--ll-input-bg)",
                 borderColor: "var(--ll-color-line)",
                 borderWidth: 1,
-                color: "var(--ll-color-ink)"
+                color: "var(--ll-input-text)"
               }}
             >
-              <option value="ALL" className="bg-slate-900 text-slate-200">All Severities</option>
-              <option value="HIGH" className="bg-slate-900 text-slate-200">High Severity</option>
-              <option value="MEDIUM" className="bg-slate-900 text-slate-200">Medium Severity</option>
-              <option value="LOW" className="bg-slate-900 text-slate-200">Low Severity</option>
+              <option value="ALL" style={{ background: "var(--ll-bg-card)", color: "var(--ll-color-ink)" }}>All Severities</option>
+              <option value="HIGH" style={{ background: "var(--ll-bg-card)", color: "var(--ll-color-ink)" }}>High Severity</option>
+              <option value="MEDIUM" style={{ background: "var(--ll-bg-card)", color: "var(--ll-color-ink)" }}>Medium Severity</option>
+              <option value="LOW" style={{ background: "var(--ll-bg-card)", color: "var(--ll-color-ink)" }}>Low Severity</option>
             </select>
           </div>
         </div>
@@ -344,22 +347,22 @@ export default function RuleBookPanel({ rules = [] }) {
       {/* ── ACTIVE PRODUCT BANNER (IF SELECTED) ── */}
       {selectedProduct && (
         <div
-          className="px-6 py-3.5 border-b flex flex-wrap items-center justify-between gap-3"
+          className="px-5 sm:px-6 py-3 border-b flex flex-wrap items-center justify-between gap-3"
           style={{
-            background: "rgba(229, 184, 66, 0.06)",
-            borderColor: "rgba(229, 184, 66, 0.2)"
+            background: "rgba(229, 184, 66, 0.08)",
+            borderColor: "rgba(229, 184, 66, 0.25)"
           }}
         >
           <div className="flex items-center gap-2.5">
-            <Sparkles size={16} className="text-amber-400" />
+            <Sparkles size={15} style={{ color: "var(--ll-color-gold)" }} />
             <div>
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-400">
+              <span className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: "var(--ll-color-gold)" }}>
                 Active Commodity Focus:
               </span>
               <span className="ml-2 text-sm font-bold" style={{ color: "var(--ll-color-ink)" }}>
                 {selectedProduct}
               </span>
-              <span className="ml-2 text-xs text-slate-400">
+              <span className="ml-2 text-xs" style={{ color: "var(--ll-color-slate)" }}>
                 ({selectedCategory})
               </span>
             </div>
@@ -371,14 +374,15 @@ export default function RuleBookPanel({ rules = [] }) {
               style={{
                 background: "rgba(229, 184, 66, 0.15)",
                 color: "var(--ll-color-gold)",
-                border: "1px solid rgba(229, 184, 66, 0.3)"
+                border: "1px solid rgba(229, 184, 66, 0.35)"
               }}
             >
               {filteredRules.length} Mandatory Declarations
             </span>
             <button
               onClick={() => setSelectedProduct("")}
-              className="text-xs text-slate-400 hover:text-white underline cursor-pointer"
+              className="text-xs hover:underline cursor-pointer"
+              style={{ color: "var(--ll-color-slate)" }}
             >
               Reset focus
             </button>
@@ -387,15 +391,15 @@ export default function RuleBookPanel({ rules = [] }) {
       )}
 
       {/* ── DYNAMIC RULES LIST / CARDS ── */}
-      <div className="p-6">
+      <div className="p-5 sm:p-6" style={{ background: "var(--ll-bg-card)" }}>
         {filteredRules.length === 0 ? (
           <div
             className="py-14 text-center rounded-xl border border-dashed p-8"
-            style={{ borderColor: "var(--ll-color-line)", background: "rgba(0,0,0,0.15)" }}
+            style={{ borderColor: "var(--ll-color-line)", background: "var(--ll-bg-paper)" }}
           >
-            <BookOpen size={36} className="mx-auto mb-3 opacity-30 text-slate-400" />
-            <h4 className="text-sm font-semibold text-slate-200">No matching statutory rules found</h4>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            <BookOpen size={36} className="mx-auto mb-3 opacity-30" style={{ color: "var(--ll-color-slate)" }} />
+            <h4 className="text-sm font-semibold" style={{ color: "var(--ll-color-ink)" }}>No matching statutory rules found</h4>
+            <p className="text-xs mt-1 max-w-sm mx-auto" style={{ color: "var(--ll-color-slate)" }}>
               Try adjusting your category selection, search terms, or clearing your active filters.
             </p>
             <button
@@ -407,7 +411,7 @@ export default function RuleBookPanel({ rules = [] }) {
               }}
               className="mt-4 px-4 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer"
               style={{
-                borderColor: "rgba(229,184,66,0.3)",
+                borderColor: "rgba(229,184,66,0.35)",
                 color: "var(--ll-color-gold)",
                 background: "rgba(229,184,66,0.1)"
               }}
@@ -423,48 +427,51 @@ export default function RuleBookPanel({ rules = [] }) {
 
               const sevBg =
                 rule.severity === "HIGH"
-                  ? "rgba(239, 68, 68, 0.12)"
+                  ? "var(--ll-violation-bg)"
                   : rule.severity === "MEDIUM"
-                  ? "rgba(245, 158, 11, 0.12)"
-                  : "rgba(148, 163, 184, 0.12)";
+                  ? "var(--ll-review-bg)"
+                  : "var(--ll-bg-paper-deep)";
               const sevColor =
                 rule.severity === "HIGH"
-                  ? "#F87171"
+                  ? "var(--ll-violation)"
                   : rule.severity === "MEDIUM"
-                  ? "#FBBF24"
-                  : "#94A3B8";
+                  ? "var(--ll-review)"
+                  : "var(--ll-color-slate)";
               const sevBorder =
                 rule.severity === "HIGH"
-                  ? "rgba(239, 68, 68, 0.25)"
+                  ? "var(--ll-violation-bd)"
                   : rule.severity === "MEDIUM"
-                  ? "rgba(245, 158, 11, 0.25)"
-                  : "rgba(148, 163, 184, 0.25)";
+                  ? "var(--ll-review-bd)"
+                  : "var(--ll-color-line)";
 
               return (
                 <div
                   key={rule.code}
-                  className="rounded-xl border transition-all duration-150 overflow-hidden"
+                  className="rounded-xl border transition-all duration-150 overflow-hidden shadow-2xs"
                   style={{
                     background: isExpanded
-                      ? "linear-gradient(145deg, rgba(16, 26, 42, 0.95), rgba(11, 18, 30, 0.95))"
-                      : "rgba(11, 18, 30, 0.65)",
+                      ? "var(--ll-bg-paper)"
+                      : "var(--ll-bg-paper)",
                     borderColor: isExpanded
-                      ? "rgba(229, 184, 66, 0.35)"
+                      ? "var(--ll-color-gold)"
                       : "var(--ll-color-line)",
-                    boxShadow: isExpanded ? "0 8px 30px rgba(0,0,0,0.3)" : "none"
+                    boxShadow: isExpanded ? "0 4px 20px rgba(0,0,0,0.08)" : "none"
                   }}
                 >
                   {/* Card Header Row */}
                   <div
                     onClick={() => setExpandedRuleCode(isExpanded ? null : rule.code)}
-                    className="p-4.5 sm:p-5 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    className="p-4 sm:p-4.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{
+                      background: isExpanded ? "rgba(229, 184, 66, 0.04)" : "transparent"
+                    }}
                   >
                     <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-[280px]">
                       {/* Code Badge */}
                       <span
                         className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold tracking-wide border flex-shrink-0"
                         style={{
-                          background: "rgba(10, 16, 27, 0.9)",
+                          background: "var(--ll-bg-card)",
                           color: "var(--ll-color-gold)",
                           borderColor: "rgba(229, 184, 66, 0.3)"
                         }}
@@ -484,9 +491,9 @@ export default function RuleBookPanel({ rules = [] }) {
                             <span
                               className="text-[11px] font-mono px-2 py-0.5 rounded border"
                               style={{
-                                color: "#38BDF8",
-                                borderColor: "rgba(56, 189, 248, 0.25)",
-                                background: "rgba(56, 189, 248, 0.08)"
+                                color: "#0284C7",
+                                borderColor: "rgba(2, 132, 199, 0.25)",
+                                background: "rgba(2, 132, 199, 0.08)"
                               }}
                             >
                               {meta.statutory_ref}
@@ -494,20 +501,20 @@ export default function RuleBookPanel({ rules = [] }) {
                           )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-400">
-                          <span>Category: <strong className="text-slate-300 font-medium">{rule.category}</strong></span>
+                        <div className="flex flex-wrap items-center gap-2.5 mt-1 text-xs" style={{ color: "var(--ll-color-slate)" }}>
+                          <span>Category: <strong className="font-semibold" style={{ color: "var(--ll-color-ink-soft)" }}>{rule.category}</strong></span>
                           <span>•</span>
-                          <span>Version: <span className="font-mono text-slate-300">{rule.version}</span></span>
+                          <span>Version: <span className="font-mono font-medium" style={{ color: "var(--ll-color-ink-soft)" }}>{rule.version}</span></span>
                           <span>•</span>
-                          <span>Effective: <span className="text-slate-300">{rule.effective}</span></span>
+                          <span>Effective: <span style={{ color: "var(--ll-color-ink-soft)" }}>{rule.effective}</span></span>
                         </div>
                       </div>
                     </div>
 
                     {/* Right Action & Badges */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <span
-                        className="px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-wider border"
+                        className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider border"
                         style={{
                           background: sevBg,
                           color: sevColor,
@@ -518,19 +525,20 @@ export default function RuleBookPanel({ rules = [] }) {
                       </span>
 
                       <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold border"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border"
                         style={{
-                          background: "rgba(16, 185, 129, 0.12)",
-                          color: "#34D399",
-                          borderColor: "rgba(16, 185, 129, 0.25)"
+                          background: "var(--ll-compliant-bg)",
+                          color: "var(--ll-compliant)",
+                          borderColor: "var(--ll-compliant-bd)"
                         }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         {rule.status}
                       </span>
 
                       <button
-                        className="p-1 rounded-lg text-slate-400 hover:text-white transition-colors"
+                        className="p-1 rounded-lg transition-colors cursor-pointer"
+                        style={{ color: "var(--ll-color-slate)" }}
                         title={isExpanded ? "Collapse rule details" : "Expand rule details"}
                       >
                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -541,16 +549,16 @@ export default function RuleBookPanel({ rules = [] }) {
                   {/* ── EXPANDED STATUTORY BREAKDOWN ── */}
                   {isExpanded && (
                     <div
-                      className="px-5 pb-5 pt-1 border-t space-y-4"
+                      className="px-5 pb-5 pt-3 border-t space-y-3.5"
                       style={{
-                        borderColor: "rgba(229, 184, 66, 0.15)",
-                        background: "rgba(7, 12, 20, 0.55)"
+                        borderColor: "var(--ll-color-line)",
+                        background: "var(--ll-bg-card)"
                       }}
                     >
                       {/* Legal Rationale */}
                       {meta.rationale && (
-                        <div className="pt-2">
-                          <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                        <div>
+                          <p className="text-xs leading-relaxed font-sans" style={{ color: "var(--ll-color-ink-soft)" }}>
                             {meta.rationale}
                           </p>
                         </div>
@@ -559,8 +567,8 @@ export default function RuleBookPanel({ rules = [] }) {
                       {/* Required Terms Pills */}
                       {meta.terms && (
                         <div>
-                          <div className="text-[10.5px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                            <CheckCircle2 size={12} className="text-emerald-400" />
+                          <div className="text-[10.5px] font-mono uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: "var(--ll-color-slate)" }}>
+                            <CheckCircle2 size={12} className="text-emerald-500" />
                             Prescribed Legal Keywords & Valid Standard Declarations:
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5">
@@ -569,7 +577,7 @@ export default function RuleBookPanel({ rules = [] }) {
                                 key={i}
                                 className="px-2.5 py-1 rounded-md text-[11px] font-mono border"
                                 style={{
-                                  background: "rgba(16, 27, 43, 0.9)",
+                                  background: "var(--ll-bg-paper)",
                                   borderColor: "var(--ll-color-line)",
                                   color: "var(--ll-color-ink)"
                                 }}
@@ -586,16 +594,16 @@ export default function RuleBookPanel({ rules = [] }) {
                         <div
                           className="p-3.5 rounded-xl border flex items-start gap-3"
                           style={{
-                            background: "rgba(239, 68, 68, 0.06)",
-                            borderColor: "rgba(239, 68, 68, 0.2)"
+                            background: "var(--ll-violation-bg)",
+                            borderColor: "var(--ll-violation-bd)"
                           }}
                         >
-                          <Shield size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+                          <Shield size={16} className="flex-shrink-0 mt-0.5" style={{ color: "var(--ll-violation)" }} />
                           <div className="text-xs">
-                            <div className="font-bold text-red-300 mb-0.5">
+                            <div className="font-bold mb-0.5" style={{ color: "var(--ll-violation)" }}>
                               Enforcement Penalty Provision ({meta.penalty_section})
                             </div>
-                            <div className="text-slate-300 leading-normal">
+                            <div className="leading-normal" style={{ color: "var(--ll-color-ink-soft)" }}>
                               {meta.fine}
                             </div>
                           </div>
@@ -612,19 +620,19 @@ export default function RuleBookPanel({ rules = [] }) {
 
       {/* ── FOOTER LEGAL NOTE ── */}
       <div
-        className="px-6 py-4 border-t flex flex-wrap items-center justify-between gap-3 text-xs"
+        className="px-5 sm:px-6 py-3.5 border-t flex flex-wrap items-center justify-between gap-3 text-xs"
         style={{
           borderColor: "var(--ll-color-line)",
-          background: "rgba(6, 10, 18, 0.7)"
+          background: "var(--ll-table-head-bg)"
         }}
       >
-        <div className="flex items-center gap-2 text-slate-400">
-          <Info size={13} className="text-amber-400 flex-shrink-0" />
+        <div className="flex items-center gap-2" style={{ color: "var(--ll-color-slate)" }}>
+          <Info size={13} style={{ color: "var(--ll-color-gold)" }} className="flex-shrink-0" />
           <span>
             Statutory rule matrix verified under official Ministry of Consumer Affairs notifications.
           </span>
         </div>
-        <div className="font-mono text-[11px] text-slate-500">
+        <div className="font-mono text-[11px]" style={{ color: "var(--ll-color-slate)" }}>
           Rule Engine: Deterministic Python Evaluation
         </div>
       </div>
