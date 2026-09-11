@@ -668,11 +668,20 @@ function CursorReactiveDots({ variant = "landing" }) {
 
       if (pointer.x > -500) {
         const glow = context.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, influence);
-        glow.addColorStop(0, "rgba(100, 205, 255, 0.2)");
-        glow.addColorStop(0.42, "rgba(151, 102, 255, 0.08)");
+        glow.addColorStop(0, "rgba(100, 205, 255, 0.3)");
+        glow.addColorStop(0.35, "rgba(151, 102, 255, 0.15)");
         glow.addColorStop(1, "rgba(151, 102, 255, 0)");
         context.fillStyle = glow;
         context.fillRect(pointer.x - influence, pointer.y - influence, influence * 2, influence * 2);
+
+        for (let ring = 0; ring < 3; ring += 1) {
+          const radius = 26 + ((time * 42 + ring * 68) % 165);
+          context.beginPath();
+          context.arc(pointer.x, pointer.y, radius, 0, Math.PI * 2);
+          context.strokeStyle = `hsla(${hues[ring]}, 95%, 62%, ${0.22 * (1 - radius / 200)})`;
+          context.lineWidth = 1.2;
+          context.stroke();
+        }
       }
 
       for (let y = gap / 2; y < height; y += gap) {
@@ -681,7 +690,7 @@ function CursorReactiveDots({ variant = "landing" }) {
           const dy = y - pointer.y;
           const distance = Math.hypot(dx, dy);
           const strength = Math.max(0, 1 - distance / influence);
-          const offset = strength * strength * 30;
+          const offset = strength * strength * 38;
           const angle = Math.atan2(dy, dx);
           const column = Math.floor(x / gap);
           const row = Math.floor(y / gap);
@@ -691,12 +700,20 @@ function CursorReactiveDots({ variant = "landing" }) {
           context.arc(
             x + Math.cos(angle) * offset,
             y + Math.sin(angle) * offset + ambient,
-            1.6 + strength * 3.4,
+            2 + strength * 4.5,
             0,
             Math.PI * 2
           );
-          context.fillStyle = `hsla(${hue}, 88%, ${52 + strength * 14}%, ${0.18 + strength * 0.7})`;
+          context.fillStyle = `hsla(${hue}, 94%, ${54 + strength * 16}%, ${0.26 + strength * 0.7})`;
           context.fill();
+
+          if (strength > 0.12) {
+            context.beginPath();
+            context.arc(x + Math.cos(angle) * offset, y + Math.sin(angle) * offset + ambient, 8 + strength * 17, 0, Math.PI * 2);
+            context.strokeStyle = `hsla(${hue}, 95%, 67%, ${strength * 0.2})`;
+            context.lineWidth = 0.7;
+            context.stroke();
+          }
         }
       }
       frameId = requestAnimationFrame(draw);
