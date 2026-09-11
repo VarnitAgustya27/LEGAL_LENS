@@ -17,9 +17,10 @@ class RuleEngine:
                 data = json.load(f)
                 self.rules = data.get("rule_list", [])
 
-    def evaluate_inspection(self, declarations: Dict[str, Dict[str, Any]], product_info: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_inspection(self, declarations: Dict[str, Dict[str, Any]], product_info: Dict[str, Any], inspection_type: str = "RETAIL_PACK") -> Dict[str, Any]:
         is_imported = product_info.get("is_imported", False)
         category = product_info.get("category", "Packaged Food")
+        insp_type = product_info.get("inspection_type", inspection_type)
 
         evaluations = []
         violations = []
@@ -43,9 +44,22 @@ class RuleEngine:
             if "ALL" not in cat_app and category not in cat_app:
                 continue
 
-            # Check import applicability for Country of Origin
-            if rule.get("is_mandatory_when_imported") and not is_imported and not rule.get("is_mandatory", True):
-                continue
+            # E-Commerce Rule 6(10) PCR 2011 specific adjustments:
+            if insp_type == "E_COMMERCE_LISTING":
+                # Rule 6(10) explicitly exempts Month/Year of Manufacture and Product Name from statutory packaging declaration checks
+                if field in ["mfg_date", "product_name"]:
+                    continue
+                # Rule 6(10) proviso & Consumer Protection E-Commerce Rules: Country of Origin is mandatory for ALL e-com listings
+                if field == "country_of_origin":
+                    is_mandatory = True
+                else:
+                    is_mandatory = rule.get("is_mandatory", True)
+            else:
+                # Check import applicability for Country of Origin
+                if field == "country_of_origin":
+                    is_mandatory = True if is_imported else False
+                else:
+                    is_mandatory = rule.get("is_mandatory", True)
 
             decl = declarations.get(field, {})
             is_detected = decl.get("detected", False)
@@ -55,9 +69,25 @@ class RuleEngine:
             bbox = decl.get("bbox")
             image_id = decl.get("image_id")
 
-            # If optional declaration is not detected, skip without failing
-            is_mandatory = rule.get("is_mandatory", True)
+            # If optional / domestic declaration is not detected
             if not is_mandatory and not is_detected:
+                if field == "country_of_origin" and not is_imported:
+                    total_applicable += 1
+                    eval_res = {
+                        "rule_code": code,
+                        "field": field,
+                        "label": label,
+                        "status": "REVIEW",
+                        "severity": "LOW",
+                        "message": "Country of origin not declared on package label. Requires officer verification: Exempt under Rule 6(1)(f) PCR 2011 if manufactured domestically in India; mandatory if imported.",
+                        "expected": "Declaration of Country of Origin (if imported) or Domestic Manufacturer Address (Rule 6(1)(a))",
+                        "detected": "NOT DETECTED (Domestic/Unverified)",
+                        "statutory_reference": stat_ref,
+                        "confidence": 0.90,
+                        "evidence_image_id": image_id
+                    }
+                    evaluations.append(eval_res)
+                    review_count += 1
                 continue
 
             total_applicable += 1

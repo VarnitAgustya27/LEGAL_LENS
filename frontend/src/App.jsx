@@ -217,6 +217,7 @@ function ReqStatusChip({ status }) {
     PASS: { c: C.compliant, bg: C.compliantBg, bd: C.compliantBd, Icon: CheckCircle2 },
     FAIL: { c: C.violation, bg: C.violationBg, bd: C.violationBd, Icon: XCircle },
     REVIEW: { c: C.review, bg: C.reviewBg, bd: C.reviewBd, Icon: AlertTriangle },
+    EXEMPT: { c: "#0284c7", bg: "rgba(2, 132, 199, 0.12)", bd: "rgba(2, 132, 199, 0.3)", Icon: Info },
   };
   const m = map[status] || map.REVIEW;
   return (
@@ -624,7 +625,7 @@ function Icon({ name, size = 20 }) {
 
 function LandingPageView({ onAccessConsole }) {
   return (
-<div className="legal-lens-app">
+    <div className="legal-lens-app">
 
       {/* NAVIGATION */}
 
@@ -1378,9 +1379,9 @@ function LegalLoginPage({ onLogin, users = [], onBackToPortal }) {
           </h1>
 
           <p>
-          LEGAL LENS helps enforcement officers intelligently analyze packaged
-          commodities, detect regulatory violations and generate evidence-backed
-          compliance reports under PCR 2011.
+            LEGAL LENS helps enforcement officers intelligently analyze packaged
+            commodities, detect regulatory violations and generate evidence-backed
+            compliance reports under PCR 2011.
           </p>
 
           {/* Scanner Visual */}
@@ -1506,7 +1507,7 @@ function LegalLoginPage({ onLogin, users = [], onBackToPortal }) {
                 <span className="input-symbol">👤</span>
                 <input
                   type="text"
-                  placeholder="e.g. LM-DL-842 or official email"
+                  placeholder="e.g. LMD-DL-842 or official email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="username"
@@ -1756,18 +1757,16 @@ function CropPhotoModal({
               <button
                 type="button"
                 onClick={() => setCropShape("round")}
-                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
-                  cropShape === "round" ? "bg-amber-500 text-slate-950 font-bold shadow-xs" : "text-slate-400 hover:text-white"
-                }`}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${cropShape === "round" ? "bg-amber-500 text-slate-950 font-bold shadow-xs" : "text-slate-400 hover:text-white"
+                  }`}
               >
                 ● Circle
               </button>
               <button
                 type="button"
                 onClick={() => setCropShape("rect")}
-                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
-                  cropShape === "rect" ? "bg-amber-500 text-slate-950 font-bold shadow-xs" : "text-slate-400 hover:text-white"
-                }`}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${cropShape === "rect" ? "bg-amber-500 text-slate-950 font-bold shadow-xs" : "text-slate-400 hover:text-white"
+                  }`}
               >
                 █ Rectangle
               </button>
@@ -1778,9 +1777,8 @@ function CropPhotoModal({
               <button
                 type="button"
                 onClick={() => setFitMode("contain")}
-                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
-                  fitMode === "contain" ? "bg-slate-700 text-white font-bold" : "text-slate-400 hover:text-white"
-                }`}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${fitMode === "contain" ? "bg-slate-700 text-white font-bold" : "text-slate-400 hover:text-white"
+                  }`}
                 title="Fit full photo inside viewport"
               >
                 Fit Whole Image
@@ -1788,9 +1786,8 @@ function CropPhotoModal({
               <button
                 type="button"
                 onClick={() => setFitMode("cover")}
-                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
-                  fitMode === "cover" ? "bg-slate-700 text-white font-bold" : "text-slate-400 hover:text-white"
-                }`}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${fitMode === "cover" ? "bg-slate-700 text-white font-bold" : "text-slate-400 hover:text-white"
+                  }`}
                 title="Fill entire crop frame"
               >
                 Fill Frame
@@ -1799,9 +1796,8 @@ function CropPhotoModal({
           </div>
 
           <div
-            className={`relative select-none cursor-grab active:cursor-grabbing flex items-center justify-center bg-slate-950 overflow-hidden border-2 border-amber-500 shadow-[0_0_30px_rgba(229,184,66,0.3)] mt-8 ${
-              isRect ? "w-[380px] h-[260px] rounded-xl" : "w-[300px] h-[300px] rounded-full"
-            }`}
+            className={`relative select-none cursor-grab active:cursor-grabbing flex items-center justify-center bg-slate-950 overflow-hidden border-2 border-amber-500 shadow-[0_0_30px_rgba(229,184,66,0.3)] mt-8 ${isRect ? "w-[380px] h-[260px] rounded-xl" : "w-[300px] h-[300px] rounded-full"
+              }`}
             onMouseDown={handlePointerDown}
             onMouseMove={handlePointerMove}
             onMouseUp={handlePointerUp}
@@ -1816,11 +1812,10 @@ function CropPhotoModal({
                 alt="Crop preview"
                 className="max-w-none pointer-events-none transition-transform duration-75"
                 style={{
-                  transform: `translate(${pan.x}px, ${pan.y}px) rotate(${rotation}deg) scale(${
-                    (fitMode === "contain"
+                  transform: `translate(${pan.x}px, ${pan.y}px) rotate(${rotation}deg) scale(${(fitMode === "contain"
                       ? Math.min(viewportW / (imgRef.current?.naturalWidth || 1), viewportH / (imgRef.current?.naturalHeight || 1))
                       : Math.max(viewportW / (imgRef.current?.naturalWidth || 1), viewportH / (imgRef.current?.naturalHeight || 1))) * zoom
-                  })`,
+                    })`,
                   transformOrigin: "center center",
                 }}
               />
@@ -2399,13 +2394,13 @@ function Dashboard({ onOpenInspection, isDark }) {
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={violationsByCategory} margin={{ top: 20, right: 12, left: -16, bottom: 22 }}>
                 <CartesianGrid vertical={false} stroke={isDark ? "#25354C" : "#DAD4C2"} strokeDasharray="3 3" opacity={0.5} />
-                <XAxis 
-                  dataKey="category" 
-                  tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470", fontWeight: 500 }} 
-                  interval={0} 
-                  angle={-10} 
-                  textAnchor="end" 
-                  height={45} 
+                <XAxis
+                  dataKey="category"
+                  tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470", fontWeight: 500 }}
+                  interval={0}
+                  angle={-10}
+                  textAnchor="end"
+                  height={45}
                   tickLine={false}
                 />
                 <YAxis allowDecimals={false} domain={[0, 'dataMax + 6']} tick={{ fontSize: 11, fill: isDark ? "#94A3B8" : "#5B6470" }} tickLine={false} axisLine={false} />
@@ -2413,21 +2408,21 @@ function Dashboard({ onOpenInspection, isDark }) {
                   cursor={false}
                   contentStyle={{ background: "var(--ll-bg-card)", color: "var(--ll-color-charcoal)", borderColor: "var(--ll-color-line)", borderRadius: 8, fontSize: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.15)", ...FONT.body }}
                 />
-                <Bar 
-                  dataKey="violations" 
-                  barSize={80} 
-                  radius={[8, 8, 0, 0]} 
-                  isAnimationActive={true} 
+                <Bar
+                  dataKey="violations"
+                  barSize={80}
+                  radius={[8, 8, 0, 0]}
+                  isAnimationActive={true}
                   animationDuration={700}
                 >
-                  <LabelList 
-                    dataKey="violations" 
-                    position="top" 
+                  <LabelList
+                    dataKey="violations"
+                    position="top"
                     formatter={(val) => (val > 0 ? val : '')}
-                    style={{ fill: isDark ? "#F8FAFC" : "#0F172A", fontSize: 12.5, fontWeight: 700 }} 
+                    style={{ fill: isDark ? "#F8FAFC" : "#0F172A", fontSize: 12.5, fontWeight: 700 }}
                   />
                   {violationsByCategory.map((entry, index) => {
-                    const colors = isDark 
+                    const colors = isDark
                       ? ['#E5B842', '#38BDF8', '#F87171', '#4ADE80', '#A78BFA', '#FB923C']
                       : ['#96742E', '#0284C7', '#DC2626', '#16A34A', '#7C3AED', '#EA580C'];
                     return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
@@ -2467,9 +2462,9 @@ function Dashboard({ onOpenInspection, isDark }) {
           </div>
           <table className="w-full" style={{ fontSize: 12.5 }}>
             <thead>
-              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
                 {["CASE NO.", "PRODUCT", "STATUS", "DATE"].map((h) => (
-                  <th key={h} className="text-left font-semibold px-5 py-2 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                  <th key={h} className="text-left font-semibold px-5 py-2.5 border-b" style={{ borderColor: C.line }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -2546,14 +2541,14 @@ function Dashboard({ onOpenInspection, isDark }) {
 /* ============================== INSPECTIONS LIST ============================== */
 
 function InspectionsList({ onOpen, onNew, users = [] }) {
-  const [statusFilter, setStatusFilter]   = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [searchQuery, setSearchQuery]     = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [refreshKey, setRefreshKey]       = useState(0);
-  const [rows, setRows]                   = useState(null);   // null = loading
-  const [fetchError, setFetchError]       = useState(null);
-  const [openingId, setOpeningId]         = useState(null); // case_number being opened
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [rows, setRows] = useState(null);   // null = loading
+  const [fetchError, setFetchError] = useState(null);
+  const [openingId, setOpeningId] = useState(null); // case_number being opened
   const shouldReduceMotion = useReducedMotion();
 
   // Helper to dynamically resolve inspector name from users list while strictly preserving Deleted User
@@ -2622,21 +2617,21 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
             : INSPECTIONS.filter((i) => i.status === statusFilter);
           const filtered = debouncedSearch
             ? fallback.filter((i) =>
-                [i.id, i.product, i.manufacturer].some((v) =>
-                  (v || "").toLowerCase().includes(debouncedSearch.toLowerCase())
-                )
+              [i.id, i.product, i.manufacturer].some((v) =>
+                (v || "").toLowerCase().includes(debouncedSearch.toLowerCase())
               )
+            )
             : fallback;
           setRows(filtered.map((i) => ({
-            case_number:    i.id,
-            product_name:   i.product,
-            category:       i.category,
-            manufacturer:   i.manufacturer,
-            status:         i.status,
+            case_number: i.id,
+            product_name: i.product,
+            category: i.category,
+            manufacturer: i.manufacturer,
+            status: i.status,
             inspector_name: i.inspector,
-            created_at:     i.date,
-            is_demo:        true,
-            _raw:           i,
+            created_at: i.date,
+            is_demo: true,
+            _raw: i,
           })));
         } else {
           setRows(data);
@@ -2722,9 +2717,9 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
       <Card padded={false} className="overflow-x-auto ll-scroll rounded-xl">
         <table className="w-full" style={{ fontSize: 12.5 }}>
           <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
               {["CASE NO.", "PRODUCT", "CATEGORY", "MANUFACTURER", "STATUS", "INSPECTOR", "DATE", "SOURCE", ""].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-2.5 border-t border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
+                <th key={h} className="text-left font-semibold px-5 py-2.5 border-b whitespace-nowrap" style={{ borderColor: C.line }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -2891,7 +2886,7 @@ function MobileCodeScanner({ open, onClose, onDetected }) {
   const [torchOn, setTorchOn] = useState(false);
 
   const stopScanner = () => {
-    try { controlsRef.current?.stop?.(); } catch (_) {}
+    try { controlsRef.current?.stop?.(); } catch (_) { }
     controlsRef.current = null;
     const video = videoRef.current;
     if (video?.srcObject) {
@@ -3094,13 +3089,12 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
         }}
         whileHover={!imageData && !shouldReduceMotion ? { scale: 1.01, transition: { duration: 0.15 } } : {}}
         animate={isDragging ? { scale: 1.02, borderColor: "#E5B842" } : {}}
-        className={`w-full ${heightClass} border-2 rounded-xl flex flex-col items-center justify-center p-3 transition-all relative overflow-hidden ${
-          isDragging
+        className={`w-full ${heightClass} border-2 rounded-xl flex flex-col items-center justify-center p-3 transition-all relative overflow-hidden ${isDragging
             ? "border-amber-400 bg-amber-400/10 shadow-lg shadow-amber-500/10"
             : imageData
-            ? "border-emerald-500/40 bg-slate-900/40"
-            : "border-dashed border-slate-700/60 hover:border-slate-500 bg-slate-800/20 cursor-pointer"
-        }`}
+              ? "border-emerald-500/40 bg-slate-900/40"
+              : "border-dashed border-slate-700/60 hover:border-slate-500 bg-slate-800/20 cursor-pointer"
+          }`}
         style={{
           background: imageData ? "var(--ll-bg-card)" : "var(--ll-bg-paper-deep)",
           borderColor: isDragging ? "var(--ll-color-gold)" : imageData ? "var(--ll-compliant)" : "var(--ll-color-line)",
@@ -3262,6 +3256,7 @@ function NewInspection({ onFinish, currentUser }) {
     ecommerce: null,
   });
   const [ecomUrl, setEcomUrl] = useState("");
+  const [scanMode, setScanMode] = useState("PHYSICAL"); // "PHYSICAL" | "ECOMMERCE"
   const [extraAngles, setExtraAngles] = useState([]); // [{ id: 'side', label: 'Side Panel', data: null }]
   const [stepError, setStepError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -3274,7 +3269,7 @@ function NewInspection({ onFinish, currentUser }) {
     manufacturer: "",
     packageWidth: "150",
     packageHeight: "220",
-    location: "Karol Bagh, Delhi",
+    location: "Field Inspection / Retail Store",
     inspectionDate: new Date().toISOString().slice(0, 10),
     notes: "",
   });
@@ -3328,8 +3323,12 @@ function NewInspection({ onFinish, currentUser }) {
   };
 
   const handleContinueFromImages = () => {
-    if (!images.front && !images.back) {
-      setStepError("Please upload at least the Front (PDP) or Back panel image to proceed.");
+    if (ecomUrl.trim() && !images.front && !images.back) {
+      handleEcomScanSubmit();
+      return;
+    }
+    if (!images.front && !images.back && !images.ecommerce) {
+      setStepError("Please upload product packaging photos, a listing screenshot, or enter an e-commerce URL.");
       return;
     }
     setStepError("");
@@ -3342,23 +3341,23 @@ function NewInspection({ onFinish, currentUser }) {
     (images.ecommerce ? 1 : 0) +
     extraAngles.filter((a) => a.data).length;
 
-function dataURItoBlob(dataURI) {
-  if (!dataURI || typeof dataURI !== "string" || !dataURI.startsWith("data:")) return null;
-  try {
-    const parts = dataURI.split(",");
-    const mime = parts[0].match(/:(.*?);/)?.[1] || "image/jpeg";
-    const byteString = atob(parts[1]);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+  function dataURItoBlob(dataURI) {
+    if (!dataURI || typeof dataURI !== "string" || !dataURI.startsWith("data:")) return null;
+    try {
+      const parts = dataURI.split(",");
+      const mime = parts[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+      const byteString = atob(parts[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      return new Blob([ab], { type: mime });
+    } catch (e) {
+      console.warn("dataURItoBlob error:", e);
+      return null;
     }
-    return new Blob([ab], { type: mime });
-  } catch (e) {
-    console.warn("dataURItoBlob error:", e);
-    return null;
   }
-}
 
   const handleSubmitForProcessing = async () => {
     setSubmitting(true);
@@ -3450,6 +3449,74 @@ function dataURItoBlob(dataURI) {
     setCreatedCase(newCaseData);
     setSubmitting(false);
     setStep(3);
+  };
+
+  const handleEcomScanSubmit = async () => {
+    if (!ecomUrl.trim()) {
+      setStepError("Please enter an e-commerce product URL to inspect.");
+      return;
+    }
+    setStepError("");
+    setSubmitting(true);
+
+    try {
+      console.log(`🌐 Scanning e-commerce URL with FastAPI & Gemini Vision: ${ecomUrl}`);
+      
+      const fileObjects = [];
+      const imgSources = [images.ecommerce, images.front, images.back].filter(Boolean);
+      for (let idx = 0; idx < imgSources.length; idx++) {
+        const item = imgSources[idx];
+        if (item.file) {
+          fileObjects.push(item.file);
+        } else if (item.previewUrl && item.previewUrl.startsWith("data:")) {
+          const blob = dataURItoBlob(item.previewUrl);
+          if (blob) {
+            fileObjects.push(new File([blob], `ecom_screenshot_${idx + 1}.jpg`, { type: "image/jpeg" }));
+          }
+        }
+      }
+
+      const scanRes = await ApiService.ecomScanUrl({
+        url: ecomUrl.trim(),
+        category: metadata?.category || "Packaged Food",
+        location: metadata?.location && metadata.location !== "Field Inspection / Retail Store" ? metadata.location : "Digital Marketplace",
+        files: fileObjects
+      });
+      console.log("✅ E-Commerce scan response:", scanRes);
+
+      let newCaseData = {
+        inspection_no: scanRes.case_number || `LM/ECOM/2026/${Math.floor(100000 + Math.random() * 900000)}`,
+        product_name: scanRes.product || scanRes.product_name || "E-Commerce Packaged Item",
+        category: scanRes.category || metadata?.category || "Packaged Food",
+        location: scanRes.location || "Digital Marketplace",
+        platform: scanRes.platform || "E-Commerce",
+        seller_name: scanRes.seller_name,
+        url: ecomUrl.trim(),
+        uploaded_images: {},
+        ...scanRes,
+        declarations: scanRes.declarations || [],
+        violations: scanRes.violations || [],
+        status: scanRes.status || "REVIEW"
+      };
+
+      if (scanRes.images && Array.isArray(scanRes.images)) {
+        scanRes.images.forEach((img, idx) => {
+          const key = img.angle || `GALLERY_PHOTO_${idx + 1}`;
+          newCaseData.uploaded_images[key] = {
+            previewUrl: img.url || img.image_url,
+            name: img.filename || `product_photo_${idx + 1}.jpg`
+          };
+        });
+      }
+
+      setCreatedCase(newCaseData);
+      setSubmitting(false);
+      setStep(3);
+    } catch (err) {
+      console.error("⚠️ E-Commerce scan failed:", err);
+      setSubmitting(false);
+      setStepError(err.message || "Failed to inspect e-commerce link. Please check URL and try again.");
+    }
   };
 
   return (
@@ -3699,21 +3766,41 @@ function dataURItoBlob(dataURI) {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
               <div className="lg:col-span-6 flex flex-col justify-center p-5 rounded-xl border space-y-2 min-h-[176px]" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
-                <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: C.charcoal }}>
-                  <Globe size={14} style={{ color: C.gold }} />
-                  <span className="font-bold">Product E-Listing URL</span>
-                </label>
-                <div className="relative">
-                  <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    style={{ ...inputStyle, paddingLeft: 34, height: 42 }}
-                    placeholder="enter product e-listing"
-                    value={ecomUrl}
-                    onChange={(e) => setEcomUrl(e.target.value)}
-                  />
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: C.charcoal }}>
+                    <Globe size={14} style={{ color: C.gold }} />
+                    <span className="font-bold">Product E-Listing URL</span>
+                  </label>
+                  {ecomUrl && (
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                      {ecomUrl.includes("amazon") ? "Amazon" : ecomUrl.includes("flipkart") ? "Flipkart" : ecomUrl.includes("blinkit") ? "Blinkit" : ecomUrl.includes("zepto") ? "Zepto" : "E-Commerce"}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      style={{ ...inputStyle, paddingLeft: 34, height: 42 }}
+                      placeholder="https://www.amazon.in/dp/... or Flipkart, Blinkit URL"
+                      value={ecomUrl}
+                      onChange={(e) => setEcomUrl(e.target.value)}
+                    />
+                  </div>
+                  {ecomUrl.trim() && (
+                    <button
+                      type="button"
+                      onClick={handleEcomScanSubmit}
+                      disabled={submitting}
+                      className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-sm disabled:opacity-50"
+                    >
+                      {submitting ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
+                      Scan URL
+                    </button>
+                  )}
                 </div>
                 <span className="text-[11px] text-slate-400 leading-relaxed">
-                  Paste Amazon, Flipkart, or Blinkit product page URL for automated online mandatory declaration parsing.
+                  Paste product page URL. The engine downloads all product gallery photos & specifications for Rule 6(10) PCR 2011 inspection.
                 </span>
               </div>
 
@@ -3751,7 +3838,7 @@ function dataURItoBlob(dataURI) {
       {step === 1 && (
         <Card>
           <SectionLabel eyebrow="STEP 2" title="Inspection Context" right={<span style={{ fontSize: 11.5, color: C.slate }}>AI Auto-Extraction Enabled</span>} />
-          
+
           <div className="mb-5 p-3.5 rounded-lg border flex items-start gap-3" style={{ background: "rgba(229,184,66,0.06)", borderColor: "rgba(229,184,66,0.3)" }}>
             <Sparkles size={18} style={{ color: C.gold, marginTop: 2, flexShrink: 0 }} />
             <div>
@@ -3759,7 +3846,7 @@ function dataURItoBlob(dataURI) {
                 Autonomous Multimodal AI Extraction Active
               </span>
               <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                You do not need to manually enter Product Name, MRP, Net Weight, Manufacturer, or Dates. 
+                You do not need to manually enter Product Name, MRP, Net Weight, Manufacturer, or Dates.
                 <strong> Gemini Vision AI</strong> will automatically inspect and extract all statutory declarations directly from your uploaded packaging photos.
               </p>
             </div>
@@ -3895,17 +3982,17 @@ function ProcessingScreen({ onDone, createdCase }) {
   return (
     <Card className="overflow-hidden rounded-xl">
       <SectionLabel eyebrow="STEP 4" title="Running Compliance Pipeline" />
-      
+
       {/* High-Tech AI Radar Scanner Visualizer */}
       <div className="relative w-full h-36 rounded-xl bg-slate-950 border border-slate-800 mb-6 overflow-hidden flex items-center justify-center shadow-inner">
         {/* Animated Scanner Beam */}
         {!shouldReduceMotion && (
           <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_20px_#F59E0B] animate-scanline z-20" />
         )}
-        
+
         {/* Radial Radar Grid */}
         <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#E5B842_1px,transparent_1px)] [background-size:16px_16px]" />
-        
+
         {/* Concentric Dual Radar Rings */}
         <div className="relative z-10 flex flex-col items-center justify-center">
           <div className="relative flex items-center justify-center">
@@ -3955,13 +4042,12 @@ function ProcessingScreen({ onDone, createdCase }) {
               initial={shouldReduceMotion ? {} : { opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.04 }}
-              className={`flex items-center gap-3 py-2.5 px-3.5 rounded-lg border transition-all ${
-                active
+              className={`flex items-center gap-3 py-2.5 px-3.5 rounded-lg border transition-all ${active
                   ? "bg-amber-500/12 border-amber-500/40 shadow-xs"
                   : complete
-                  ? "bg-emerald-500/8 border-emerald-500/15"
-                  : "border-transparent opacity-50"
-              }`}
+                    ? "bg-emerald-500/8 border-emerald-500/15"
+                    : "border-transparent opacity-50"
+                }`}
             >
               {complete ? (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 18 }}>
@@ -4144,8 +4230,8 @@ function InspectionDetail({ inspection, users = [] }) {
   const derivedProduct = typeof insp.product === "object" ? insp.product?.name : insp.product;
   const productName = (derivedProduct && derivedProduct !== "Packaged Commodity" && derivedProduct !== "") ? derivedProduct
     : ((rawExtractedName && rawExtractedName !== "Packaged Commodity" && rawExtractedName !== "") ? rawExtractedName
-    : ((insp.product_name && insp.product_name !== "Packaged Commodity" && insp.product_name !== "") ? insp.product_name
-    : "NA"));
+      : ((insp.product_name && insp.product_name !== "Packaged Commodity" && insp.product_name !== "") ? insp.product_name
+        : "NA"));
 
   const caseId = insp.case_number || (typeof insp.id === "number" ? `LM/2026/${String(insp.id).padStart(6, "0")}` : (insp.id || "LM/2026/000001"));
 
@@ -4153,18 +4239,60 @@ function InspectionDetail({ inspection, users = [] }) {
   let reqs = [];
   let extractedMap = {};
 
+  const isEcom = insp.inspection_type === "E_COMMERCE_LISTING" || 
+                 insp.type === "E_COMMERCE_LISTING" || 
+                 String(insp.location || "").toLowerCase().includes("listing") || 
+                 String(insp.location || "").toLowerCase().includes("marketplace") ||
+                 String(insp.case_number || "").includes("ECOM");
+
   if (insp.declarations && Array.isArray(insp.declarations) && insp.declarations.length > 0) {
-    reqs = insp.declarations.map((d, index) => {
+    // Filter out product_name and unprinted mfg_date for e-commerce inspections
+    const filteredDeclarations = insp.declarations.filter(d => {
+      const fieldKey = d.field || d.field_name || "";
+      if (fieldKey === "product_name") return false;
+      if (isEcom && fieldKey === "mfg_date") {
+        const raw = d.value || d.detected_value || d.raw_text || d.text;
+        const hasVal = Boolean(raw && String(raw).trim() !== "" && String(raw).toLowerCase() !== "null" && String(raw).toLowerCase() !== "none");
+        if (!hasVal) return false;
+      }
+      return true;
+    });
+
+    reqs = filteredDeclarations.map((d, index) => {
       const fieldKey = d.field || d.field_name || `decl_${index}`;
       const fieldLabel = d.label || (typeof fieldKey === "string" ? fieldKey.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "Declaration");
+      const isExempt = d.status === "EXEMPT" || d.is_exempt === true || (isEcom && fieldKey === "mfg_date");
       const rawTextVal = d.value || d.detected_value || d.raw_text || d.text || d.detected;
       const hasValue = Boolean(rawTextVal && String(rawTextVal).trim() !== "" && String(rawTextVal).trim() !== '""' && String(rawTextVal).toLowerCase() !== "none" && String(rawTextVal).toLowerCase() !== "null");
       const isDetected = (d.detected === true || d.is_present === true) && hasValue;
-      const statusVal = (!isDetected || !hasValue) ? "FAIL" : (d.status === "COMPLIANT" || d.status === "PASS" || d.is_compliant === true ? "PASS" : (d.status || "FAIL"));
-      const confNum = typeof d.confidence === "number" ? d.confidence : (typeof d.confidence_score === "number" ? d.confidence_score : 0.95);
-      const confVal = hasValue ? Math.round(confNum > 1 ? confNum : confNum * 100) : 0;
-      const detectedVal = hasValue ? String(rawTextVal) : "NOT DETECTED / MISSING FROM LABEL";
-      const reasonVal = d.reason || d.remarks || (statusVal === "PASS" ? "Verified compliant under Legal Metrology (PCR 2011)" : "Mandatory statutory requirement not found or illegible on package label.");
+      
+      let statusVal = "FAIL";
+      let detectedVal = "NOT DETECTED / MISSING FROM LABEL";
+      let confVal = 0;
+      let reasonVal = d.reason || d.remarks;
+
+      if (isExempt) {
+        statusVal = "EXEMPT";
+        detectedVal = hasValue ? String(rawTextVal) : "Exempt under Rule 6(10) PCR 2011 (Digital Listing)";
+        confVal = 98;
+        reasonVal = reasonVal || "Exempt from mandatory digital display under Rule 6(10) Legal Metrology (PCR 2011).";
+      } else if (d.status === "REVIEW" || (!isEcom && fieldKey === "country_of_origin" && !hasValue && !insp.is_imported && !insp.product?.is_imported)) {
+        statusVal = "REVIEW";
+        detectedVal = hasValue ? String(rawTextVal) : "Requires Verification (Rule 6(1)(f))";
+        confVal = 90;
+        reasonVal = reasonVal || "Exempt under Rule 6(1)(f) PCR 2011 if manufactured domestically in India; mandatory if imported.";
+      } else if (isDetected || hasValue) {
+        statusVal = (d.status === "COMPLIANT" || d.status === "PASS" || d.is_compliant === true) ? "PASS" : (d.status || "PASS");
+        detectedVal = String(rawTextVal);
+        const confNum = typeof d.confidence === "number" ? d.confidence : (typeof d.confidence_score === "number" ? d.confidence_score : 0.95);
+        confVal = Math.round(confNum > 1 ? confNum : confNum * 100);
+        reasonVal = reasonVal || "Verified compliant under Legal Metrology (PCR 2011)";
+      } else {
+        statusVal = "FAIL";
+        detectedVal = "NOT DETECTED / MISSING FROM LABEL";
+        confVal = 0;
+        reasonVal = reasonVal || "Mandatory statutory requirement not found or illegible on package label.";
+      }
 
       // ONLY use the exact bbox and photo index detected directly by AI from the image
       const resolvedBox = (isDetected && Array.isArray(d.bbox) && d.bbox.length === 4) ? d.bbox : null;
@@ -4173,11 +4301,11 @@ function InspectionDetail({ inspection, users = [] }) {
       return {
         key: fieldKey,
         label: fieldLabel,
-        rule: d.rule || d.rule_citation || "Rule 6(1) PCR 2011",
+        rule: d.rule || d.rule_citation || (isExempt ? "Rule 6(10) PCR 2011" : (statusVal === "REVIEW" ? "Rule 6(1)(f) PCR 2011" : "Rule 6(1) PCR 2011")),
         status: statusVal,
         confidence: confVal,
         detected: detectedVal,
-        is_present: isDetected,
+        is_present: isDetected || isExempt,
         reason: reasonVal,
         bbox: resolvedBox,
         image_index: targetImageIdx,
@@ -4186,35 +4314,38 @@ function InspectionDetail({ inspection, users = [] }) {
     });
 
     extractedMap = {};
-    insp.declarations.forEach((d, index) => {
+    filteredDeclarations.forEach((d, index) => {
       const fieldKey = d.field || d.field_name || `decl_${index}`;
       const fieldLabel = d.label || (typeof fieldKey === "string" ? fieldKey.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : `Declaration ${index + 1}`);
-      const rawVal = d.value || d.detected_value || d.raw_text || (d.is_present ? "Present" : "Missing");
+      const rawVal = d.value || d.detected_value || d.raw_text || (d.status === "EXEMPT" ? "Exempt (Rule 6(10))" : (d.is_present ? "Present" : "Missing"));
       extractedMap[fieldLabel] = rawVal && String(rawVal).trim() !== "" ? rawVal : (reqs[index]?.detected || "Verified Present");
     });
   }
 
+  const mandatoryReqs = reqs.filter((r) => r.status !== "EXEMPT");
   const passCount = reqs.filter((r) => r.status === "PASS").length;
   const failCount = reqs.filter((r) => r.status === "FAIL").length;
+  const exemptCount = reqs.filter((r) => r.status === "EXEMPT").length;
   const reviewCount = reqs.filter((r) => r.status === "REVIEW").length;
   const avgConf = Math.round(reqs.reduce((s, r) => s + (r.confidence || 90), 0) / (reqs.length || 1));
 
   // 3-Tier Classification:
-  // 1. 100% (passCount === reqs.length) -> COMPLIANT
-  // 2. < 50% (passRatio < 0.50) -> NON_COMPLIANT
-  // 3. 50% to 99% -> REVIEW (Requires Verification)
-  const passRatio = passCount / (reqs.length || 1);
-  const computedStatus = (passCount === reqs.length && reqs.length > 0)
-    ? "COMPLIANT"
-    : (passRatio < 0.50 ? "NON_COMPLIANT" : "REVIEW");
+  // 1. All mandatory pass (failCount === 0 && passCount > 0) -> COMPLIANT (or REVIEW if verification items exist)
+  // 2. < 50% pass ratio of mandatory -> NON_COMPLIANT
+  // 3. Otherwise -> REVIEW / NON_COMPLIANT
+  const mandatoryCount = mandatoryReqs.length;
+  const passRatio = mandatoryCount > 0 ? passCount / mandatoryCount : (passCount / (reqs.length || 1));
+  const computedStatus = (failCount === 0 && passCount > 0)
+    ? (reviewCount > 0 ? "REVIEW" : "COMPLIANT")
+    : (passRatio < 0.50 ? "NON_COMPLIANT" : (failCount > 0 ? "NON_COMPLIANT" : "REVIEW"));
 
-  const inspectionStatus = computedStatus;
+  const inspectionStatus = (insp.status && insp.status !== "REVIEW" && !((insp.status === "NON_COMPLIANT" || insp.status === "NON-COMPLIANT") && failCount === 0)) ? insp.status : computedStatus;
 
   const extractedMfr = insp.declarations?.find(d => d.field === "manufacturer")?.value;
   const manufacturerVal = extractedMfr || insp.manufacturer || (typeof insp.product === "object" && insp.product?.category) || "Registered Food Manufacturer";
   const locationVal = insp.location || "NA";
   const dateVal = insp.created_at ? new Date(insp.created_at).toLocaleDateString("en-IN") : (insp.date || new Date().toLocaleDateString("en-IN"));
-  
+
   let currentUserFullName = "NA";
   try {
     const userStr = localStorage.getItem('legallens_current_user');
@@ -4225,7 +4356,7 @@ function InspectionDetail({ inspection, users = [] }) {
   } catch (e) {
     console.warn("Failed to read user name from localStorage:", e);
   }
-  
+
   let inspectorVal = insp.inspector_name || insp.inspector || currentUserFullName || "NA";
   if (String(inspectorVal).trim().toLowerCase() === "deleted user") {
     inspectorVal = "Deleted User";
@@ -4248,7 +4379,14 @@ function InspectionDetail({ inspection, users = [] }) {
 
   if (insp.uploaded_images && typeof insp.uploaded_images === "object" && Object.keys(insp.uploaded_images).length > 0) {
     Object.entries(insp.uploaded_images).forEach(([key, val], idx) => {
-      const url = val?.previewUrl || val?.url || (typeof val === "string" ? val : null);
+      let url = val?.previewUrl || val?.url || (typeof val === "string" ? val : null);
+      if (url && typeof url === 'string') {
+        if (url.startsWith('/uploads/')) {
+          url = `${ApiService.getApiBase()}${url}`;
+        } else if (url.startsWith('uploads/')) {
+          url = `${ApiService.getApiBase()}/${url}`;
+        }
+      }
       if (url && !seenUrls.has(url)) {
         seenUrls.add(url);
         initialPhotos.push({
@@ -4260,13 +4398,12 @@ function InspectionDetail({ inspection, users = [] }) {
     });
   } else if (insp.images && Array.isArray(insp.images) && insp.images.length > 0) {
     insp.images.forEach((img, idx) => {
-      let url = img.supabase_url || img.image_url || img.url || img.original_path;
-      if (url && typeof url === 'string' && url.includes('/uploads/')) {
-        const supabaseBase = import.meta.env.VITE_SUPABASE_URL;
-        if (supabaseBase && supabaseBase.startsWith('https://')) {
-          const filename = url.split('/').pop();
-          const bucket = url.includes('/reports/') ? 'reports' : 'product-images';
-          url = `${supabaseBase.replace(/\/+$/, '')}/storage/v1/object/public/${bucket}/${filename}`;
+      let url = img.url || img.image_url || img.supabase_url || img.original_path;
+      if (url && typeof url === 'string') {
+        if (url.startsWith('/uploads/')) {
+          url = `${ApiService.getApiBase()}${url}`;
+        } else if (url.startsWith('uploads/')) {
+          url = `${ApiService.getApiBase()}/${url}`;
         }
       }
       if (url && !seenUrls.has(url)) {
@@ -4291,6 +4428,7 @@ function InspectionDetail({ inspection, users = [] }) {
 
   const [photosList, setPhotosList] = useState(initialPhotos);
   const [activePhotoId, setActivePhotoId] = useState(initialPhotos[0]?.id || "photo_1");
+  const photoTabsScrollRef = useRef(null);
 
   // Keep photosList in sync when inspection prop changes
   useEffect(() => {
@@ -4299,6 +4437,27 @@ function InspectionDetail({ inspection, users = [] }) {
       setActivePhotoId(initialPhotos[0]?.id || "photo_1");
     }
   }, [insp.id, insp.case_number, insp.images]);
+
+  // Auto-scroll active photo tab into view
+  useEffect(() => {
+    const activeBtn = document.getElementById(`tab_${activePhotoId}`);
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  }, [activePhotoId]);
+
+  const scrollPhotoTabs = (direction) => {
+    if (photoTabsScrollRef.current) {
+      const scrollAmount = direction === "left" ? -140 : 140;
+      photoTabsScrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  const handleTabsWheel = (e) => {
+    if (photoTabsScrollRef.current && Math.abs(e.deltaY) > 0) {
+      photoTabsScrollRef.current.scrollLeft += e.deltaY;
+    }
+  };
 
   // Handler to smoothly switch to the specific image where a declaration lives
   const handleSelectReq = (r) => {
@@ -4326,16 +4485,28 @@ function InspectionDetail({ inspection, users = [] }) {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       const newItems = files.map((file, i) => {
-        const id = `PHOTO_${Date.now()}_${i+1}`;
+        const id = `PHOTO_${Date.now()}_${i + 1}`;
         return {
           id: id,
           label: `PHOTO ${photosList.length + i + 1} (${file.name.slice(0, 10)})`,
           url: URL.createObjectURL(file)
         };
       });
-      setPhotosList(prev => [...prev, ...newItems]);
+      setPhotosList((prev) => [...prev, ...newItems]);
       setActivePhotoId(newItems[0].id);
     }
+  };
+
+  const currentPhotoIndex = photosList.findIndex(p => p.id === activePhotoId);
+  const handlePrevPhoto = () => {
+    if (photosList.length <= 1) return;
+    const prevIdx = (currentPhotoIndex - 1 + photosList.length) % photosList.length;
+    setActivePhotoId(photosList[prevIdx].id);
+  };
+  const handleNextPhoto = () => {
+    if (photosList.length <= 1) return;
+    const nextIdx = (currentPhotoIndex + 1) % photosList.length;
+    setActivePhotoId(photosList[nextIdx].id);
   };
 
   return (
@@ -4370,9 +4541,9 @@ function InspectionDetail({ inspection, users = [] }) {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t" style={{ borderColor: C.line }}>
           {[
-            ["Mandatory Declarations", `${passCount} / ${reqs.length}`, "detected & verified"],
+            ["Mandatory Declarations", `${passCount} / ${mandatoryReqs.length || reqs.length}`, "detected & verified"],
             ["Violations", failCount, "require correction"],
-            ["Manual Verification", reviewCount, "needs officer review"],
+            ["Exempt / Review", exemptCount > 0 ? `${exemptCount} Exempt` : reviewCount, exemptCount > 0 ? "Rule 6(10) Digital Exemption" : "needs officer review"],
             ["Overall Confidence", `${avgConf}%`, "AI extraction average"],
           ].map(([l, v, s]) => (
             <div key={l}>
@@ -4386,41 +4557,73 @@ function InspectionDetail({ inspection, users = [] }) {
 
       {/* ── MULTI-ANGLE PACKAGE VISION CANVAS & BOUNDING BOX OVERLAY ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+
         {/* Left: Interactive Multi-Angle Visual Bounding Box Canvas (7 cols) */}
         <Card className="lg:col-span-7 flex flex-col justify-between overflow-hidden rounded-xl shadow-md" padded={false}>
           <div className="p-4 border-b flex flex-wrap items-center justify-between gap-3" style={{ borderColor: C.line }}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <ScanLine size={17} style={{ color: C.gold }} />
               <span style={{ ...FONT.display, fontSize: 14.5, fontWeight: 700, color: C.ink }}>
                 Package Vision Canvas ({photosList.length} Photos)
               </span>
             </div>
 
-            {/* Dynamic Photo Tabs & Upload Button */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-900/10 dark:bg-slate-950/60 border border-slate-700/30 overflow-x-auto max-w-[340px]">
-                {photosList.map((p) => (
+            {/* Dynamic Photo Tabs with Smooth Horizontal Carousel Navigation */}
+            <div className="flex items-center gap-2 flex-1 justify-end min-w-0 max-w-full">
+              <div className="relative flex items-center max-w-[360px] sm:max-w-[440px] md:max-w-[500px] min-w-0">
+                {photosList.length > 3 && (
                   <button
-                    key={p.id}
                     type="button"
-                    onClick={() => setActivePhotoId(p.id)}
-                    className={`ll-focus text-[11px] font-mono px-3 py-1 rounded-md transition-all whitespace-nowrap font-semibold cursor-pointer ${
-                      activePhotoId === p.id
-                        ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
+                    onClick={() => scrollPhotoTabs("left")}
+                    className="p-1 rounded-l-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-all flex-shrink-0 cursor-pointer border border-r-0 border-slate-700"
+                    title="Scroll left"
                   >
-                    {p.label}
+                    <ChevronLeft size={14} />
                   </button>
-                ))}
+                )}
+
+                <div
+                  ref={photoTabsScrollRef}
+                  onWheel={handleTabsWheel}
+                  className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-900/40 dark:bg-slate-950/70 border border-slate-700/40 overflow-x-auto no-scrollbar scroll-smooth"
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
+                  {photosList.map((p, pIdx) => (
+                    <button
+                      key={p.id}
+                      id={`tab_${p.id}`}
+                      type="button"
+                      onClick={() => setActivePhotoId(p.id)}
+                      className={`ll-focus text-[11px] font-mono px-3 py-1 rounded-md transition-all whitespace-nowrap font-semibold cursor-pointer flex-shrink-0 ${
+                        activePhotoId === p.id
+                          ? "bg-amber-500 text-slate-950 shadow-xs font-bold ring-1 ring-amber-400"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                      }`}
+                    >
+                      {p.label || `PHOTO ${pIdx + 1}`}
+                    </button>
+                  ))}
+                </div>
+
+                {photosList.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => scrollPhotoTabs("right")}
+                    className="p-1 rounded-r-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-all flex-shrink-0 cursor-pointer border border-l-0 border-slate-700"
+                    title="Scroll right"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                )}
               </div>
 
               <button
                 type="button"
                 onClick={() => setShowBoxes(!showBoxes)}
-                className={`ll-focus text-xs font-mono px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs ${
-                  showBoxes ? "bg-amber-500/20 text-amber-300 border-amber-500/40" : "bg-slate-800 text-slate-400 border-slate-700"
+                className={`ll-focus text-xs font-mono px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs flex-shrink-0 ${
+                  showBoxes
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                    : "bg-slate-800 text-slate-400 border-slate-700"
                 }`}
                 title="Toggle bounding box highlights"
               >
@@ -4430,24 +4633,27 @@ function InspectionDetail({ inspection, users = [] }) {
           </div>
 
           {/* Canvas Image Container with Dynamic Overlays */}
-          <div className="relative min-h-[360px] max-h-[460px] w-full bg-slate-950/95 flex items-center justify-center overflow-hidden group select-none">
-            <img
-              src={currentPhoto.url}
-              alt={currentPhoto.label}
-              className="max-h-[440px] max-w-full object-contain transition-transform duration-300"
-              onError={(e) => {
-                if (e.target.src !== MISSING_IMAGE_PLACEHOLDER) {
-                  e.target.src = MISSING_IMAGE_PLACEHOLDER;
-                }
-              }}
-            />
+          <div className="relative min-h-[360px] max-h-[500px] w-full bg-slate-950/95 flex items-center justify-center overflow-hidden group select-none p-2">
+            
+            {/* Direct Image Wrapper that hugs image dimensions tightly */}
+            <div className="relative inline-block max-h-full max-w-full">
+              <img
+                src={currentPhoto.url}
+                alt={currentPhoto.label}
+                className="max-h-[460px] max-w-full block object-contain mx-auto rounded-md shadow-lg"
+                onError={(e) => {
+                  if (e.target.src !== MISSING_IMAGE_PLACEHOLDER) {
+                    e.target.src = MISSING_IMAGE_PLACEHOLDER;
+                  }
+                }}
+              />
 
               {/* Bounding Box Highlights (Only rendered for declarations ACTUALLY found on this photo) */}
               {showBoxes && reqs.map((r, i) => {
                 // If declaration was not found/missing from packaging, do NOT draw any box!
                 if (!r.bbox || !Array.isArray(r.bbox) || r.bbox.length !== 4 || r.status === "FAIL" || !r.is_present) return null;
                 const isHovered = hoveredReq === r.key;
-                
+
                 // Match declaration's detected image index with currently active photo
                 const declPhotoIdx = (typeof r.image_index === "number" ? r.image_index : 1) - 1;
                 const activePhotoIndex = photosList.findIndex(p => p.id === activePhotoId);
@@ -4456,48 +4662,47 @@ function InspectionDetail({ inspection, users = [] }) {
                 // Only render if currently viewing the photo this declaration belongs to
                 if (!isCurrentPhotoMatch) return null;
 
-              const [ymin, xmin, ymax, xmax] = r.bbox;
-              const top = `${ymin / 10}%`;
-              const left = `${xmin / 10}%`;
-              const width = `${(xmax - xmin) / 10}%`;
-              const height = `${(ymax - ymin) / 10}%`;
-              const isPass = r.status === "PASS";
+                const [ymin, xmin, ymax, xmax] = r.bbox;
+                const top = `${ymin / 10}%`;
+                const left = `${xmin / 10}%`;
+                const width = `${(xmax - xmin) / 10}%`;
+                const height = `${(ymax - ymin) / 10}%`;
+                const isPass = r.status === "PASS";
 
-              return (
-                <motion.div
-                  key={r.key || i}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: isHovered ? 1.04 : 1 }}
-                  transition={{ type: "spring", stiffness: 350, damping: 22 }}
-                  onMouseEnter={() => handleSelectReq(r)}
-                  onMouseLeave={() => setHoveredReq(null)}
-                  className={`absolute border-2 cursor-pointer rounded-sm ${
-                    isHovered
-                      ? "border-amber-400 bg-amber-400/30 shadow-[0_0_25px_#F59E0B] z-30 ring-2 ring-amber-300"
-                      : isPass
-                        ? "border-emerald-500/70 bg-emerald-500/10 hover:border-emerald-400 hover:bg-emerald-500/20 z-10"
-                        : "border-red-500/80 bg-red-500/15 hover:border-red-400 hover:bg-red-500/25 z-20"
-                  }`}
-                  style={{ top, left, width, height }}
-                >
-                  <motion.span
-                    animate={isHovered ? { y: -2, scale: 1.05 } : { y: 0, scale: 1 }}
-                    className={`absolute -top-5 left-0 px-1.5 py-0.2 rounded text-[9.5px] font-mono font-bold whitespace-nowrap uppercase tracking-wider ${
-                      isHovered ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/30" : (isPass ? "bg-emerald-600 text-white" : "bg-red-600 text-white")
-                    } shadow-md`}
+                return (
+                  <motion.div
+                    key={r.key || i}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: isHovered ? 1.04 : 1 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                    onMouseEnter={() => handleSelectReq(r)}
+                    onMouseLeave={() => setHoveredReq(null)}
+                    className={`absolute border-2 cursor-pointer rounded-sm ${isHovered
+                        ? "border-amber-400 bg-amber-400/30 shadow-[0_0_25px_#F59E0B] z-30 ring-2 ring-amber-300"
+                        : isPass
+                          ? "border-emerald-500/70 bg-emerald-500/10 hover:border-emerald-400 hover:bg-emerald-500/20 z-10"
+                          : "border-red-500/80 bg-red-500/15 hover:border-red-400 hover:bg-red-500/25 z-20"
+                      }`}
+                    style={{ top, left, width, height }}
                   >
-                    {r.label?.split(" ")[0]} ({r.confidence}%)
-                  </motion.span>
-                </motion.div>
-              );
-            })}
+                    <motion.span
+                      animate={isHovered ? { y: -2, scale: 1.05 } : { y: 0, scale: 1 }}
+                      className={`absolute -top-5 left-0 px-1.5 py-0.2 rounded text-[9.5px] font-mono font-bold whitespace-nowrap uppercase tracking-wider ${isHovered ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/30" : (isPass ? "bg-emerald-600 text-white" : "bg-red-600 text-white")
+                        } shadow-md`}
+                    >
+                      {r.label?.split(" ")[0]} ({r.confidence}%)
+                    </motion.span>
+                  </motion.div>
+                );
+              })}
+            </div>
 
             {/* Bottom Floating Legend */}
             {(() => {
               const hoveredItem = reqs.find(r => r.key === hoveredReq);
               const isCompliantActive = hoveredItem && hoveredItem.status === "PASS";
               const isViolationActive = hoveredItem && hoveredItem.status === "FAIL";
-              
+
               return (
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-3.5 py-1.5 rounded-lg bg-slate-950/85 backdrop-blur-md border border-slate-800 text-[11px] font-mono text-slate-300 pointer-events-none">
                   <span className="flex items-center gap-2 select-none">
@@ -4510,7 +4715,7 @@ function InspectionDetail({ inspection, users = [] }) {
                       <span className={`w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block ${isCompliantActive ? 'shadow-[0_0_8px_#10B981]' : ''}`} />
                       <span className={isCompliantActive ? 'text-emerald-400 font-bold' : ''}>Compliant</span>
                     </span>
-                    
+
                     <span className="flex items-center gap-1.5 transition-all duration-200 ml-3"
                       style={{
                         opacity: hoveredReq ? (isViolationActive ? 1 : 0.35) : 1,
@@ -4538,11 +4743,10 @@ function InspectionDetail({ inspection, users = [] }) {
               <div
                 key={p.id}
                 onClick={() => setActivePhotoId(p.id)}
-                className={`relative flex-shrink-0 w-12 h-12 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
-                  activePhotoId === p.id
+                className={`relative flex-shrink-0 w-12 h-12 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${activePhotoId === p.id
                     ? "border-amber-400 scale-105 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
                     : "border-slate-700 opacity-60 hover:opacity-100 hover:border-slate-500"
-                }`}
+                  }`}
                 title={p.label}
               >
                 <img
@@ -4596,11 +4800,10 @@ function InspectionDetail({ inspection, users = [] }) {
                   onMouseEnter={() => handleSelectReq(r)}
                   onMouseLeave={() => setHoveredReq(null)}
                   onClick={() => handleSelectReq(r)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer space-y-2 ${
-                    isHovered
+                  className={`p-3 rounded-xl border transition-all cursor-pointer space-y-2 ${isHovered
                       ? "bg-slate-900 border-amber-400/80 text-white shadow-md shadow-amber-500/10 -translate-y-[1px]"
                       : "bg-slate-900/40 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60"
-                  }`}
+                    }`}
                 >
                   <div className="text-[11px] font-bold text-amber-400/90 tracking-wide">
                     {r.label}
@@ -4614,10 +4817,12 @@ function InspectionDetail({ inspection, users = [] }) {
                     <div className="flex items-center gap-2.5">
                       <span className="text-amber-400/80 font-semibold">{r.confidence}% conf</span>
                       <span className={`font-bold px-2 py-0.5 rounded-full uppercase text-[9px] tracking-wider ${
-                        isPass 
-                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
-                          : 'bg-red-500/15 text-red-400 border border-red-500/30'
-                      }`}>
+                          r.status === 'PASS'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : r.status === 'EXEMPT'
+                              ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                              : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                        }`}>
                         {r.status}
                       </span>
                     </div>
@@ -4639,9 +4844,9 @@ function InspectionDetail({ inspection, users = [] }) {
           <div className="p-5 pb-0"><SectionLabel eyebrow="RULE-BY-RULE" title="Compliance Checklist" /></div>
           <table className="w-full" style={{ fontSize: 12.5 }}>
             <thead>
-              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em" }}>
+              <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
                 {["REQUIREMENT", "RULE", "STATUS", "CONFIDENCE", ""].map((h) => (
-                  <th key={h} className="text-left font-semibold px-5 py-3 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
+                  <th key={h} className="text-left font-semibold px-5 py-3 border-b" style={{ borderColor: C.line }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -4687,13 +4892,7 @@ function InspectionDetail({ inspection, users = [] }) {
             <p style={{ fontSize: 11.5, color: C.slate, lineHeight: 1.5, marginBottom: 10 }}>
               The finding above is AI-assisted. Confirm, override, or flag for further review before it becomes the final determination.
             </p>
-            <select style={{ ...inputStyle, marginBottom: 10 }} defaultValue="">
-              <option value="" disabled>Select determination</option>
-              <option>Confirm AI finding ? Non-Compliant</option>
-              <option>Override ? mark Compliant</option>
-              <option>Escalate for senior review</option>
-            </select>
-            <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks?" />
+            <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks…" />
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -5101,9 +5300,9 @@ function Products({ onOpenInspection, onNewInspection, users = [] }) {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const match = p.name.toLowerCase().includes(q) ||
-                    p.barcode.toLowerCase().includes(q) ||
-                    p.category.toLowerCase().includes(q) ||
-                    (p.manufacturer && p.manufacturer.toLowerCase().includes(q));
+        p.barcode.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        (p.manufacturer && p.manufacturer.toLowerCase().includes(q));
       if (!match) return false;
     }
     if (categoryFilter !== "ALL" && p.category !== categoryFilter) return false;
@@ -5301,48 +5500,6 @@ function Rules() {
 
       <RuleBookPanel rules={RULES} />
 
-      <Card padded={false} className="overflow-x-auto rounded-xl shadow-sm">
-        <table className="w-full" style={{ fontSize: 12.5 }}>
-          <thead>
-            <tr style={{ color: C.slate, fontSize: 10.5, letterSpacing: "0.04em", background: "var(--ll-table-head-bg)" }}>
-              {["RULE CODE", "NAME", "APPLICABLE CATEGORY", "SEVERITY", "VERSION", "EFFECTIVE FROM", "STATUS"].map((h) => (
-                <th key={h} className="text-left font-semibold px-5 py-3.5 border-t border-b" style={{ borderColor: C.line }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {RULES.map((r) => {
-              const sevColor = r.severity === "HIGH" ? C.violation : r.severity === "MEDIUM" ? C.review : C.slate;
-              const sevBg = r.severity === "HIGH" ? C.violationBg : r.severity === "MEDIUM" ? C.reviewBg : "var(--ll-bg-paper-deep)";
-              const sevBd = r.severity === "HIGH" ? C.violationBd : r.severity === "MEDIUM" ? C.reviewBd : C.line;
-              return (
-                <tr key={r.code} className="ll-tr">
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontWeight: 700, color: C.ink }}>{r.code}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, fontWeight: 600 }}>{r.name}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.category}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
-                    <span style={{ color: sevColor, background: sevBg, border: `1px solid ${sevBd}`, fontWeight: 700, fontSize: 10.5, padding: "2px 8px", borderRadius: 9999 }}>{r.severity}</span>
-                  </td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, ...FONT.mono, fontSize: 11.5 }}>{r.version}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line, color: C.slate }}>{r.effective}</td>
-                  <td className="px-5 py-3.5 border-b" style={{ borderColor: C.line }}>
-                    <span className="inline-flex items-center gap-1.5" style={{
-                      fontSize: 10.5, fontWeight: 700, padding: "2px 10px", borderRadius: 9999,
-                      background: r.status === "ACTIVE" ? "var(--ll-compliant-bg)" : "var(--ll-bg-paper-deep)",
-                      color: r.status === "ACTIVE" ? "var(--ll-compliant)" : C.slate,
-                      border: r.status === "ACTIVE" ? "1px solid var(--ll-compliant-bd)" : `1px solid ${C.line}`,
-                    }}>
-                      {r.status === "ACTIVE" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
-                      {r.status}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </Card>
-
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-xs" style={{ background: "var(--ll-modal-overlay)" }} onClick={() => setShowAdd(false)}>
           <Card className="ll-rise max-w-lg w-full rounded-2xl shadow-2xl">
@@ -5472,11 +5629,11 @@ function Reports({ onOpenInspection, users = [] }) {
       const q = searchTerm.toLowerCase();
       const resolvedInspector = resolveInspectorName(r).toLowerCase();
       const match = (r.case_number && r.case_number.toLowerCase().includes(q)) ||
-                    (r.product_name && r.product_name.toLowerCase().includes(q)) ||
-                    (r.product && r.product.toLowerCase().includes(q)) ||
-                    resolvedInspector.includes(q) ||
-                    (r.inspector_name && r.inspector_name.toLowerCase().includes(q)) ||
-                    (r.inspector && r.inspector.toLowerCase().includes(q));
+        (r.product_name && r.product_name.toLowerCase().includes(q)) ||
+        (r.product && r.product.toLowerCase().includes(q)) ||
+        resolvedInspector.includes(q) ||
+        (r.inspector_name && r.inspector_name.toLowerCase().includes(q)) ||
+        (r.inspector && r.inspector.toLowerCase().includes(q));
       if (!match) return false;
     }
     if (statusFilter !== "ALL" && (r.status || "REVIEW").toUpperCase() !== statusFilter) return false;
@@ -6682,9 +6839,9 @@ export default function App() {
   const [loadingDb, setLoadingDb] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
 
-  // Theme state: dark / light
+  // Theme state: dark / light (defaults to dark to match obsidian outer portal)
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("Legal-Lens_theme") || "light";
+    return localStorage.getItem("Legal-Lens_theme") || "dark";
   });
 
   const isDark = theme === "dark";
@@ -6960,7 +7117,7 @@ export default function App() {
     setCurrentUser(found);
   };
 
-  
+
   const [showLogin, setShowLogin] = useState(() => {
     return localStorage.getItem("legallens_show_login") === "true";
   });

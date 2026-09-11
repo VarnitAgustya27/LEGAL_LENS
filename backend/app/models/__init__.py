@@ -7,3 +7,4 @@ from app.models.rule import Rule
 from app.models.violation import Violation
 from app.models.report import Report
 from app.models.audit_log import AuditLog
+from app.models.ecommerce_link import EcommerceLink

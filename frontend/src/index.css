@@ -3411,14 +3411,35 @@ a {
 .ll-root table {
   border-collapse: separate;
   border-spacing: 0;
+  width: 100%;
 }
 
 .ll-root table thead {
-  background: rgba(245,245,247,.72);
+  background: var(--ll-table-head-bg, #0d1524);
+}
+
+.ll-root.dark table thead,
+.dark table thead,
+.ll-root.dark thead,
+.dark thead,
+.ll-root.dark thead tr,
+.dark thead tr {
+  background: #0d1524 !important;
 }
 
 .ll-root table th {
   font-weight: 700 !important;
+  color: var(--ll-color-slate, #94a3b8);
+  border-color: var(--ll-color-line, #22344D);
+}
+
+.ll-root.dark table th,
+.dark table th,
+.ll-root.dark thead th,
+.dark thead th {
+  background: transparent !important;
+  color: #94a3b8 !important;
+  border-color: #1e2b40 !important;
 }
 
 .ll-root table tbody tr {
@@ -3426,7 +3447,7 @@ a {
 }
 
 .ll-root table tbody tr:hover {
-  background: rgba(0,122,255,.035) !important;
+  background: var(--ll-tr-hover, rgba(0,122,255,.035)) !important;
 }
 
 .ll-root input,
