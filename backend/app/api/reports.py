@@ -130,7 +130,8 @@ def _generate_pdf_for_case_payload(case_number: str, db: Session) -> str:
                 eval_data = service.rule_engine.evaluate_inspection(declarations_dict, {
                     "name": row.get("product_name"),
                     "category": row.get("category", "Packaged Food"),
-                    "is_imported": False
+                    "is_imported": False,
+                    "inspection_type": row.get("inspection_type") or ("E_COMMERCE_LISTING" if "ECOM" in cno_clean else "PHYSICAL_PACKAGE")
                 })
                 report_payload = {
                     "case_number": cno_clean,

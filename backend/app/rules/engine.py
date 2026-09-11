@@ -17,9 +17,10 @@ class RuleEngine:
                 data = json.load(f)
                 self.rules = data.get("rule_list", [])
 
-    def evaluate_inspection(self, declarations: Dict[str, Dict[str, Any]], product_info: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_inspection(self, declarations: Dict[str, Dict[str, Any]], product_info: Dict[str, Any], inspection_type: str = "RETAIL_PACK") -> Dict[str, Any]:
         is_imported = product_info.get("is_imported", False)
         category = product_info.get("category", "Packaged Food")
+        insp_type = product_info.get("inspection_type", inspection_type)
 
         evaluations = []
         violations = []
@@ -43,9 +44,21 @@ class RuleEngine:
             if "ALL" not in cat_app and category not in cat_app:
                 continue
 
-            # Check import applicability for Country of Origin
-            if rule.get("is_mandatory_when_imported") and not is_imported and not rule.get("is_mandatory", True):
-                continue
+            # E-Commerce Rule 6(10) PCR 2011 specific adjustments:
+            if insp_type == "E_COMMERCE_LISTING":
+                # Rule 6(10) explicitly exempts Month/Year of Manufacture and Product Name from statutory packaging declaration checks
+                if field in ["mfg_date", "product_name"]:
+                    continue
+                # Rule 6(10) proviso & Consumer Protection E-Commerce Rules: Country of Origin is mandatory for ALL e-com listings
+                if field == "country_of_origin":
+                    is_mandatory = True
+                else:
+                    is_mandatory = rule.get("is_mandatory", True)
+            else:
+                # Check import applicability for Country of Origin
+                if rule.get("is_mandatory_when_imported") and not is_imported and not rule.get("is_mandatory", True):
+                    continue
+                is_mandatory = rule.get("is_mandatory", True)
 
             decl = declarations.get(field, {})
             is_detected = decl.get("detected", False)
@@ -56,7 +69,6 @@ class RuleEngine:
             image_id = decl.get("image_id")
 
             # If optional declaration is not detected, skip without failing
-            is_mandatory = rule.get("is_mandatory", True)
             if not is_mandatory and not is_detected:
                 continue
 

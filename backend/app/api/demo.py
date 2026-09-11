@@ -28,7 +28,7 @@ DEMO_CASES = {
         "category": "Packaged Food",
         "barcode": "8902223334445",
         "is_imported": False,
-        "location": "Karol Bagh, Delhi",
+        "location": "Central Market, Delhi",
         "filename": "missing_mrp_sample.png"
     },
     "case_3_missing_mfr": {

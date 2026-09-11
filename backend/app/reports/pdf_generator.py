@@ -84,8 +84,10 @@ class InspectionReportGenerator:
         evaluations = inspection_data.get("evaluations", [])
         raw_score = inspection_data.get("score")
         if (raw_score is None or float(raw_score) == 0.0) and evaluations:
-            passed_checks = sum(1 for e in evaluations if e.get("status") == "PASS")
-            score = round((passed_checks / max(1, len(evaluations))) * 100, 1)
+            passed_checks = sum(1 for e in evaluations if e.get("status") in ["PASS", "EXEMPT"])
+            mandatory_evals = [e for e in evaluations if e.get("status") != "EXEMPT"]
+            denom = max(1, len(mandatory_evals) if mandatory_evals else len(evaluations))
+            score = round((passed_checks / denom) * 100, 1)
         else:
             score = round(float(raw_score or 0.0), 1)
 
@@ -132,7 +134,7 @@ class InspectionReportGenerator:
         evals = inspection_data.get("evaluations", [])
         for ev in evals:
             ev_status = ev.get("status", "PASS")
-            st_color = '#3A6B35' if ev_status == 'PASS' else '#9B2C2C' if ev_status == 'FAIL' else '#966A16'
+            st_color = '#3A6B35' if ev_status == 'PASS' else '#0284c7' if ev_status == 'EXEMPT' else '#9B2C2C' if ev_status == 'FAIL' else '#966A16'
             conf_str = f"{int(ev.get('confidence', 0.95)*100)}%"
             val_str = str(ev.get("detected") or ev.get("value") or ev.get("message") or "Detected")
             if len(val_str) > 40:

@@ -204,6 +204,29 @@ class ApiService {
     return await res.json();
   }
 
+  static async ecomScanUrl({ url, category, location, files = [] }) {
+    const formData = new FormData();
+    formData.append('url', url);
+    formData.append('category', category || 'Packaged Food');
+    formData.append('location', location || 'E-Commerce Platform');
+    if (files && files.length > 0) {
+      for (const f of files) {
+        formData.append('files', f);
+      }
+    }
+    const res = await fetch(`${API_BASE}/inspections/ecom-scan-url`, {
+      method: 'POST',
+      headers: this.getUserHeaders(),
+      body: formData
+    });
+    this.handleUnauthorized(res);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'E-Commerce link scan failed');
+    }
+    return await res.json();
+  }
+
 
   static async runScan(inspectionId) {
     const res = await fetch(`${API_BASE}/inspections/${inspectionId}/scan`, {
