@@ -623,6 +623,79 @@ function Icon({ name, size = 20 }) {
 }
 
 
+function CursorReactiveDots() {
+  const canvasRef = useRef(null);
+  const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || shouldReduceMotion || window.matchMedia("(pointer: coarse)").matches) return undefined;
+
+    const context = canvas.getContext("2d");
+    const pointer = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+    let frameId;
+    let width = 0;
+    let height = 0;
+    let pixelRatio = 1;
+
+    const resize = () => {
+      const bounds = canvas.getBoundingClientRect();
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      width = bounds.width;
+      height = bounds.height;
+      canvas.width = Math.floor(width * pixelRatio);
+      canvas.height = Math.floor(height * pixelRatio);
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    };
+
+    const movePointer = (event) => {
+      const bounds = canvas.getBoundingClientRect();
+      const isInHero = event.clientX >= bounds.left && event.clientX <= bounds.right
+        && event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+      pointer.targetX = isInHero ? event.clientX - bounds.left : -1000;
+      pointer.targetY = isInHero ? event.clientY - bounds.top : -1000;
+    };
+
+    const draw = () => {
+      pointer.x += (pointer.targetX - pointer.x) * 0.16;
+      pointer.y += (pointer.targetY - pointer.y) * 0.16;
+      context.clearRect(0, 0, width, height);
+
+      const gap = 34;
+      const influence = 150;
+      for (let y = gap / 2; y < height; y += gap) {
+        for (let x = gap / 2; x < width; x += gap) {
+          const dx = x - pointer.x;
+          const dy = y - pointer.y;
+          const distance = Math.hypot(dx, dy);
+          const strength = Math.max(0, 1 - distance / influence);
+          const offset = strength * strength * 14;
+          const angle = Math.atan2(dy, dx);
+          context.beginPath();
+          context.arc(x + Math.cos(angle) * offset, y + Math.sin(angle) * offset, 1 + strength * 1.5, 0, Math.PI * 2);
+          context.fillStyle = `rgba(31, 64, 96, ${0.12 + strength * 0.48})`;
+          context.fill();
+        }
+      }
+      frameId = requestAnimationFrame(draw);
+    };
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    resize();
+    window.addEventListener("pointermove", movePointer, { passive: true });
+    frameId = requestAnimationFrame(draw);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("pointermove", movePointer);
+      cancelAnimationFrame(frameId);
+    };
+  }, [shouldReduceMotion]);
+
+  return <canvas ref={canvasRef} className="cursor-reactive-dots" aria-hidden="true" />;
+}
+
 function LandingPageView({ onAccessConsole }) {
   return (
     <div className="legal-lens-app">
@@ -665,6 +738,7 @@ function LandingPageView({ onAccessConsole }) {
 
         <section className="premium-hero" id="platform">
           <div className="hero-pattern"></div>
+          <CursorReactiveDots />
 
           <div className="hero-inner">
 
