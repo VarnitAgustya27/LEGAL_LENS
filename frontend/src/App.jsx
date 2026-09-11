@@ -623,7 +623,7 @@ function Icon({ name, size = 20 }) {
 }
 
 
-function CursorReactiveDots() {
+function CursorReactiveDots({ variant = "landing" }) {
   const canvasRef = useRef(null);
   const shouldReduceMotion = useReducedMotion();
 
@@ -633,6 +633,7 @@ function CursorReactiveDots() {
 
     const context = canvas.getContext("2d");
     const pointer = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+    const hues = variant === "login" ? [194, 264, 42, 160] : [209, 270, 34, 168];
     let frameId;
     let width = 0;
     let height = 0;
@@ -661,19 +662,40 @@ function CursorReactiveDots() {
       pointer.y += (pointer.targetY - pointer.y) * 0.16;
       context.clearRect(0, 0, width, height);
 
-      const gap = 34;
-      const influence = 150;
+      const time = performance.now() / 1000;
+      const gap = 42;
+      const influence = 225;
+
+      if (pointer.x > -500) {
+        const glow = context.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, influence);
+        glow.addColorStop(0, "rgba(100, 205, 255, 0.2)");
+        glow.addColorStop(0.42, "rgba(151, 102, 255, 0.08)");
+        glow.addColorStop(1, "rgba(151, 102, 255, 0)");
+        context.fillStyle = glow;
+        context.fillRect(pointer.x - influence, pointer.y - influence, influence * 2, influence * 2);
+      }
+
       for (let y = gap / 2; y < height; y += gap) {
         for (let x = gap / 2; x < width; x += gap) {
           const dx = x - pointer.x;
           const dy = y - pointer.y;
           const distance = Math.hypot(dx, dy);
           const strength = Math.max(0, 1 - distance / influence);
-          const offset = strength * strength * 14;
+          const offset = strength * strength * 30;
           const angle = Math.atan2(dy, dx);
+          const column = Math.floor(x / gap);
+          const row = Math.floor(y / gap);
+          const hue = hues[(column + row * 2) % hues.length];
+          const ambient = Math.sin(time * 1.35 + column * 0.72 + row * 0.48) * 1.4;
           context.beginPath();
-          context.arc(x + Math.cos(angle) * offset, y + Math.sin(angle) * offset, 1 + strength * 1.5, 0, Math.PI * 2);
-          context.fillStyle = `rgba(31, 64, 96, ${0.12 + strength * 0.48})`;
+          context.arc(
+            x + Math.cos(angle) * offset,
+            y + Math.sin(angle) * offset + ambient,
+            1.6 + strength * 3.4,
+            0,
+            Math.PI * 2
+          );
+          context.fillStyle = `hsla(${hue}, 88%, ${52 + strength * 14}%, ${0.18 + strength * 0.7})`;
           context.fill();
         }
       }
@@ -691,9 +713,9 @@ function CursorReactiveDots() {
       window.removeEventListener("pointermove", movePointer);
       cancelAnimationFrame(frameId);
     };
-  }, [shouldReduceMotion]);
+  }, [shouldReduceMotion, variant]);
 
-  return <canvas ref={canvasRef} className="cursor-reactive-dots" aria-hidden="true" />;
+  return <canvas ref={canvasRef} className={`cursor-reactive-dots cursor-reactive-dots--${variant}`} aria-hidden="true" />;
 }
 
 function LandingPageView({ onAccessConsole }) {
@@ -1409,6 +1431,7 @@ function LegalLoginPage({ onLogin, users = [], onBackToPortal }) {
       <div className="login-orb orb-one"></div>
       <div className="login-orb orb-two"></div>
       <div className="login-orb orb-three"></div>
+      <CursorReactiveDots variant="login" />
 
       {/* LEFT SIDE */}
       <div className="login-showcase">
