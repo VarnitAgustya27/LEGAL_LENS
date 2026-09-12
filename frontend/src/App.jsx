@@ -2488,7 +2488,7 @@ function Dashboard({ onOpenInspection, isDark }) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-6 ll-page ll-dashboard-page"
     >
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Inspections" value={stats ? stats.total.toLocaleString() : ""} Icon={ClipboardList} color={C.ink} loading={loading} />
@@ -2773,7 +2773,7 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-4"
+      className="space-y-4 ll-page ll-inspections-page"
     >
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -3634,7 +3634,7 @@ function NewInspection({ onFinish, currentUser }) {
   };
 
   return (
-    <div className="w-full max-w-5xl">
+    <div className="w-full max-w-5xl ll-page ll-new-inspection-page">
 
       {/* SIH Golden Demo Presets (1-Click Compliance Test) - temporarily commented out for demo
       <div className="mb-6 p-4 rounded-sm border" style={{ background: "var(--ll-bg-card)", borderColor: C.gold }}>
@@ -4624,7 +4624,7 @@ function InspectionDetail({ inspection, users = [] }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ll-page ll-inspection-detail-page">
       <input
         ref={canvasUploadRef}
         type="file"
@@ -5429,7 +5429,7 @@ function Products({ onOpenInspection, onNewInspection, users = [] }) {
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-6"
+      className="space-y-6 ll-page ll-products-page"
     >
       <Card padded={false} className="rounded-xl overflow-hidden shadow-sm">
         {/* Header & Filter Toolbar */}
@@ -5604,7 +5604,7 @@ function Products({ onOpenInspection, onNewInspection, users = [] }) {
 function Rules() {
   const [showAdd, setShowAdd] = useState(false);
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 ll-page ll-rules-page">
       <div className="flex items-center justify-between">
         <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 520 }}>
           Rules are versioned so amendments to the Packaged Commodities Rules can be added without changing application code. The deterministic engine always evaluates against the currently active version.
@@ -5823,7 +5823,7 @@ function Reports({ onOpenInspection, users = [] }) {
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-6"
+      className="space-y-6 ll-page ll-reports-page"
     >
       <Card padded={false} className="overflow-x-auto ll-scroll relative rounded-xl shadow-sm">
         {/* Header & Filter Toolbar */}
@@ -6051,7 +6051,7 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ll-page ll-settings-page">
       {/* Toast Notification */}
       {toastMessage && (
         <div
