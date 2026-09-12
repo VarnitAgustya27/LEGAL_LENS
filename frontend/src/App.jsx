@@ -3379,7 +3379,7 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
                 title="Open live QR / barcode scanner"
               >
-                <ScanLine size={13} /> Scan QR / Barcode
+                <ScanLine size={13} /> Scan from Camera
               </motion.button>
             </div>
           </div>
@@ -3489,8 +3489,8 @@ function NewInspection({ onFinish, currentUser }) {
       handleEcomScanSubmit();
       return;
     }
-    if (!images.front && !images.back && !images.ecommerce) {
-      setStepError("Please upload product packaging photos, a listing screenshot, or enter an e-commerce URL.");
+    if (!images.front && !images.back) {
+      setStepError("Please upload product packaging photos or enter an e-commerce URL.");
       return;
     }
     setStepError("");
@@ -3934,62 +3934,43 @@ function NewInspection({ onFinish, currentUser }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-              <div className="lg:col-span-6 flex flex-col justify-center p-5 rounded-xl border space-y-2 min-h-[176px]" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: C.charcoal }}>
-                    <Globe size={14} style={{ color: C.gold }} />
-                    <span className="font-bold">Product E-Listing URL</span>
-                  </label>
-                  {ecomUrl && (
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                      {ecomUrl.includes("amazon") ? "Amazon" : ecomUrl.includes("flipkart") ? "Flipkart" : ecomUrl.includes("blinkit") ? "Blinkit" : ecomUrl.includes("zepto") ? "Zepto" : "E-Commerce"}
-                    </span>
-                  )}
+            <div className="flex flex-col justify-center p-5 rounded-xl border space-y-2" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: C.charcoal }}>
+                  <Globe size={14} style={{ color: C.gold }} />
+                  <span className="font-bold">Product E-Listing URL</span>
+                </label>
+                {ecomUrl && (
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                    {ecomUrl.includes("amazon") ? "Amazon" : ecomUrl.includes("flipkart") ? "Flipkart" : ecomUrl.includes("blinkit") ? "Blinkit" : ecomUrl.includes("zepto") ? "Zepto" : "E-Commerce"}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    style={{ ...inputStyle, paddingLeft: 34, height: 42 }}
+                    placeholder="https://www.amazon.in/dp/... or Flipkart, Blinkit URL"
+                    value={ecomUrl}
+                    onChange={(e) => setEcomUrl(e.target.value)}
+                  />
                 </div>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      style={{ ...inputStyle, paddingLeft: 34, height: 42 }}
-                      placeholder="https://www.amazon.in/dp/... or Flipkart, Blinkit URL"
-                      value={ecomUrl}
-                      onChange={(e) => setEcomUrl(e.target.value)}
-                    />
-                  </div>
-                  {ecomUrl.trim() && (
-                    <button
-                      type="button"
-                      onClick={handleEcomScanSubmit}
-                      disabled={submitting}
-                      className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-sm disabled:opacity-50"
-                    >
-                      {submitting ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
-                      Scan URL
-                    </button>
-                  )}
-                </div>
-                <span className="text-[11px] text-slate-400 leading-relaxed">
-                  Paste product page URL. The engine downloads all product gallery photos & specifications for Rule 6(10) PCR 2011 inspection.
-                </span>
+                {ecomUrl.trim() && (
+                  <button
+                    type="button"
+                    onClick={handleEcomScanSubmit}
+                    disabled={submitting}
+                    className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {submitting ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
+                    Scan URL
+                  </button>
+                )}
               </div>
-
-              <div className="lg:col-span-1 flex items-center justify-center font-mono text-xs font-bold text-slate-400">
-                <span className="px-2 py-1 rounded border" style={{ background: "var(--ll-bg-paper-deep)", borderColor: C.line }}>OR</span>
-              </div>
-
-              <div className="lg:col-span-5 flex flex-col justify-center">
-                <Dropzone
-                  label="Listing Screenshot"
-                  sublabel="Upload file or Press Ctrl + V to paste"
-                  required={false}
-                  imageData={images.ecommerce}
-                  onImageChange={(data) => setImages((prev) => ({ ...prev, ecommerce: data }))}
-                  onRemove={() => setImages((prev) => ({ ...prev, ecommerce: null }))}
-                  onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
-                  heightClass="h-44 sm:h-48"
-                />
-              </div>
+              <span className="text-[11px] text-slate-400 leading-relaxed">
+                Paste product page URL. The engine downloads all product gallery photos & specifications for Rule 6(10) PCR 2011 inspection.
+              </span>
             </div>
           </div>
 
