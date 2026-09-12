@@ -2486,48 +2486,44 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
           </AnimatePresence>
         </div>
 
-        {/* Sleek Mobile Bottom Navigation Bar (Thumb-friendly for mobile officers) */}
+        {/* Dynamic Android Mobile Bottom Navigation Bar */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur-xl px-2 py-1.5 flex items-center justify-around shadow-2xl" style={{ background: "var(--ll-bg-card)", borderColor: C.line }}>
-          <button
-            type="button"
-            onClick={() => setPage("dashboard")}
-            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors cursor-pointer ${page === "dashboard" ? "text-amber-400 font-bold" : "text-slate-400 hover:text-slate-200"}`}
-          >
-            <LayoutDashboard size={18} />
-            <span className="text-[10px] mt-0.5">Home</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPage("inspections")}
-            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors cursor-pointer ${page === "inspections" || page === "inspection-detail" ? "text-amber-400 font-bold" : "text-slate-400 hover:text-slate-200"}`}
-          >
-            <ClipboardList size={18} />
-            <span className="text-[10px] mt-0.5">Cases</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPage("new-inspection")}
-            className={`flex flex-col items-center justify-center -mt-5 p-3 rounded-full shadow-xl transition-all cursor-pointer ${page === "new-inspection" ? "bg-amber-400 text-slate-950 scale-105 shadow-amber-400/40" : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-500/30"}`}
-            title="Start new inspection"
-          >
-            <FilePlus2 size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setPage("products")}
-            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors cursor-pointer ${page === "products" ? "text-amber-400 font-bold" : "text-slate-400 hover:text-slate-200"}`}
-          >
-            <Package size={18} />
-            <span className="text-[10px] mt-0.5">Products</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen(true)}
-            className="flex flex-col items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
-          >
-            <Menu size={18} />
-            <span className="text-[10px] mt-0.5">Menu</span>
-          </button>
+          {navItems.slice(0, 5).map((n) => {
+            const active = page === n.key || (page === "inspection-detail" && n.key === "inspections");
+            const isCenterScan = n.key === "new-inspection";
+
+            if (isCenterScan) {
+              return (
+                <button
+                  key={n.key}
+                  type="button"
+                  onClick={() => setPage(n.key)}
+                  className={`flex flex-col items-center justify-center -mt-5 p-3 rounded-full shadow-xl transition-all cursor-pointer ${
+                    active
+                      ? "bg-emerald-400 text-slate-950 scale-105 shadow-emerald-500/40"
+                      : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/30"
+                  }`}
+                  title="Scan Product"
+                >
+                  <n.Icon size={20} />
+                </button>
+              );
+            }
+
+            return (
+              <button
+                key={n.key}
+                type="button"
+                onClick={() => setPage(n.key)}
+                className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  active ? "text-emerald-400 font-bold" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <n.Icon size={18} strokeWidth={active ? 2.3 : 1.8} />
+                <span className="text-[10px] mt-0.5">{n.label.replace("Catalogue", "").replace("Repository", "")}</span>
+              </button>
+            );
+          })}
         </div>
       </main>
 
