@@ -3912,3 +3912,317 @@ canvas {
       max(0px, env(safe-area-inset-bottom)) !important;
   }
 }
+
+/* =========================================================
+   LEGAL LENS — UNIFIED COMMAND-CENTER VISUAL SYSTEM
+   Public portal, secure login, and officer workspace.
+========================================================= */
+
+:root {
+  --ll-neon-cyan: #5ee7ff;
+  --ll-neon-violet: #9b8cff;
+  --ll-neon-mint: #70f0c0;
+  --ll-night: #060a12;
+  --ll-panel: rgba(13, 21, 35, .78);
+}
+
+/* Public portal */
+.legal-lens-app {
+  background: #070b14;
+  color: #eff7ff;
+}
+
+.main-navbar {
+  background: rgba(7, 11, 20, .74);
+  border-color: rgba(139, 176, 218, .14);
+  box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 18px 48px rgba(0,0,0,.15);
+}
+
+.brand-mark {
+  background: linear-gradient(135deg, #68eaff, #7667ee 58%, #e1a94e);
+  box-shadow: 0 8px 28px rgba(83, 185, 255, .25);
+}
+
+.brand-copy strong { color: #f4f8ff; }
+.brand-copy small { color: #8ca1ba; }
+.nav-menu a { color: #a9b9cd; }
+.nav-menu a:hover { color: var(--ll-neon-cyan); }
+
+.nav-access-button,
+.hero-primary {
+  background: linear-gradient(105deg, #4bcde8, #7f74ec 57%, #b998ea);
+  border: 1px solid rgba(194, 239, 255, .28);
+  box-shadow: 0 12px 34px rgba(76, 154, 255, .22), inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+.nav-access-button:hover,
+.hero-primary:hover {
+  background: linear-gradient(105deg, #75e8fa, #9688ff 57%, #ddb6ff);
+  box-shadow: 0 16px 44px rgba(103, 153, 255, .38), inset 0 1px 0 rgba(255,255,255,.32);
+}
+
+.premium-hero {
+  min-height: 780px;
+  background:
+    radial-gradient(ellipse 55% 64% at 74% 38%, rgba(91, 84, 255, .20), transparent 68%),
+    radial-gradient(ellipse 48% 54% at 12% 12%, rgba(49, 201, 255, .13), transparent 72%),
+    linear-gradient(135deg, #070b14 0%, #0b1423 48%, #100c22 100%);
+}
+
+.hero-pattern {
+  opacity: .68;
+  background-image:
+    linear-gradient(rgba(125, 183, 236, .065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 183, 236, .065) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.official-tag {
+  border-color: rgba(127, 204, 255, .22);
+  background: rgba(106, 198, 255, .07);
+  color: #a8c6e7;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.official-dot { background: var(--ll-neon-mint); box-shadow: 0 0 0 4px rgba(112, 240, 192, .11), 0 0 20px rgba(112, 240, 192, .56); }
+.hero-left h1 { color: #f6f9ff; text-shadow: 0 12px 44px rgba(0,0,0,.22); }
+.hero-left h1 span { color: #8ceaff; }
+.hero-secondary { border-color: rgba(143, 188, 234, .22); background: rgba(255,255,255,.04); color: #d4e2f2; backdrop-filter: blur(14px); }
+.hero-secondary:hover { border-color: rgba(111, 226, 255, .52); color: #fff; background: rgba(77, 186, 255, .11); }
+.technology-strip { border-color: rgba(151, 187, 228, .16); }
+.technology-strip strong { color: #8ceaff; }
+.technology-strip span { color: #92a6bd; }
+.strip-divider { background: rgba(151, 187, 228, .19); }
+
+.compliance-console {
+  position: relative;
+  background: linear-gradient(145deg, rgba(18, 31, 50, .86), rgba(9, 16, 28, .92));
+  border-color: rgba(128, 191, 255, .20);
+  box-shadow: 0 34px 90px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.025) inset;
+  backdrop-filter: blur(25px);
+}
+
+.compliance-console::before {
+  content: "";
+  position: absolute;
+  height: 2px;
+  inset: 0 12% auto;
+  background: linear-gradient(90deg, transparent, var(--ll-neon-cyan), var(--ll-neon-violet), transparent);
+  opacity: .85;
+  box-shadow: 0 0 20px rgba(94, 231, 255, .8);
+}
+
+.console-top, .analysis-heading { border-color: rgba(148, 190, 232, .13); }
+.console-top h3, .analysis-heading strong { color: #eff7ff; }
+.console-eyebrow, .analysis-heading span, .preview-label { color: #8ca7c4; }
+.console-live { color: var(--ll-neon-mint); }
+.console-live span { background: var(--ll-neon-mint); box-shadow: 0 0 12px var(--ll-neon-mint); }
+.product-preview { border-color: rgba(144, 192, 237, .14); background: rgba(1, 7, 16, .17); }
+.analysis-panel { color: #dceafb; }
+.declaration-item { border-color: rgba(148, 190, 232, .10); }
+.score-card { background: linear-gradient(135deg, rgba(77, 194, 255, .11), rgba(127, 93, 255, .10)); border-color: rgba(133, 205, 255, .16); }
+.score-card strong { color: #f4f9ff; }
+.console-footer { background: rgba(4, 10, 18, .48); border-color: rgba(148, 190, 232, .12); color: #7f9bb7; }
+
+.trust-bar { background: #0a111e; border-color: rgba(141, 185, 228, .13); }
+.trust-bar > div { color: var(--ll-neon-cyan); }
+.trust-bar span { color: #8fa7c0; }
+.trust-bar strong { color: #e1edf9; }
+.capabilities-section, .mission-section { background: #080e19; }
+.section-intro h2, .mission-left h2 { color: #f3f8ff; }
+.section-intro > p, .mission-right p { color: #9db1c7; }
+.premium-feature { background: linear-gradient(145deg, rgba(20, 32, 51, .9), rgba(10, 17, 29, .94)); border-color: rgba(138, 186, 234, .14); box-shadow: inset 0 1px 0 rgba(255,255,255,.035); }
+.premium-feature:hover { border-color: rgba(102, 224, 255, .54); box-shadow: 0 22px 56px rgba(0,0,0,.25), 0 0 24px rgba(86, 207, 255, .10); }
+.premium-icon { background: linear-gradient(135deg, rgba(87, 220, 255, .16), rgba(137, 103, 255, .12)); color: var(--ll-neon-cyan); border: 1px solid rgba(107, 215, 255, .18); }
+.premium-feature h3 { color: #edf6ff; }
+.premium-feature p, .feature-number { color: #92a8bf; }
+.feature-bottom { border-color: rgba(148, 190, 232, .12); color: var(--ll-neon-cyan); }
+.workflow-section { background: radial-gradient(ellipse at 50% 0%, rgba(95, 85, 255, .18), transparent 50%), #080d18; }
+.step-icon { background: linear-gradient(145deg, rgba(74, 207, 255, .15), rgba(115, 84, 235, .13)); border-color: rgba(134, 200, 255, .20); color: #9beaff; box-shadow: 0 10px 35px rgba(35, 163, 255, .12); }
+.workflow-connector { background: linear-gradient(90deg, transparent, rgba(95, 228, 255, .62), rgba(149, 115, 255, .62), transparent); }
+.mission-tags span { background: rgba(112, 198, 255, .08); border: 1px solid rgba(126, 204, 255, .14); color: #b3cee7; }
+.enterprise-cta { background: radial-gradient(circle at 50% 0%, rgba(81, 214, 255, .22), transparent 42%), radial-gradient(circle at 80% 85%, rgba(141, 99, 255, .18), transparent 36%), #070c16; }
+
+/* Officer login */
+.legal-login-page { background: #070b14; }
+.login-showcase { background: linear-gradient(135deg, rgba(5, 13, 25, .97), rgba(10, 28, 49, .95) 56%, rgba(20, 13, 43, .96)); }
+.login-panel { background: linear-gradient(145deg, rgba(10, 17, 30, .98), rgba(16, 14, 32, .98)); border-left: 1px solid rgba(132, 192, 241, .13); }
+.login-form-container { color: #e9f3ff; }
+.login-form-container h2 { color: #f5f9ff; }
+.login-form-container p, .login-form-container label { color: #9bb0c8; }
+.login-form-container input { background: rgba(2, 8, 16, .5); border-color: rgba(145, 195, 240, .18); color: #eef7ff; }
+.login-form-container input:focus { border-color: rgba(94, 231, 255, .7) !important; box-shadow: 0 0 0 4px rgba(74, 205, 255, .10) !important; }
+
+/* Authenticated application: consistent high-contrast surfaces across every route. */
+.ll-root.dark { background: #060a12 !important; }
+.ll-root.dark > main { background: radial-gradient(ellipse at 86% -8%, rgba(95, 91, 255, .14), transparent 38%), radial-gradient(ellipse at 6% 26%, rgba(40, 200, 255, .10), transparent 33%), #080d17 !important; }
+.ll-root.dark > main > header { background: rgba(8, 14, 25, .72) !important; border-color: rgba(141, 187, 231, .13) !important; box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 10px 35px rgba(0,0,0,.14); }
+.ll-root.dark > aside { background: linear-gradient(180deg, #080f1c, #060a12) !important; border-right-color: rgba(141, 187, 231, .12) !important; }
+.ll-root.dark aside nav button:hover { background: linear-gradient(90deg, rgba(78, 217, 255, .09), rgba(132, 103, 255, .06)) !important; }
+.ll-root.dark .fut-page-hero { border-color: rgba(123, 200, 255, .18); background: linear-gradient(135deg, rgba(17, 31, 52, .94), rgba(8, 14, 25, .92)); box-shadow: 0 26px 76px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05); }
+.ll-root.dark .fut-hero-icon { color: var(--ll-neon-cyan); border-color: rgba(99, 223, 255, .30); background: linear-gradient(145deg, rgba(66, 209, 255, .17), rgba(107, 80, 255, .12)); }
+.ll-root.dark .fut-live-dot { box-shadow: 0 0 16px rgba(112, 240, 192, .92); }
+.ll-root.dark .fut-page [class*="rounded-xl"].border,
+.ll-root.dark .fut-page [class*="rounded-2xl"].border { border-color: rgba(139, 187, 233, .15) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.025); }
+.ll-root.dark .fut-page table tbody tr:hover { box-shadow: inset 3px 0 0 var(--ll-neon-cyan), 0 8px 26px rgba(0,0,0,.12); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .premium-hero { background-size: 120% 120%; animation: llAtmosphere 16s ease-in-out infinite alternate; }
+}
+
+@keyframes llAtmosphere {
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 60%; }
+}
+
+@media (max-width: 768px) {
+  .main-navbar { height: 68px; }
+  .navbar-inner { padding: 0 18px; }
+  .nav-menu { display: none; }
+  .premium-hero { min-height: auto; }
+  .hero-inner { padding: 62px 22px; }
+  .trust-bar { padding: 14px 22px; gap: 18px; }
+  .capabilities-section, .mission-section { padding: 74px 22px; }
+  .workflow-section, .enterprise-cta { padding: 76px 22px; }
+}
+
+/* Route-level workspace treatments */
+.ll-root.dark .ll-page { position: relative; }
+
+.ll-root.dark .ll-page > .border {
+  border-color: rgba(137, 191, 241, .17) !important;
+  background: linear-gradient(145deg, rgba(16, 28, 46, .88), rgba(9, 16, 29, .92)) !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+
+.ll-root.dark .ll-page > .border:hover { border-color: rgba(104, 224, 255, .28) !important; }
+
+/* Dashboard: metric tiles, charts, and alert data */
+.ll-root.dark .ll-dashboard-page > .grid:first-child > div {
+  border: 1px solid rgba(136, 194, 244, .17);
+  background: linear-gradient(145deg, rgba(19, 33, 54, .96), rgba(9, 17, 30, .96));
+  box-shadow: 0 16px 42px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.ll-root.dark .ll-dashboard-page > .grid:first-child > div::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 100% 0%, rgba(84, 205, 255, .12), transparent 38%);
+}
+
+.ll-root.dark .ll-dashboard-page > .grid:first-child > div:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(103, 226, 255, .42);
+  box-shadow: 0 24px 58px rgba(0,0,0,.24), 0 0 28px rgba(63, 188, 255, .08);
+}
+
+.ll-root.dark .ll-dashboard-page .recharts-cartesian-grid line { stroke: rgba(143, 187, 229, .14); }
+.ll-root.dark .ll-dashboard-page .recharts-tooltip-wrapper { filter: drop-shadow(0 16px 30px rgba(0,0,0,.28)); }
+
+/* Inspections: make the search-and-filter bar feel like a control rail. */
+.ll-root.dark .ll-inspections-page > .flex:first-child {
+  padding: 12px;
+  border: 1px solid rgba(137, 191, 241, .15);
+  border-radius: 18px;
+  background: rgba(6, 13, 24, .50);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.ll-root.dark .ll-inspections-page input,
+.ll-root.dark .ll-inspections-page select,
+.ll-root.dark .ll-products-page input,
+.ll-root.dark .ll-products-page select,
+.ll-root.dark .ll-reports-page input,
+.ll-root.dark .ll-reports-page select,
+.ll-root.dark .ll-settings-page input,
+.ll-root.dark .ll-settings-page select {
+  background: rgba(4, 11, 21, .70) !important;
+  border-color: rgba(138, 190, 239, .17) !important;
+  color: #e7f2ff !important;
+}
+
+.ll-root.dark .ll-inspections-page table thead,
+.ll-root.dark .ll-products-page table thead,
+.ll-root.dark .ll-reports-page table thead {
+  background: linear-gradient(90deg, rgba(54, 141, 196, .15), rgba(116, 84, 198, .10)) !important;
+}
+
+.ll-root.dark .ll-inspections-page table tbody tr:hover,
+.ll-root.dark .ll-products-page table tbody tr:hover,
+.ll-root.dark .ll-reports-page table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(75, 209, 255, .08), rgba(141, 104, 255, .05)) !important;
+  box-shadow: inset 3px 0 0 var(--ll-neon-cyan);
+}
+
+/* New inspection: a clearly staged review workflow. */
+.ll-root.dark .ll-new-inspection-page > .flex.items-center.mb-8 {
+  padding: 15px 18px;
+  border: 1px solid rgba(130, 188, 239, .17);
+  border-radius: 20px;
+  background: linear-gradient(90deg, rgba(10, 23, 39, .82), rgba(12, 14, 32, .72));
+  box-shadow: 0 14px 36px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.ll-root.dark .ll-new-inspection-page > .flex.items-center.mb-8 > div > div:first-child > div:first-child {
+  box-shadow: 0 0 18px rgba(95, 226, 255, .24);
+}
+
+.ll-root.dark .ll-new-inspection-page .border-dashed {
+  border-color: rgba(99, 218, 255, .32) !important;
+  background: linear-gradient(135deg, rgba(47, 172, 225, .06), rgba(132, 88, 255, .05)) !important;
+}
+
+/* Products and reports: archive headers become premium data surfaces. */
+.ll-root.dark .ll-products-page > .border > div:first-child,
+.ll-root.dark .ll-reports-page > .border > div:first-child {
+  position: relative;
+  background: linear-gradient(100deg, rgba(20, 45, 70, .88), rgba(18, 22, 49, .85)) !important;
+}
+
+.ll-root.dark .ll-products-page > .border > div:first-child::after,
+.ll-root.dark .ll-reports-page > .border > div:first-child::after {
+  content: "";
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(96, 231, 255, .70), rgba(151, 111, 255, .56), transparent);
+}
+
+.ll-root.dark .ll-products-page [class*="rounded-full"],
+.ll-root.dark .ll-reports-page [class*="rounded-full"] {
+  border-color: rgba(120, 203, 255, .20) !important;
+  background: rgba(85, 192, 255, .07) !important;
+}
+
+/* Rules and administration: careful, auditable surfaces. */
+.ll-root.dark .ll-rules-page > .flex:first-child {
+  padding: 20px 22px;
+  border: 1px solid rgba(137, 191, 241, .15);
+  border-radius: 18px;
+  background: linear-gradient(100deg, rgba(17, 34, 54, .78), rgba(12, 18, 34, .76));
+}
+
+.ll-root.dark .ll-rules-page [class*="rule"],
+.ll-root.dark .ll-settings-page > .border {
+  box-shadow: 0 18px 48px rgba(0,0,0,.17), inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.ll-root.dark .ll-settings-page > .border:first-of-type {
+  border-left-color: var(--ll-neon-cyan) !important;
+  background: linear-gradient(105deg, rgba(12, 42, 53, .86), rgba(12, 19, 36, .90)) !important;
+}
+
+.ll-root.dark .ll-settings-page .grid > .border {
+  border-color: rgba(137, 191, 241, .15) !important;
+  background: linear-gradient(145deg, rgba(18, 31, 51, .84), rgba(10, 16, 28, .94)) !important;
+}
+
+@media (max-width: 768px) {
+  .ll-root.dark .ll-inspections-page > .flex:first-child,
+  .ll-root.dark .ll-rules-page > .flex:first-child { padding: 10px; border-radius: 15px; }
+  .ll-root.dark .ll-new-inspection-page > .flex.items-center.mb-8 { padding: 12px; border-radius: 16px; }
+}
