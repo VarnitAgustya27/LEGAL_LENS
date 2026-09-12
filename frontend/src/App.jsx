@@ -2372,33 +2372,63 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -6 }}
                     transition={{ duration: 0.16, ease: "easeOut" }}
-                    className="absolute right-0 mt-2 w-56 rounded-xl border shadow-2xl overflow-hidden z-50 backdrop-blur-md"
+                    className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-32px)] rounded-xl border shadow-2xl overflow-hidden z-50 backdrop-blur-md"
                     style={{ background: "var(--ll-bg-card)", borderColor: C.line }}
                   >
-                    <div className="px-4 py-3 border-b md:hidden" style={{ borderColor: C.line }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{currentUser?.name || "Officer"}</div>
-                      <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}>{currentUser?.role || "Enforcement"}</div>
+                    {/* User Info Header */}
+                    <div className="px-4 py-3 border-b" style={{ borderColor: C.line, background: "rgba(255,255,255,0.02)" }}>
+                      <div className="text-xs font-bold truncate" style={{ color: C.ink }}>
+                        {currentUser?.name || "Enforcement Officer"}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5 flex items-center justify-between">
+                        <span>{currentUser?.badge || "Badge: LL-042"}</span>
+                        <span
+                          className="px-2 py-0.5 rounded-full border text-[9.5px] font-bold"
+                          style={{ background: roleBadgeStyle.bg, color: roleBadgeStyle.color, borderColor: roleBadgeStyle.bd }}
+                        >
+                          {currentUser?.role || "Officer"}
+                        </span>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="ll-focus w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors cursor-pointer whitespace-nowrap hover:bg-slate-500/10"
-                      style={{ color: "var(--ll-violation)", background: "transparent", border: "none", fontSize: 13, fontWeight: 600 }}
-                      onClick={handleSignOut}
-                    >
-                      <LogOut size={14} />
-                      Sign out
-                    </button>
+
+                    {/* Action: Update Profile Photo */}
                     <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
                     <button
                       type="button"
                       role="menuitem"
-                      className="ll-focus w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors cursor-pointer border-t whitespace-nowrap hover:bg-slate-500/10"
-                      style={{ color: C.ink, borderColor: C.line, background: "transparent", fontSize: 13, fontWeight: 500 }}
-                      onClick={() => avatarFileRef.current?.click()}
+                      className="ll-focus w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer hover:bg-slate-500/10"
+                      style={{ color: C.ink, background: "transparent", fontSize: 13, fontWeight: 500 }}
+                      onClick={() => {
+                        setProfileOpen(false);
+                        avatarFileRef.current?.click();
+                      }}
                     >
-                      <Camera size={14} style={{ color: C.gold }} />
-                      <span>{avatarUrl ? "Update Profile Photo" : "Add Profile Photo"}</span>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                        <Camera size={14} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-xs leading-tight">Profile Photo</div>
+                        <div className="text-[10.5px] text-slate-400 leading-tight mt-0.5">
+                          {avatarUrl ? "Change or crop photo" : "Add custom photo"}
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Action: Sign Out */}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="ll-focus w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer border-t hover:bg-red-500/10"
+                      style={{ color: "var(--ll-violation)", borderColor: C.line, background: "transparent", fontSize: 13, fontWeight: 600 }}
+                      onClick={handleSignOut}
+                    >
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-500/15 border border-red-500/30 text-red-400">
+                        <LogOut size={14} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-xs leading-tight">Sign out</div>
+                        <div className="text-[10.5px] text-red-400/70 leading-tight mt-0.5">End active session</div>
+                      </div>
                     </button>
                   </motion.div>
                 )}
