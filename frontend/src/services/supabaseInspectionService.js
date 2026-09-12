@@ -13,6 +13,8 @@ function mapResultToRow(result, currentUser) {
     ? rawStatus
     : 'REVIEW';
 
+  const isConsumerRole = currentUser?.role === 'Consumer';
+
   return {
     case_number: result.case_number || result.id || result.inspection_no,
     product_name: result.product || result.product_name || 'Packaged Commodity',
@@ -21,9 +23,12 @@ function mapResultToRow(result, currentUser) {
     location: result.location || null,
     status,
     score: typeof result.score === 'number' ? result.score : 0,
-    inspector_name: currentUser?.name || currentUser?.full_name || 'Authorized Officer',
-    inspector_badge: currentUser?.badge || currentUser?.badge_number || null,
+    inspector_name: currentUser?.name || currentUser?.full_name || (isConsumerRole ? 'Consumer' : 'Authorized Officer'),
+    inspector_badge: isConsumerRole ? null : (currentUser?.badge || currentUser?.badge_number || null),
     inspector_email: currentUser?.email || null,
+    inspector_role: currentUser?.role || (isConsumerRole ? 'Consumer' : 'Officer'),
+    is_consumer: isConsumerRole || result.is_consumer || false,
+    is_officer_internal: !isConsumerRole && (result.is_officer_internal || Boolean(currentUser?.badge)),
     declarations: declarations,
     violations: Array.isArray(result.violations) ? result.violations : [],
     images: Array.isArray(result.images) ? result.images : [],

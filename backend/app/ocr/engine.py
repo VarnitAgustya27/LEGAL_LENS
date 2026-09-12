@@ -78,9 +78,19 @@ class OCREngine:
             except Exception as e:
                 print(f"[OCREngine] EasyOCR execution exception on {image_path}: {e}")
 
-        # 2. Fallback: Contextual Golden Preset Detections (for synthetic demo cases)
+        # 2. Contextual Golden Preset Detections are permitted only for explicitly
+        # named synthetic demo fixtures. Never substitute a generic label for a
+        # real uploaded image: that would create fabricated evidence.
         if len(results) < 3:
-            results = self._generate_contextual_detections(image_path, image_id)
+            demo_markers = ("missing_mrp", "missing_mfr", "imported", "blurry", "poor")
+            filename = os.path.basename(image_path).lower() if image_path else ""
+            if any(marker in filename for marker in demo_markers):
+                results = self._generate_contextual_detections(image_path, image_id)
+            else:
+                print(
+                    f"[OCREngine] Insufficient OCR evidence for {os.path.basename(image_path)}; "
+                    "returning no declarations for officer review."
+                )
 
         return results
 
@@ -120,15 +130,4 @@ class OCREngine:
                 {"text": "Net Q... 200", "confidence": 0.38, "bbox": [280, 220, 330, 450], "image_id": image_id},
                 {"text": "MRP ... (incl...)", "confidence": 0.45, "bbox": [360, 220, 420, 550], "image_id": image_id}
             ]
-        else:
-            return [
-                {"text": "NUTRIMAX GLUCOSE BISCUITS 200g", "confidence": 0.98, "bbox": [120, 200, 180, 800], "image_id": image_id},
-                {"text": "Net Quantity: 200 g", "confidence": 0.99, "bbox": [280, 220, 330, 520], "image_id": image_id},
-                {"text": "Max. Retail Price: Rs. 25.00 (Inclusive of all taxes)", "confidence": 0.96, "bbox": [360, 220, 420, 780], "image_id": image_id},
-                {"text": "Manufactured By: Nutrimax Foods Pvt. Ltd., Industrial Area Phase-2, New Delhi - 110020", "confidence": 0.97, "bbox": [460, 200, 530, 850], "image_id": image_id},
-                {"text": "Mfg. Date: 08/2026", "confidence": 0.95, "bbox": [560, 220, 610, 450], "image_id": image_id},
-                {"text": "Best Before: 6 Months from Packaging", "confidence": 0.94, "bbox": [630, 220, 680, 620], "image_id": image_id},
-                {"text": "Consumer Care Helpline: 1800-11-4820 | Email: care@nutrimaxfoods.in", "confidence": 0.92, "bbox": [710, 180, 770, 830], "image_id": image_id},
-                {"text": "Country of Origin: India", "confidence": 0.96, "bbox": [800, 220, 850, 500], "image_id": image_id},
-                {"text": "Unit Sale Price: Rs. 0.125 / g", "confidence": 0.91, "bbox": [870, 220, 920, 520], "image_id": image_id}
-            ]
+        return []

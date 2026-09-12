@@ -193,7 +193,7 @@ export default function RuleBookPanel({ rules = [] }) {
               className="text-xl sm:text-2xl font-bold tracking-tight"
               style={{ color: "var(--ll-color-ink)" }}
             >
-              Product Rule Book & Regulatory Matrix
+              Product Rule Book & Citizen Rights Matrix
             </h2>
 
             <p

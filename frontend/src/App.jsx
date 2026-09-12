@@ -1,6 +1,10 @@
 import ApiService from "./services/api.js";
 import { RULE_BOOK_DATA } from "./components/rulebook/ruleBookData.js";
 import RuleBookPanel from "./components/rulebook/RuleBookPanel.jsx";
+import LegalLoginPage from "./components/auth/LegalLoginPage.jsx";
+import CustomerDashboard from "./components/consumer/CustomerDashboard.jsx";
+import ProductComparison from "./components/consumer/ProductComparison.jsx";
+import CustomerAccountSettings from "./components/consumer/CustomerAccountSettings.jsx";
 import { saveInspection, fetchInspections, fetchInspectionByCase, mapSupabaseRowToInspection, mapBackendInspectionToFrontend, fetchDashboardStats, fetchReportsFromSupabase } from "./services/supabaseInspectionService.js";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -761,13 +765,22 @@ function LandingPageView({ onAccessConsole }) {
             <a href="#mission">Mission</a>
           </nav>
 
-          <button
-            className="nav-access-button"
-            onClick={onAccessConsole}
-          >
-            Officer Access
-            <Icon name="arrow" size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md hover:brightness-110"
+              onClick={() => onAccessConsole && onAccessConsole("Customer")}
+              style={{ background: "#10B981", color: "#060A11" }}
+            >
+              <span>🛍</span> Customer Login
+            </button>
+            <button
+              className="nav-access-button"
+              onClick={() => onAccessConsole && onAccessConsole("Officer")}
+            >
+              Officer Access
+              <Icon name="arrow" size={16} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -794,14 +807,22 @@ function LandingPageView({ onAccessConsole }) {
                 <span>for packaged commodities.</span>
               </h1>
 
-              <div className="hero-actions">
+              <div className="hero-actions flex flex-wrap gap-3">
                 <button
                   className="hero-primary"
-                  onClick={onAccessConsole}
+                  onClick={() => onAccessConsole && onAccessConsole("Officer")}
                 >
                   <Icon name="scan" size={19} />
-                  Launch Compliance Console
+                  Officer Console
                   <Icon name="arrow" size={18} />
+                </button>
+
+                <button
+                  className="hero-primary font-bold shadow-lg flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
+                  onClick={() => onAccessConsole && onAccessConsole("Customer")}
+                  style={{ background: "#10B981", color: "#060A11", borderColor: "#10B981" }}
+                >
+                  <span>🛍</span> Customer Login
                 </button>
 
                 <a href="#capabilities" className="hero-secondary">
@@ -1354,7 +1375,7 @@ function LandingPageView({ onAccessConsole }) {
 
 
 
-function LegalLoginPage({ onLogin, users = [], onBackToPortal }) {
+function LegacyInlineLegalLoginPage({ onLogin, users = [], onBackToPortal }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -2039,8 +2060,18 @@ const NAV = [
   { key: "settings", label: "Users & Settings", Icon: Settings },
 ];
 
+const CONSUMER_NAV = [
+  { key: "dashboard", label: "Consumer Hub", Icon: LayoutDashboard },
+  { key: "new-inspection", label: "Scan Product", Icon: ScanLine },
+  { key: "compare", label: "Compare Products", Icon: Scale },
+  { key: "inspections", label: "Scanned History", Icon: ClipboardList },
+  { key: "rules", label: "Rule Repository", Icon: ScrollText },
+  { key: "account", label: "Manage Account", Icon: User },
+];
+
 const PAGE_TITLES = {
   dashboard: ["OVERVIEW", "Enforcement Dashboard"],
+  compare: ["PRODUCT COMPARISON", "Compare Packaged Products"],
   inspections: ["CASE REGISTER", "Inspections"],
   "new-inspection": ["NEW CASE", "New Inspection"],
   "inspection-detail": ["CASE FILE", "Inspection Result"],
@@ -2048,9 +2079,12 @@ const PAGE_TITLES = {
   rules: ["LEGAL FRAMEWORK", "Rule Repository"],
   reports: ["ARCHIVE", "Inspection Reports"],
   settings: ["ADMINISTRATION", "Users & Settings"],
+  account: ["PROFILE", "Manage Account & Preferences"],
 };
 
 function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, toggleTheme, isDbConnected, onSignOut, children }) {
+  const isConsumer = currentUser?.role === "Consumer";
+  const navItems = isConsumer ? CONSUMER_NAV : NAV;
   const [eyebrow, title] = PAGE_TITLES[page] || ["", ""];
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -2174,7 +2208,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
         </div>
 
         <nav className="flex-1 py-4 px-3 overflow-y-auto ll-scroll space-y-1">
-          {NAV.map((n) => {
+          {navItems.map((n) => {
             const active = page === n.key || (page === "inspection-detail" && n.key === "inspections");
             return (
               <motion.button
@@ -2255,7 +2289,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
               </div>
 
               <nav className="flex-1 py-4 px-3 overflow-y-auto space-y-1">
-                {NAV.map((n) => {
+                {navItems.map((n) => {
                   const active = page === n.key || (page === "inspection-detail" && n.key === "inspections");
                   return (
                     <button
@@ -7248,7 +7282,7 @@ export default function App() {
 
   const [page, setPage] = useState(() => {
     const savedUser = localStorage.getItem("legallens_current_user");
-    if (!savedUser) return "login";
+    if (!savedUser) return "landing";
     return localStorage.getItem("legallens_active_page") || "dashboard";
   });
 
@@ -7541,22 +7575,21 @@ export default function App() {
 
   const handleSwitchRole = (newRole) => {
     const found = users.find((u) => u.role === newRole) || {
-      id: "DEMO",
-      name: newRole === "Admin" ? "Poonam Desai" : newRole === "Reviewer" ? "Sanjay Iyer" : "Enforcement Officer",
+      id: newRole === "Consumer" ? "USR-006" : "DEMO",
+      name: newRole === "Admin" ? "Poonam Desai" : newRole === "Reviewer" ? "Sanjay Iyer" : newRole === "Consumer" ? "Rajesh Kumar (Citizen)" : "Enforcement Officer",
       role: newRole,
-      email: `${newRole.toLowerCase().replace(" ", ".")}@lm.gov.in`,
-      badge: newRole === "Admin" ? "LMD-HQ-001" : "LM-DL-842",
-      jurisdiction: "Delhi Division",
+      email: newRole === "Consumer" ? "consumer@gmail.com" : `${newRole.toLowerCase().replace(" ", ".")}@lm.gov.in`,
+      badge: newRole === "Admin" ? "LMD-HQ-001" : newRole === "Consumer" ? "CITIZEN-DL-901" : "LM-DL-842",
+      jurisdiction: newRole === "Consumer" ? "Public Consumer Portal" : "Delhi Division",
       active: true,
-      initials: newRole === "Admin" ? "PD" : "EO",
+      initials: newRole === "Admin" ? "PD" : newRole === "Consumer" ? "RK" : "EO",
     };
     setCurrentUser(found);
   };
 
 
-  const [showLogin, setShowLogin] = useState(() => {
-    return localStorage.getItem("legallens_show_login") === "true";
-  });
+  const [loginTabMode, setLoginTabMode] = useState("officer");
+  const [showLogin, setShowLogin] = useState(false);
 
   const handleSetShowLogin = (val) => {
     setShowLogin(val);
@@ -7567,6 +7600,8 @@ export default function App() {
     if (showLogin || page === "login") {
       return (
         <LegalLoginPage
+          key={loginTabMode}
+          initialTab={loginTabMode}
           users={users}
           onLogin={(user) => {
             const sessionUser = publicOfficerProfile(user);
@@ -7577,7 +7612,7 @@ export default function App() {
           }}
           onBackToPortal={() => {
             handleSetShowLogin(false);
-            navigateTo("portal");
+            navigateTo("landing");
           }}
         />
       );
@@ -7585,7 +7620,12 @@ export default function App() {
 
     return (
       <LandingPageView
-        onAccessConsole={() => {
+        onAccessConsole={(mode) => {
+          if (mode === "Consumer" || mode === "Customer") {
+            setLoginTabMode("customer");
+          } else {
+            setLoginTabMode("officer");
+          }
           handleSetShowLogin(true);
           navigateTo("login");
         }}
@@ -7607,32 +7647,80 @@ export default function App() {
         onSignOut={() => {
           setCurrentUser(null);
           localStorage.removeItem("legallens_current_user");
-          handleSetShowLogin(true);
-          navigateTo("login");
+          handleSetShowLogin(false);
+          navigateTo("landing");
         }}
       >
         {page === "dashboard" && (
-          <Dashboard
-            isDark={isDark}
-            onOpenInspection={async (i) => {
-              let fullObj = i;
-              if (i?.case_number) {
-                try {
-                  const { data } = await fetchInspectionByCase(i.case_number);
-                  if (data) fullObj = mapSupabaseRowToInspection(data);
-                } catch (e) {
-                  console.warn("Dashboard onOpenInspection fetch warning:", e);
+          currentUser?.role === "Consumer" ? (
+            <CustomerDashboard
+              currentUser={currentUser}
+              isDark={isDark}
+              onNewInspection={() => navigateTo("new-inspection")}
+              onCompareProducts={() => navigateTo("compare")}
+              onOpenHistory={() => navigateTo("inspections")}
+              onOpenRules={() => navigateTo("rules")}
+              onOpenAccount={() => navigateTo("account")}
+              onOpenInspection={async (i) => {
+                let fullObj = i;
+                if (i?.case_number) {
+                  try {
+                    const { data } = await fetchInspectionByCase(i.case_number);
+                    if (data) fullObj = mapSupabaseRowToInspection(data);
+                  } catch (e) {
+                    console.warn("CustomerDashboard onOpenInspection warning:", e);
+                  }
                 }
-              }
-              setSelectedInspection(fullObj);
-              localStorage.setItem("legallens_current_inspection", JSON.stringify(fullObj));
+                setSelectedInspection(fullObj);
+                localStorage.setItem("legallens_current_inspection", JSON.stringify(fullObj));
+                navigateTo("inspection-detail");
+              }}
+            />
+          ) : (
+            <Dashboard
+              isDark={isDark}
+              currentUser={currentUser}
+              onNewInspection={() => navigateTo("new-inspection")}
+              onOpenInspection={async (i) => {
+                let fullObj = i;
+                if (i?.case_number) {
+                  try {
+                    const { data } = await fetchInspectionByCase(i.case_number);
+                    if (data) fullObj = mapSupabaseRowToInspection(data);
+                  } catch (e) {
+                    console.warn("Dashboard onOpenInspection fetch warning:", e);
+                  }
+                }
+                setSelectedInspection(fullObj);
+                localStorage.setItem("legallens_current_inspection", JSON.stringify(fullObj));
+                navigateTo("inspection-detail");
+              }}
+            />
+          )
+        )}
+        {page === "compare" && (
+          <ProductComparison
+            currentUser={currentUser}
+            onScanNew={() => navigateTo("new-inspection")}
+            onOpenDetail={(i) => {
+              setSelectedInspection(i);
+              localStorage.setItem("legallens_current_inspection", JSON.stringify(i));
               navigateTo("inspection-detail");
             }}
+          />
+        )}
+        {page === "account" && (
+          <CustomerAccountSettings
+            currentUser={currentUser}
+            avatarUrl={avatarUrl}
+            onUpdateAvatar={handleUpdateAvatar}
+            isDark={isDark}
           />
         )}
         {page === "inspections" && (
           <InspectionsList
             users={users}
+            currentUser={currentUser}
             onOpen={(i) => { setSelectedInspection(i); localStorage.setItem("legallens_current_inspection", JSON.stringify(i)); navigateTo("inspection-detail"); }}
             onNew={() => navigateTo("new-inspection")}
           />
@@ -7651,26 +7739,49 @@ export default function App() {
             }}
           />
         )}
-        {page === "inspection-detail" && <InspectionDetail inspection={selectedInspection} users={users} />}
-        {page === "products" && (
-          <Products
+        {page === "inspection-detail" && (
+          <InspectionDetail
+            inspection={selectedInspection}
             users={users}
-            onOpenInspection={async (i) => {
-              let fullObj = i;
-              if (i?.case_number) {
-                try {
-                  const { data } = await fetchInspectionByCase(i.case_number);
-                  if (data) fullObj = mapSupabaseRowToInspection(data);
-                } catch (e) {
-                  console.warn("Products onOpenInspection fetch warning:", e);
-                }
-              }
-              setSelectedInspection(fullObj);
-              localStorage.setItem("legallens_current_inspection", JSON.stringify(fullObj));
-              navigateTo("inspection-detail");
+            currentUser={currentUser}
+            onSubmitGrievance={(grievanceObj) => {
+              setSelectedInspection(grievanceObj);
+              localStorage.setItem("legallens_current_inspection", JSON.stringify(grievanceObj));
+              // Save grievance to Supabase if configured
+              saveInspection(grievanceObj, currentUser).catch((err) =>
+                console.warn("[onSubmitGrievance] Supabase save failed:", err)
+              );
             }}
-            onNewInspection={() => navigateTo("new-inspection")}
           />
+        )}
+        {page === "products" && (
+          currentUser?.role === "Consumer" ? (
+            <div className="p-12 text-center text-slate-300 bg-slate-900/40 rounded-2xl border border-slate-800 my-8 max-w-lg mx-auto">
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto mb-3 text-xl font-bold">🛡</div>
+              <h3 className="text-base font-bold text-slate-100 mb-1">Access Restricted</h3>
+              <p className="text-xs text-slate-400">Products catalogue and officer audit trails are restricted to Legal Metrology Enforcement Officers.</p>
+            </div>
+          ) : (
+            <Products
+              users={users}
+              currentUser={currentUser}
+              onOpenInspection={async (i) => {
+                let fullObj = i;
+                if (i?.case_number) {
+                  try {
+                    const { data } = await fetchInspectionByCase(i.case_number);
+                    if (data) fullObj = mapSupabaseRowToInspection(data);
+                  } catch (e) {
+                    console.warn("Products onOpenInspection fetch warning:", e);
+                  }
+                }
+                setSelectedInspection(fullObj);
+                localStorage.setItem("legallens_current_inspection", JSON.stringify(fullObj));
+                navigateTo("inspection-detail");
+              }}
+              onNewInspection={() => navigateTo("new-inspection")}
+            />
+          )
         )}
         {page === "rules" && <Rules />}
         {page === "reports" && (
@@ -7684,18 +7795,26 @@ export default function App() {
           />
         )}
         {page === "settings" && (
-          <SettingsPage
-            users={users}
-            currentUser={currentUser}
-            onAddUser={handleAddUser}
-            onUpdateUser={handleUpdateUser}
-            onDeleteUser={handleDeleteUser}
-            onSwitchRole={handleSwitchRole}
-            isDbConnected={isDbConnected}
-            onRefreshDb={fetchSupabaseUsers}
-            onSeedDb={handleSeedDb}
-            loadingDb={loadingDb}
-          />
+          currentUser?.role === "Consumer" ? (
+            <div className="p-12 text-center text-slate-300 bg-slate-900/40 rounded-2xl border border-slate-800 my-8 max-w-lg mx-auto">
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto mb-3 text-xl font-bold">🛡</div>
+              <h3 className="text-base font-bold text-slate-100 mb-1">Access Restricted</h3>
+              <p className="text-xs text-slate-400">User management & system settings are restricted to Legal Metrology Officers and Administrators.</p>
+            </div>
+          ) : (
+            <SettingsPage
+              users={users}
+              currentUser={currentUser}
+              onAddUser={handleAddUser}
+              onUpdateUser={handleUpdateUser}
+              onDeleteUser={handleDeleteUser}
+              onSwitchRole={handleSwitchRole}
+              isDbConnected={isDbConnected}
+              onRefreshDb={fetchSupabaseUsers}
+              onSeedDb={handleSeedDb}
+              loadingDb={loadingDb}
+            />
+          )
         )}
       </Shell>
     </ErrorBoundary>

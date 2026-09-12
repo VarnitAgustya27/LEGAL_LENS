@@ -45,3 +45,14 @@ def test_imported_missing_country_of_origin(rule_engine):
     res = rule_engine.evaluate_inspection(declarations, product_info)
     assert any(v["rule_code"] == "PCR-COO-004" for v in res["violations"])
     assert res["overall_status"] == "NON_COMPLIANT"
+
+def test_unavailable_ocr_requires_review_not_a_missing_declaration_failure(rule_engine):
+    declarations = {
+        "mrp": {"detected": False, "value": None, "raw_text": None, "confidence": 0.0, "extraction_unavailable": True},
+        "net_quantity": {"detected": False, "value": None, "raw_text": None, "confidence": 0.0, "extraction_unavailable": True},
+        "manufacturer": {"detected": False, "value": None, "raw_text": None, "confidence": 0.0, "extraction_unavailable": True},
+    }
+    res = rule_engine.evaluate_inspection(declarations, {"is_imported": False, "category": "Packaged Food", "extraction_unavailable": True})
+    assert res["overall_status"] == "REVIEW"
+    assert res["failed_checks"] == 0
+    assert res["review_checks"] > 0

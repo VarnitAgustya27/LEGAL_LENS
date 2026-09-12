@@ -1,5 +1,6 @@
 import pytest
 from app.extraction.extractor import DeclarationExtractor
+from app.ocr.engine import OCREngine
 
 def test_extraction_all_fields():
     detections = [
@@ -15,3 +16,7 @@ def test_extraction_all_fields():
     assert "150" in decls["mrp"]["value"]
     assert decls["manufacturer"]["detected"] is True
     assert decls["consumer_care"]["detected"] is True
+
+def test_non_demo_image_does_not_receive_generic_mock_ocr():
+    engine = OCREngine()
+    assert engine._generate_contextual_detections("uploaded_pintola_back.jpeg", "BACK") == []

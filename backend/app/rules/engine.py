@@ -69,6 +69,29 @@ class RuleEngine:
             bbox = decl.get("bbox")
             image_id = decl.get("image_id")
 
+            # A failed OCR/provider run makes all declaration absence uncertain.
+            # Evaluate every applicable rule as REVIEW, including fields that
+            # were never added to the extracted declaration dictionary.
+            if product_info.get("extraction_unavailable", False):
+                total_applicable += 1
+                eval_res = {
+                    "rule_code": code,
+                    "field": field,
+                    "label": label,
+                    "status": "REVIEW",
+                    "severity": "MEDIUM",
+                    "message": f"{label} could not be assessed because no usable OCR evidence was produced. Officer visual review is required.",
+                    "expected": f"Legible {label} complying with {stat_ref}",
+                    "detected": "OCR EVIDENCE UNAVAILABLE",
+                    "statutory_reference": stat_ref,
+                    "confidence": 0.0,
+                    "evidence_image_id": image_id
+                }
+                evaluations.append(eval_res)
+                violations.append(eval_res)
+                review_count += 1
+                continue
+
             # If optional / domestic declaration is not detected
             if not is_mandatory and not is_detected:
                 if field == "country_of_origin" and not is_imported:
@@ -91,6 +114,27 @@ class RuleEngine:
                 continue
 
             total_applicable += 1
+
+            # OCR/provider failure means evidence is unavailable; it is not a
+            # legal finding that the declaration is missing from the label.
+            if decl.get("extraction_unavailable"):
+                eval_res = {
+                    "rule_code": code,
+                    "field": field,
+                    "label": label,
+                    "status": "REVIEW",
+                    "severity": "MEDIUM",
+                    "message": f"{label} could not be assessed because no usable OCR evidence was produced. Officer visual review is required.",
+                    "expected": f"Legible {label} complying with {stat_ref}",
+                    "detected": "OCR EVIDENCE UNAVAILABLE",
+                    "statutory_reference": stat_ref,
+                    "confidence": 0.0,
+                    "evidence_image_id": image_id
+                }
+                evaluations.append(eval_res)
+                violations.append(eval_res)
+                review_count += 1
+                continue
 
             # 1. Check for Missing or Not Detected
             if not is_detected or not val or val.strip().lower() == "missing":
@@ -276,7 +320,9 @@ class RuleEngine:
         # 1. 100% (8/8) -> COMPLIANT
         # 2. < 50% (< 4/8, e.g. 3/8, 2/8) -> NON_COMPLIANT
         # 3. 50% to 99% (4/8 to 7/8) -> REVIEW (Requires Verification)
-        if passed_count == total_applicable and total_applicable > 0:
+        if review_count > 0 and failed_count == 0:
+            overall_status = "REVIEW"
+        elif passed_count == total_applicable and total_applicable > 0:
             overall_status = "COMPLIANT"
         elif pass_ratio < 0.50:
             overall_status = "NON_COMPLIANT"
