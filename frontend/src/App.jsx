@@ -2125,25 +2125,18 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
         )}
       </AnimatePresence>
 
-      {/* Responsive Sidebar Drawer */}
+      {/* Desktop Persistent Sidebar (lg and above only) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col h-screen overflow-hidden transition-transform duration-300 ease-in-out lg:static lg:w-64 lg:translate-x-0 lg:flex-shrink-0 ${
-          mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
-        }`}
+        className="hidden lg:flex lg:flex-col lg:w-64 lg:flex-shrink-0 lg:h-screen lg:sticky lg:top-0 overflow-hidden"
         style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}
       >
-
-        {/* Top Brand Header with Dark Mode Toggle & Mobile Close Button */}
+        {/* Top Brand Header with Dark Mode Toggle */}
         <div className="relative flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-          {/* Subtle top amber glow line */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
 
           <button
             type="button"
-            onClick={() => {
-              setPage("dashboard");
-              setMobileNavOpen(false);
-            }}
+            onClick={() => setPage("dashboard")}
             className="ll-focus flex items-center gap-2.5 text-left cursor-pointer select-none group"
             style={{ background: "transparent", opacity: 1 }}
             title="Go to Home / Dashboard"
@@ -2159,39 +2152,25 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
             </span>
           </button>
 
-          <div className="flex items-center gap-2">
-            {/* AESTHETIC DARK MODE TOGGLE BUTTON */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="ll-focus group relative flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 hover:scale-110 shadow-xs"
-              style={{
-                borderColor: isDark ? "rgba(229,184,66,0.6)" : "rgba(255,255,255,0.25)",
-                background: isDark ? "rgba(229,184,66,0.18)" : "rgba(255,255,255,0.08)",
-                color: isDark ? "#E5B842" : "#E2E8F0",
-                boxShadow: isDark ? "0 0 12px rgba(229,184,66,0.3)" : "none",
-              }}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              aria-label="Toggle dark mode"
-            >
-              {isDark ? (
-                <Sun size={15} className="text-amber-300 transition-transform group-hover:rotate-45" />
-              ) : (
-                <Moon size={15} className="text-slate-200 transition-transform group-hover:-rotate-12" />
-              )}
-            </button>
-
-            {/* Close Sidebar Button on Mobile */}
-            <button
-              type="button"
-              onClick={() => setMobileNavOpen(false)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 lg:hidden cursor-pointer"
-              title="Close menu"
-              aria-label="Close navigation menu"
-            >
-              <X size={18} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="ll-focus group relative flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 hover:scale-110 shadow-xs"
+            style={{
+              borderColor: isDark ? "rgba(229,184,66,0.6)" : "rgba(255,255,255,0.25)",
+              background: isDark ? "rgba(229,184,66,0.18)" : "rgba(255,255,255,0.08)",
+              color: isDark ? "#E5B842" : "#E2E8F0",
+              boxShadow: isDark ? "0 0 12px rgba(229,184,66,0.3)" : "none",
+            }}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle dark mode"
+          >
+            {isDark ? (
+              <Sun size={15} className="text-amber-300 transition-transform group-hover:rotate-45" />
+            ) : (
+              <Moon size={15} className="text-slate-200 transition-transform group-hover:-rotate-12" />
+            )}
+          </button>
         </div>
 
         <nav className="flex-1 py-4 px-3 overflow-y-auto ll-scroll space-y-1">
@@ -2203,10 +2182,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                 whileHover={{ x: active ? 0 : 4 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.15 }}
-                onClick={() => {
-                  setPage(n.key);
-                  setMobileNavOpen(false);
-                }}
+                onClick={() => setPage(n.key)}
                 className="ll-focus w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-left transition-all cursor-pointer relative overflow-hidden"
                 style={{
                   background: active ? "rgba(199,167,90,0.18)" : "transparent",
@@ -2240,6 +2216,82 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
         </div>
       </aside>
 
+      {/* Mobile Drawer (Only rendered on mobile when mobileNavOpen is true) */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileNavOpen(false)}
+              className="absolute inset-0 bg-black/75 backdrop-blur-xs"
+              aria-hidden="true"
+            />
+            {/* Sliding Drawer */}
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 280 }}
+              className="relative w-72 max-w-[82vw] h-full flex flex-col shadow-2xl overflow-hidden z-10"
+              style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center gap-2.5">
+                  <ScanLine size={21} style={{ color: "#C7A75A" }} />
+                  <span style={{ ...FONT.display, fontSize: 19, fontWeight: 800, color: "#F7F5EF", letterSpacing: "0.02em" }}>Legal-Lens</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
+                  title="Close navigation"
+                >
+                  <X size={19} />
+                </button>
+              </div>
+
+              <nav className="flex-1 py-4 px-3 overflow-y-auto space-y-1">
+                {NAV.map((n) => {
+                  const active = page === n.key || (page === "inspection-detail" && n.key === "inspections");
+                  return (
+                    <button
+                      key={n.key}
+                      onClick={() => {
+                        setPage(n.key);
+                        setMobileNavOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3.5 py-3 rounded-lg text-left transition-all cursor-pointer relative"
+                      style={{
+                        background: active ? "rgba(199,167,90,0.18)" : "transparent",
+                        color: active ? "#F8FAFC" : "#94A3B8",
+                      }}
+                    >
+                      {active && <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-amber-400 shadow-[0_0_8px_#E5B842]" />}
+                      <n.Icon size={17} strokeWidth={active ? 2.3 : 1.9} className={active ? "text-amber-400" : "text-slate-400"} />
+                      <span style={{ fontSize: 13.5, fontWeight: active ? 700 : 500 }}>{n.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+
+              <div className="px-3 pb-5 border-t border-white/10 pt-3">
+                <button
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-left cursor-pointer transition-colors text-red-400 hover:bg-red-500/10"
+                  onClick={handleSignOut}
+                >
+                  <LogOut size={16} />
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>Sign out</span>
+                </button>
+              </div>
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
+
       <main className="flex-1 min-w-0 flex flex-col">
         <header className="relative z-30 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3.5 sm:py-4 border-b transition-colors backdrop-blur-md" style={{ borderColor: C.line, background: "var(--ll-bg-header)" }}>
           <div className="flex items-center gap-3">
@@ -2258,6 +2310,20 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="lg:hidden flex items-center justify-center w-8 h-8 rounded-full border transition-all shadow-xs"
+              style={{
+                borderColor: isDark ? "rgba(229,184,66,0.6)" : "rgba(255,255,255,0.25)",
+                background: isDark ? "rgba(229,184,66,0.18)" : "rgba(255,255,255,0.08)",
+                color: isDark ? "#E5B842" : "#E2E8F0",
+              }}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <Sun size={14} className="text-amber-300" /> : <Moon size={14} className="text-slate-200" />}
+            </button>
+
             <div className="relative hidden md:block">
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input placeholder="Search case no., product, barcode…" className="ll-focus transition-all duration-200 rounded-lg" style={{ ...inputStyle, paddingLeft: 34, width: 240, fontSize: 12.5 }} />
@@ -2340,7 +2406,8 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto ll-scroll p-3.5 sm:p-6 md:p-8">
+
+        <div className="flex-1 overflow-y-auto ll-scroll p-3 sm:p-6 md:p-8 pb-20 lg:pb-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={page}
@@ -2353,6 +2420,50 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
               {children}
             </motion.div>
           </AnimatePresence>
+        </div>
+
+        {/* Sleek Mobile Bottom Navigation Bar (Thumb-friendly for mobile officers) */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur-xl px-2 py-1.5 flex items-center justify-around shadow-2xl" style={{ background: "var(--ll-bg-card)", borderColor: C.line }}>
+          <button
+            type="button"
+            onClick={() => setPage("dashboard")}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors cursor-pointer ${page === "dashboard" ? "text-amber-400 font-bold" : "text-slate-400 hover:text-slate-200"}`}
+          >
+            <LayoutDashboard size={18} />
+            <span className="text-[10px] mt-0.5">Home</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPage("inspections")}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors cursor-pointer ${page === "inspections" || page === "inspection-detail" ? "text-amber-400 font-bold" : "text-slate-400 hover:text-slate-200"}`}
+          >
+            <ClipboardList size={18} />
+            <span className="text-[10px] mt-0.5">Cases</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPage("new-inspection")}
+            className={`flex flex-col items-center justify-center -mt-5 p-3 rounded-full shadow-xl transition-all cursor-pointer ${page === "new-inspection" ? "bg-amber-400 text-slate-950 scale-105 shadow-amber-400/40" : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-500/30"}`}
+            title="Start new inspection"
+          >
+            <FilePlus2 size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setPage("products")}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors cursor-pointer ${page === "products" ? "text-amber-400 font-bold" : "text-slate-400 hover:text-slate-200"}`}
+          >
+            <Package size={18} />
+            <span className="text-[10px] mt-0.5">Products</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="flex flex-col items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+          >
+            <Menu size={18} />
+            <span className="text-[10px] mt-0.5">Menu</span>
+          </button>
         </div>
       </main>
 
