@@ -2322,6 +2322,39 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
 
 /* ============================== DASHBOARD ============================== */
 
+function WorkspacePageHero({ eyebrow, title, description, Icon, metric, action }) {
+  return (
+    <section className="workspace-page-hero">
+      <div className="workspace-page-hero__grid" aria-hidden="true" />
+      <div className="workspace-page-hero__orb workspace-page-hero__orb--one" aria-hidden="true" />
+      <div className="workspace-page-hero__orb workspace-page-hero__orb--two" aria-hidden="true" />
+      <div className="workspace-page-hero__content">
+        <div className="workspace-page-hero__identity">
+          <div className="workspace-page-hero__icon"><Icon size={25} strokeWidth={1.8} /></div>
+          <div>
+            <div className="workspace-page-hero__eyebrow"><span />{eyebrow}</div>
+            <h1>{title}</h1>
+            <p>{description}</p>
+          </div>
+        </div>
+        <div className="workspace-page-hero__right">
+          {metric && (
+            <div className="workspace-page-hero__metric">
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+            </div>
+          )}
+          {action}
+        </div>
+      </div>
+      <div className="workspace-page-hero__footer">
+        <span><i /> LIVE WORKSPACE</span>
+        <span>AI-ASSISTED · OFFICER-VERIFIED</span>
+      </div>
+    </section>
+  );
+}
+
 function StatCard({ label, value, Icon, color, loading }) {
   const shouldReduceMotion = useReducedMotion();
 
@@ -2490,6 +2523,13 @@ function Dashboard({ onOpenInspection, isDark }) {
       animate="visible"
       className="space-y-6 ll-page ll-dashboard-page"
     >
+      <WorkspacePageHero
+        eyebrow="COMPLIANCE COMMAND CENTER"
+        title="Inspection intelligence, in one view."
+        description="Monitor enforcement activity, identify repeat violations, and take the next inspection action with evidence in context."
+        Icon={LayoutDashboard}
+        metric={{ label: "INSPECTIONS TRACKED", value: loading ? "···" : (stats?.total?.toLocaleString() || "0") }}
+      />
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Inspections" value={stats ? stats.total.toLocaleString() : ""} Icon={ClipboardList} color={C.ink} loading={loading} />
         <StatCard label="Compliant" value={stats ? stats.compliant.toLocaleString() : ""} Icon={ShieldCheck} color={C.compliant} loading={loading} />
@@ -2775,6 +2815,14 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
       transition={{ duration: 0.25 }}
       className="space-y-4 ll-page ll-inspections-page"
     >
+      <WorkspacePageHero
+        eyebrow="CASE REGISTER"
+        title="Every inspection, traceable."
+        description="Search active and historical case files, then open the evidence trail for officer review."
+        Icon={ClipboardList}
+        metric={{ label: "CASES IN VIEW", value: rows === null ? "···" : String(rows.length) }}
+        action={<Button onClick={onNew}><FilePlus2 size={15} /> Start inspection</Button>}
+      />
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -3635,6 +3683,14 @@ function NewInspection({ onFinish, currentUser }) {
 
   return (
     <div className="w-full max-w-5xl ll-page ll-new-inspection-page">
+
+      <WorkspacePageHero
+        eyebrow="EVIDENCE INTAKE"
+        title="Create a defensible inspection."
+        description="Build a case from product imagery, structured declarations, and officer-provided context."
+        Icon={FilePlus2}
+        metric={{ label: "WORKFLOW STEP", value: `${step + 1} / ${STEPS.length}` }}
+      />
 
       {/* SIH Golden Demo Presets (1-Click Compliance Test) - temporarily commented out for demo
       <div className="mb-6 p-4 rounded-sm border" style={{ background: "var(--ll-bg-card)", borderColor: C.gold }}>
@@ -4625,6 +4681,13 @@ function InspectionDetail({ inspection, users = [] }) {
 
   return (
     <div className="space-y-6 ll-page ll-inspection-detail-page">
+      <WorkspacePageHero
+        eyebrow="EVIDENCE REVIEW"
+        title="Inspection case file."
+        description="Review declarations, visual evidence, and deterministic compliance findings before officer determination."
+        Icon={ScanLine}
+        metric={{ label: "CASE STATUS", value: inspection?.status === "COMPLIANT" ? "PASS" : inspection?.status === "NON_COMPLIANT" ? "FLAGGED" : "REVIEW" }}
+      />
       <input
         ref={canvasUploadRef}
         type="file"
@@ -5431,6 +5494,14 @@ function Products({ onOpenInspection, onNewInspection, users = [] }) {
       transition={{ duration: 0.25 }}
       className="space-y-6 ll-page ll-products-page"
     >
+      <WorkspacePageHero
+        eyebrow="PRODUCT INTELLIGENCE"
+        title="A living product register."
+        description="Group inspection history by commodity, compare outcomes, and open a complete evidence-backed timeline."
+        Icon={Package}
+        metric={{ label: "PRODUCTS REGISTERED", value: loading ? "···" : String(productsList.length) }}
+        action={<Button onClick={onNewInspection}><FilePlus2 size={15} /> New inspection</Button>}
+      />
       <Card padded={false} className="rounded-xl overflow-hidden shadow-sm">
         {/* Header & Filter Toolbar */}
         <div className="p-6 border-b space-y-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
@@ -5605,6 +5676,14 @@ function Rules() {
   const [showAdd, setShowAdd] = useState(false);
   return (
     <div className="space-y-4 ll-page ll-rules-page">
+      <WorkspacePageHero
+        eyebrow="GOVERNED RULE SET"
+        title="Versioned legal requirements."
+        description="Maintain rule metadata, amendments, and applicability with a transparent audit trail."
+        Icon={ScrollText}
+        metric={{ label: "ACTIVE RULES", value: String(RULES.length) }}
+        action={<Button onClick={() => setShowAdd(true)}><Plus size={15} /> Add rule</Button>}
+      />
       <div className="flex items-center justify-between">
         <p style={{ fontSize: 12.5, color: C.slate, maxWidth: 520 }}>
           Rules are versioned so amendments to the Packaged Commodities Rules can be added without changing application code. The deterministic engine always evaluates against the currently active version.
@@ -5825,6 +5904,13 @@ function Reports({ onOpenInspection, users = [] }) {
       transition={{ duration: 0.25 }}
       className="space-y-6 ll-page ll-reports-page"
     >
+      <WorkspacePageHero
+        eyebrow="OFFICIAL DOSSIERS"
+        title="Reports ready for review."
+        description="Access generated inspection reports, evidence summaries, and officer-ready compliance records."
+        Icon={FileText}
+        metric={{ label: "REPORTS AVAILABLE", value: loading ? "···" : String(reportsList.length) }}
+      />
       <Card padded={false} className="overflow-x-auto ll-scroll relative rounded-xl shadow-sm">
         {/* Header & Filter Toolbar */}
         <div className="p-6 border-b space-y-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>
@@ -6052,6 +6138,13 @@ function SettingsPage({ users, onAddUser, onUpdateUser, onDeleteUser, currentUse
 
   return (
     <div className="space-y-6 ll-page ll-settings-page">
+      <WorkspacePageHero
+        eyebrow="PLATFORM ADMINISTRATION"
+        title="People, roles, and access."
+        description="Manage enforcement workspace access and maintain a clear accountability record for every officer."
+        Icon={Users}
+        metric={{ label: "AUTHORIZED USERS", value: String(users.length) }}
+      />
       {/* Toast Notification */}
       {toastMessage && (
         <div
