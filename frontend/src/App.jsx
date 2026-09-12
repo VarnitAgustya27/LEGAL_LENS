@@ -12,7 +12,7 @@ import {
   ArrowLeft, ArrowRight, Download, Eye, EyeOff, Loader2, Building2, Hash, Lock, Unlock,
   User, Plus, Info, Edit, Trash2, UserPlus, UserCheck, UserX, Shield, RefreshCw, Key,
   Sun, Moon, Sparkles, Database, Scale, Layers, Award, Zap, Check, ArrowUpRight,
-  Link2, Globe, RotateCw, ZoomOut, Crop, Move, Code
+  Link2, Globe, RotateCw, ZoomOut, Crop, Move, Code, Menu
 } from "lucide-react";
 import {
   BarChart, Bar, Cell, LabelList, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -2053,6 +2053,7 @@ const PAGE_TITLES = {
 function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, toggleTheme, isDbConnected, onSignOut, children }) {
   const [eyebrow, title] = PAGE_TITLES[page] || ["", ""];
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState(null);
   const profileMenuRef = useRef(null);
   const avatarFileRef = useRef(null);
@@ -2071,6 +2072,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
 
   const handleSignOut = () => {
     setProfileOpen(false);
+    setMobileNavOpen(false);
     localStorage.removeItem("legallens_active_page");
     localStorage.removeItem("legallens_current_user");
     if (onSignOut) {
@@ -2107,16 +2109,41 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
   return (
     <div className={`ll-root min-h-screen flex ${isDark ? "dark" : ""}`} style={{ background: "var(--ll-bg-paper)", ...FONT.body }}>
       <GlobalStyle />
-      <aside className="w-64 flex-shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden" style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}>
 
-        {/* Top Brand Header with Dark Mode Toggle */}
+      {/* Mobile Drawer Backdrop Overlay */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setMobileNavOpen(false)}
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-xs lg:hidden"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Responsive Sidebar Drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col h-screen overflow-hidden transition-transform duration-300 ease-in-out lg:static lg:w-64 lg:translate-x-0 lg:flex-shrink-0 ${
+          mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
+        style={{ background: "var(--ll-bg-sidebar)", color: "#DCD8CB" }}
+      >
+
+        {/* Top Brand Header with Dark Mode Toggle & Mobile Close Button */}
         <div className="relative flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
           {/* Subtle top amber glow line */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
 
           <button
             type="button"
-            onClick={() => setPage("dashboard")}
+            onClick={() => {
+              setPage("dashboard");
+              setMobileNavOpen(false);
+            }}
             className="ll-focus flex items-center gap-2.5 text-left cursor-pointer select-none group"
             style={{ background: "transparent", opacity: 1 }}
             title="Go to Home / Dashboard"
@@ -2132,26 +2159,39 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
             </span>
           </button>
 
-          {/* AESTHETIC DARK MODE TOGGLE BUTTON */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="ll-focus group relative flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 hover:scale-110 shadow-xs"
-            style={{
-              borderColor: isDark ? "rgba(229,184,66,0.6)" : "rgba(255,255,255,0.25)",
-              background: isDark ? "rgba(229,184,66,0.18)" : "rgba(255,255,255,0.08)",
-              color: isDark ? "#E5B842" : "#E2E8F0",
-              boxShadow: isDark ? "0 0 12px rgba(229,184,66,0.3)" : "none",
-            }}
-            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            aria-label="Toggle dark mode"
-          >
-            {isDark ? (
-              <Sun size={15} className="text-amber-300 transition-transform group-hover:rotate-45" />
-            ) : (
-              <Moon size={15} className="text-slate-200 transition-transform group-hover:-rotate-12" />
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* AESTHETIC DARK MODE TOGGLE BUTTON */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="ll-focus group relative flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 hover:scale-110 shadow-xs"
+              style={{
+                borderColor: isDark ? "rgba(229,184,66,0.6)" : "rgba(255,255,255,0.25)",
+                background: isDark ? "rgba(229,184,66,0.18)" : "rgba(255,255,255,0.08)",
+                color: isDark ? "#E5B842" : "#E2E8F0",
+                boxShadow: isDark ? "0 0 12px rgba(229,184,66,0.3)" : "none",
+              }}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              aria-label="Toggle dark mode"
+            >
+              {isDark ? (
+                <Sun size={15} className="text-amber-300 transition-transform group-hover:rotate-45" />
+              ) : (
+                <Moon size={15} className="text-slate-200 transition-transform group-hover:-rotate-12" />
+              )}
+            </button>
+
+            {/* Close Sidebar Button on Mobile */}
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 lg:hidden cursor-pointer"
+              title="Close menu"
+              aria-label="Close navigation menu"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         <nav className="flex-1 py-4 px-3 overflow-y-auto ll-scroll space-y-1">
@@ -2163,7 +2203,10 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
                 whileHover={{ x: active ? 0 : 4 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.15 }}
-                onClick={() => setPage(n.key)}
+                onClick={() => {
+                  setPage(n.key);
+                  setMobileNavOpen(false);
+                }}
                 className="ll-focus w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-left transition-all cursor-pointer relative overflow-hidden"
                 style={{
                   background: active ? "rgba(199,167,90,0.18)" : "transparent",
@@ -2198,21 +2241,32 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col">
-        <header className="relative z-40 flex items-center justify-between px-8 py-4 border-b transition-colors backdrop-blur-md" style={{ borderColor: C.line, background: "var(--ll-bg-header)" }}>
-          <div>
-            <div style={{ ...FONT.mono, fontSize: 10.5, letterSpacing: "0.14em", color: C.gold, fontWeight: 700 }}>{eyebrow}</div>
-            <h1 style={{ ...FONT.display, fontSize: 23, fontWeight: 700, color: C.ink, letterSpacing: "-0.01em" }}>{title}</h1>
+        <header className="relative z-30 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3.5 sm:py-4 border-b transition-colors backdrop-blur-md" style={{ borderColor: C.line, background: "var(--ll-bg-header)" }}>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(true)}
+              className="p-2 -ml-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 lg:hidden transition-colors cursor-pointer"
+              title="Open menu"
+              aria-label="Open navigation menu"
+            >
+              <Menu size={20} />
+            </button>
+            <div>
+              <div style={{ ...FONT.mono, fontSize: 10, letterSpacing: "0.14em", color: C.gold, fontWeight: 700 }}>{eyebrow}</div>
+              <h1 style={{ ...FONT.display, fontSize: 19, fontWeight: 700, color: C.ink, letterSpacing: "-0.01em" }} className="sm:text-[23px] truncate">{title}</h1>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="relative hidden md:block">
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input placeholder="Search case no., product, barcode…" className="ll-focus transition-all duration-200 rounded-lg" style={{ ...inputStyle, paddingLeft: 34, width: 270, fontSize: 12.5 }} />
+              <input placeholder="Search case no., product, barcode…" className="ll-focus transition-all duration-200 rounded-lg" style={{ ...inputStyle, paddingLeft: 34, width: 240, fontSize: 12.5 }} />
             </div>
 
-            <div className="relative pl-4 border-l z-50" style={{ borderColor: C.line }} ref={profileMenuRef}>
+            <div className="relative pl-2 sm:pl-4 border-l z-40" style={{ borderColor: C.line }} ref={profileMenuRef}>
               <button
                 type="button"
-                className="ll-focus flex items-center gap-3 rounded-lg px-2 py-1 -mr-1 transition-all"
+                className="ll-focus flex items-center gap-2 sm:gap-3 rounded-lg px-1.5 sm:px-2 py-1 transition-all"
                 style={{
                   background: profileOpen ? "var(--ll-tr-hover)" : "transparent",
                   border: "none",
@@ -2286,7 +2340,7 @@ function Shell({ page, setPage, currentUser, avatarUrl, onUpdateAvatar, isDark, 
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto ll-scroll p-6 sm:p-8">
+        <div className="flex-1 overflow-y-auto ll-scroll p-3.5 sm:p-6 md:p-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={page}
@@ -3040,12 +3094,13 @@ function evaluateImageQuality(file, callback) {
 }
 
 
-function MobileCodeScanner({ open, onClose, onDetected }) {
+function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
   const [error, setError] = useState("");
   const [torchSupported, setTorchSupported] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   const stopScanner = () => {
     try { controlsRef.current?.stop?.(); } catch (_) { }
@@ -3054,6 +3109,32 @@ function MobileCodeScanner({ open, onClose, onDetected }) {
     if (video?.srcObject) {
       video.srcObject.getTracks().forEach((track) => track.stop());
       video.srcObject = null;
+    }
+  };
+
+  const handleCapturePhoto = () => {
+    const video = videoRef.current;
+    if (!video || isCapturing) return;
+    try {
+      setIsCapturing(true);
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob((blob) => {
+        setIsCapturing(false);
+        if (!blob) return;
+        const file = new File([blob], `package_camera_${Date.now()}.jpg`, { type: "image/jpeg" });
+        try { navigator.vibrate?.(100); } catch (_) { }
+        stopScanner();
+        onCapturePhoto?.(file);
+        onClose?.();
+      }, "image/jpeg", 0.95);
+    } catch (err) {
+      setIsCapturing(false);
+      console.error("Failed to capture picture from camera:", err);
     }
   };
 
@@ -3143,9 +3224,9 @@ function MobileCodeScanner({ open, onClose, onDetected }) {
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(148,163,184,0.18)" }}>
           <div>
             <div className="flex items-center gap-2 text-sm font-bold text-white">
-              <ScanLine size={18} className="text-cyan-400" /> Live QR & Barcode Scanner
+              <Camera size={18} className="text-cyan-400" /> Live Camera & Scanner
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Point the rear camera at a QR code or product barcode.</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Position package to click photo or auto-scan product barcode.</p>
           </div>
           <button type="button" onClick={onClose} className="p-2 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white" title="Close scanner">
             <X size={19} />
@@ -3159,6 +3240,20 @@ function MobileCodeScanner({ open, onClose, onDetected }) {
               <span className="absolute left-0 right-0 top-1/2 h-px bg-cyan-300 shadow-[0_0_18px_3px_rgba(34,211,238,0.8)] animate-pulse" />
             </div>
           </div>
+
+          {/* Quick Capture Shutter floating overlay */}
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center pointer-events-auto">
+            <button
+              type="button"
+              onClick={handleCapturePhoto}
+              disabled={isCapturing}
+              className="px-5 py-2.5 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-2xl shadow-cyan-400/50 cursor-pointer active:scale-95 transition-all border-2 border-white/40 disabled:opacity-50"
+            >
+              {isCapturing ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+              <span>Click Picture</span>
+            </button>
+          </div>
+
           {error && (
             <div className="absolute inset-0 flex items-center justify-center p-6 text-center bg-slate-950/90">
               <div>
@@ -3170,15 +3265,23 @@ function MobileCodeScanner({ open, onClose, onDetected }) {
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <span className="text-[11px] text-slate-400">QR • EAN • UPC • Code 128 and other supported formats</span>
-          <div className="flex gap-2">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-slate-950/60 border-t border-slate-800/80">
+          <span className="text-[11px] text-slate-400 hidden sm:inline">Align package & click picture to inspect</span>
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={handleCapturePhoto}
+              disabled={isCapturing}
+              className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-all disabled:opacity-50"
+            >
+              <Camera size={14} /> Click Picture
+            </button>
             {torchSupported && (
-              <button type="button" onClick={toggleTorch} className="px-3 py-2 rounded-lg border text-xs font-semibold text-amber-300 border-amber-400/30 hover:bg-amber-400/10">
+              <button type="button" onClick={toggleTorch} className="px-3 py-1.5 rounded-lg border text-xs font-semibold text-amber-300 border-amber-400/30 hover:bg-amber-400/10">
                 {torchOn ? "Flash Off" : "Flash On"}
               </button>
             )}
-            <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/15">Cancel</button>
+            <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/15">Cancel</button>
           </div>
         </div>
       </div>
@@ -3301,9 +3404,9 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                   type="button"
                   onClick={() => setShowScanner(true)}
                   className="px-2 py-1.5 rounded bg-slate-900/90 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1 shadow-md cursor-pointer"
-                  title="Open QR / barcode scanner"
+                  title="Open camera to click picture or scan code"
                 >
-                  <ScanLine size={13} /> Scan Code
+                  <Camera size={13} /> Camera
                 </motion.button>
               </div>
             </div>
@@ -3377,9 +3480,9 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
                 }}
                 className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
-                title="Open live QR / barcode scanner"
+                title="Open live camera to click picture"
               >
-                <ScanLine size={13} /> Scan from Camera
+                <Camera size={13} /> Scan from Camera
               </motion.button>
             </div>
           </div>
@@ -3392,6 +3495,10 @@ function Dropzone({ label, sublabel, required, imageData, onImageChange, onRemov
         onDetected={(value) => {
           setShowScanner(false);
           onBarcodeDetected?.(value);
+        }}
+        onCapturePhoto={(file) => {
+          setShowScanner(false);
+          handleFile(file);
         }}
       />
 
