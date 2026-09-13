@@ -7570,53 +7570,68 @@ export default function App() {
   const getAvatarMap = () => {
     try { return JSON.parse(localStorage.getItem("legallens_avatars") || "{}"); } catch { return {}; }
   };
-  const currentBadge = currentUser?.badge || "";
-  const [avatarUrl, setAvatarUrl] = useState(() => getAvatarMap()[currentBadge] || "");
+  
+  const userAvatarKey = (currentUser?.email || currentUser?.badge || currentUser?.id || "default").trim().toLowerCase();
+  
+  const [avatarUrl, setAvatarUrl] = useState(() => {
+    const map = getAvatarMap();
+    return map[userAvatarKey] || map[currentUser?.email] || map[currentUser?.badge] || currentUser?.avatarUrl || "";
+  });
 
-  // Sync avatar when badge changes (fetches from cache, then checks Supabase)
+  // Sync avatar when active user changes (fetches from cache, then checks Supabase)
   useEffect(() => {
-    const badge = currentBadge?.trim();
-    const cached = getAvatarMap()[badge] || getAvatarMap()[currentBadge] || "";
+    if (!userAvatarKey) return;
+    const map = getAvatarMap();
+    const cached = map[userAvatarKey] || map[currentUser?.email] || map[currentUser?.badge] || currentUser?.avatarUrl || "";
     setAvatarUrl(cached);
 
-    if (badge && isSupabaseConfigured() && supabase) {
+    const badgeKey = (currentUser?.badge || userAvatarKey).trim();
+    if (badgeKey && isSupabaseConfigured() && supabase) {
       supabase
         .from("officer_avatars")
         .select("avatar_url")
-        .ilike("badge", badge)
+        .ilike("badge", badgeKey)
         .maybeSingle()
         .then(({ data, error }) => {
           if (!error && data?.avatar_url) {
-            const map = getAvatarMap();
-            map[badge] = data.avatar_url;
+            map[userAvatarKey] = data.avatar_url;
+            if (currentUser?.badge) map[currentUser.badge] = data.avatar_url;
+            if (currentUser?.email) map[currentUser.email] = data.avatar_url;
             localStorage.setItem("legallens_avatars", JSON.stringify(map));
             setAvatarUrl(data.avatar_url);
-          } else if (!error && !data) {
-            if (!cached) setAvatarUrl("");
           }
         })
         .catch((err) => {
           console.warn("Could not fetch avatar from Supabase:", err);
         });
     }
-  }, [currentBadge]);
+  }, [userAvatarKey, currentUser?.badge, currentUser?.email]);
 
   const handleUpdateAvatar = async (dataUrl) => {
-    if (!currentBadge) return;
-    const badge = currentBadge.trim();
+    if (!dataUrl) return;
     const map = getAvatarMap();
-    map[badge] = dataUrl;
+    map[userAvatarKey] = dataUrl;
+    if (currentUser?.badge) map[currentUser.badge] = dataUrl;
+    if (currentUser?.email) map[currentUser.email.toLowerCase()] = dataUrl;
+    
     localStorage.setItem("legallens_avatars", JSON.stringify(map));
     setAvatarUrl(dataUrl);
 
+    // Update active currentUser object with new avatarUrl
+    if (currentUser) {
+      const updatedUser = { ...currentUser, avatarUrl: dataUrl };
+      setCurrentUser(updatedUser);
+      localStorage.setItem("legallens_current_user", JSON.stringify(updatedUser));
+    }
+
     // Also persist to separate Supabase table (safe best-effort)
-    if (isSupabaseConfigured() && supabase) {
+    const badgeKey = (currentUser?.badge || userAvatarKey).trim();
+    if (badgeKey && isSupabaseConfigured() && supabase) {
       try {
-        const { error } = await supabase.from("officer_avatars").upsert(
-          { badge: badge, avatar_url: dataUrl, updated_at: new Date().toISOString() },
+        await supabase.from("officer_avatars").upsert(
+          { badge: badgeKey, avatar_url: dataUrl, updated_at: new Date().toISOString() },
           { onConflict: "badge" }
         );
-        if (error) console.warn("Supabase avatar upsert error:", error);
       } catch (e) {
         console.warn("Could not sync avatar to Supabase:", e);
       }

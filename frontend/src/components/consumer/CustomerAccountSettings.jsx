@@ -1,18 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { User, Mail, Shield, Bell, Key, Check, Camera, Sparkles } from "lucide-react";
 import { C, FONT } from "../../constants.jsx";
+import CropPhotoModal from "../modals/CropPhotoModal.jsx";
 
 export default function CustomerAccountSettings({ currentUser, avatarUrl, onUpdateAvatar, isDark, onUpdateUser }) {
   const [name, setName] = useState(currentUser?.name || "Rajesh Kumar (Citizen)");
   const [email, setEmail] = useState(currentUser?.email || "customer@gmail.com");
   const [savedMsg, setSavedMsg] = useState("");
   const [notifications, setNotifications] = useState(true);
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const avatarFileRef = useRef(null);
 
   // Sync internal state whenever currentUser updates
   React.useEffect(() => {
     if (currentUser?.name) setName(currentUser.name);
     if (currentUser?.email) setEmail(currentUser.email);
   }, [currentUser]);
+
+  const handleAvatarPick = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setCropImageSrc(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const handleSaveProfile = (e) => {
     e?.preventDefault();
@@ -45,8 +59,8 @@ export default function CustomerAccountSettings({ currentUser, avatarUrl, onUpda
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      {/* HEADER */}
-      <div className="p-6 rounded-2xl border bg-slate-900/60 border-slate-800 flex items-center justify-between">
+      {/* HEADER WITH AVATAR CHANGE BUTTON */}
+      <div className="p-6 rounded-2xl border bg-slate-900/60 border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-2 bg-purple-500/15 text-purple-300 border border-purple-500/30">
             <User size={14} />
@@ -58,12 +72,39 @@ export default function CustomerAccountSettings({ currentUser, avatarUrl, onUpda
           </p>
         </div>
 
-        <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center justify-center font-bold text-xl overflow-hidden shadow-inner">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-          ) : (
-            currentUser?.initials || "RK"
-          )}
+        <div className="flex items-center gap-3">
+          <input
+            ref={avatarFileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarPick}
+          />
+          <div
+            className="relative group cursor-pointer"
+            onClick={() => avatarFileRef.current?.click()}
+            title="Click to change photo"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-300 border-2 border-emerald-500/40 flex items-center justify-center font-bold text-xl overflow-hidden shadow-lg relative">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                currentUser?.initials || "RK"
+              )}
+              <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-slate-100">
+                <Camera size={18} className="text-emerald-400 mb-0.5" />
+                <span className="text-[9px] font-bold">CHANGE</span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => avatarFileRef.current?.click()}
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs transition-all border border-emerald-500/30 flex items-center gap-1.5 cursor-pointer shadow-sm min-h-[44px]"
+          >
+            <Camera size={14} />
+            <span>Change Photo</span>
+          </button>
         </div>
       </div>
 
@@ -177,6 +218,21 @@ export default function CustomerAccountSettings({ currentUser, avatarUrl, onUpda
           </button>
         </div>
       </div>
+
+      {/* Crop Photo Adjustment Modal */}
+      {cropImageSrc && (
+        <CropPhotoModal
+          imageSrc={cropImageSrc}
+          onClose={() => setCropImageSrc(null)}
+          onSave={(croppedDataUrl) => {
+            onUpdateAvatar?.(croppedDataUrl);
+            setCropImageSrc(null);
+            setSavedMsg("Profile photo updated successfully!");
+            setTimeout(() => setSavedMsg(""), 4000);
+          }}
+          isDark={isDark}
+        />
+      )}
     </div>
   );
 }
