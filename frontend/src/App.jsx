@@ -765,20 +765,20 @@ function LandingPageView({ onAccessConsole }) {
             <a href="#mission">Mission</a>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
-              className="px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md hover:brightness-110"
+              className="topbar-login-btn px-2.5 sm:px-3.5 py-1 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-md hover:brightness-110"
               onClick={() => onAccessConsole && onAccessConsole("Customer")}
               style={{ background: "#10B981", color: "#060A11" }}
             >
-              <span>🛍</span> Customer Login
+              <span>🛍</span> <span className="whitespace-nowrap">Customer Login</span>
             </button>
             <button
-              className="nav-access-button"
+              className="nav-access-button topbar-access-btn"
               onClick={() => onAccessConsole && onAccessConsole("Officer")}
             >
-              Officer Access
-              <Icon name="arrow" size={16} />
+              <span className="whitespace-nowrap">Officer Access</span>
+              <Icon name="arrow" size={13} />
             </button>
           </div>
         </div>

@@ -4286,31 +4286,72 @@ canvas {
    ========================================================================== */
 
 @media (max-width: 768px) {
-  /* Enforce minimum touch targets and touch manipulation on Android */
-  button, 
+  /* Compact top header bar & topbar action buttons on Android mobile */
+  .main-navbar {
+    height: 56px !important;
+  }
+
+  .navbar-inner {
+    padding: 0 10px !important;
+  }
+
+  .main-navbar button.topbar-login-btn,
+  .main-navbar button.topbar-access-btn,
+  .nav-access-button.topbar-access-btn,
+  button.topbar-login-btn,
+  button.topbar-access-btn {
+    min-height: 32px !important;
+    height: 34px !important;
+    padding: 4px 8px !important;
+    font-size: 10.5px !important;
+    line-height: 1.1 !important;
+    border-radius: 8px !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+  }
+
+  .main-brand {
+    gap: 6px !important;
+  }
+
+  .brand-mark {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+  }
+
+  .brand-copy strong {
+    font-size: 12px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .brand-copy small {
+    display: none !important;
+  }
+
+  /* General body buttons touch targets on Android */
+  button:not(.topbar-login-btn):not(.topbar-access-btn):not(.brand-button):not(.show-password-btn), 
   [role="button"], 
   .btn,
-  .brand-button,
-  .premium-login-btn,
-  .show-password-btn {
+  .premium-login-btn {
     min-height: 44px;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Expand touch padding for small buttons on Android mobile viewports */
-  button.px-3, button.px-3\.5 {
+  button:not(.topbar-login-btn):not(.topbar-access-btn).px-3,
+  button:not(.topbar-login-btn):not(.topbar-access-btn).px-3\.5 {
     padding-left: 0.875rem !important;
     padding-right: 0.875rem !important;
   }
 
-  button.py-1, button.py-1\.5 {
+  button:not(.topbar-login-btn):not(.topbar-access-btn).py-1,
+  button:not(.topbar-login-btn):not(.topbar-access-btn).py-1\.5 {
     padding-top: 0.625rem !important;
     padding-bottom: 0.625rem !important;
   }
 
-  /* Maintain legibility for small buttons on mobile screens */
-  button.text-xs, button.text-\[11px\], button.text-\[12px\], button.text-\[12\.5px\] {
+  button:not(.topbar-login-btn):not(.topbar-access-btn).text-xs {
     font-size: 0.825rem !important;
   }
 }
@@ -4321,4 +4362,5 @@ button:active:not(:disabled),
   transform: scale(0.97);
   transition: transform 0.08s ease-out;
 }
+
 
