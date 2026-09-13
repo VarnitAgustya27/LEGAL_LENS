@@ -7322,8 +7322,24 @@ export default function App() {
     }
   });
   const [users, setUsers] = useState(() => {
+    try {
+      const saved = localStorage.getItem("legallens_users");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
     return isSupabaseConfigured() ? [] : INITIAL_USERS;
   });
+
+  // Persist updated users list to localStorage
+  useEffect(() => {
+    if (Array.isArray(users) && users.length > 0) {
+      try {
+        localStorage.setItem("legallens_users", JSON.stringify(users));
+      } catch (_) {}
+    }
+  }, [users]);
   const [loadingDb, setLoadingDb] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
 

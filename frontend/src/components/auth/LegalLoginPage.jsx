@@ -96,17 +96,34 @@ export function CustomerLoginPage({ onLogin, users = [], onBackToPortal, onSwitc
       return;
     }
 
-    const consumerUser = (users || []).find(
-      (u) => u.email?.toLowerCase() === identifier || u.role === "Consumer"
-    ) || {
-      id: "USR-006",
-      name: "Rajesh Kumar (Citizen)",
+    // Check saved currentUser in localStorage first if email matches
+    let savedCurrentUser = null;
+    try {
+      const saved = localStorage.getItem("legallens_current_user");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.email?.toLowerCase() === identifier) {
+          savedCurrentUser = parsed;
+        }
+      }
+    } catch (_) {}
+
+    // Check users array strictly by email match
+    const foundUser = (users || []).find(
+      (u) => u.email?.toLowerCase() === identifier
+    );
+
+    const defaultName = identifier.split("@")[0].replace(".", " ").replace(/\b\w/g, c => c.toUpperCase()) || "Valued Consumer";
+
+    const consumerUser = savedCurrentUser || foundUser || {
+      id: `USR-CUST-${identifier.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8)}`,
+      name: defaultName,
       role: "Consumer",
-      email: identifier.includes("@") ? identifier : "customer@gmail.com",
+      email: identifier,
       badge: "CITIZEN-DL-901",
       jurisdiction: "Public Consumer Portal",
       active: true,
-      initials: "RK"
+      initials: (defaultName[0] || "C").toUpperCase()
     };
 
     onLogin(publicOfficerProfile(consumerUser));
