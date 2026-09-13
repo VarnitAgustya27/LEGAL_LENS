@@ -3270,10 +3270,28 @@ function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
     }
   };
 
+  const fallbackCameraRef = useRef(null);
+
+  const handleNativeCameraFile = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onCapturePhoto?.(file);
+      onClose?.();
+    }
+  };
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm">
+      <input
+        ref={fallbackCameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleNativeCameraFile}
+      />
       <div className="w-full max-w-xl rounded-2xl overflow-hidden border shadow-2xl" style={{ background: "#0b1220", borderColor: "rgba(34,211,238,0.35)" }}>
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(148,163,184,0.18)" }}>
           <div>
@@ -3296,7 +3314,7 @@ function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
           </div>
 
           {/* Quick Capture Shutter floating overlay */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center pointer-events-auto">
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-3 pointer-events-auto z-10 px-4">
             <button
               type="button"
               onClick={handleCapturePhoto}
@@ -3306,14 +3324,41 @@ function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
               {isCapturing ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
               <span>Click Picture</span>
             </button>
+            <button
+              type="button"
+              onClick={() => fallbackCameraRef.current?.click()}
+              className="px-4 py-2.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 shadow-xl border border-slate-600 cursor-pointer active:scale-95 transition-all"
+            >
+              <Camera size={15} />
+              <span>Native Camera</span>
+            </button>
           </div>
 
           {error && (
-            <div className="absolute inset-0 flex items-center justify-center p-6 text-center bg-slate-950/90">
-              <div>
-                <AlertTriangle className="mx-auto mb-3 text-amber-400" size={30} />
-                <p className="text-sm text-slate-200">{error}</p>
-                <p className="text-xs text-slate-500 mt-2">On iPhone and Android, open this site over HTTPS and allow camera permission.</p>
+            <div className="absolute inset-0 flex items-center justify-center p-6 text-center bg-slate-950/95 z-20">
+              <div className="max-w-xs mx-auto space-y-3">
+                <AlertTriangle className="mx-auto text-amber-400" size={32} />
+                <p className="text-sm font-bold text-slate-100">{error}</p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Browsing over plain HTTP (<code className="text-cyan-300 font-mono">10.12.17.144</code>) restricts live stream access. Use Native Camera mode to snap photos directly!
+                </p>
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fallbackCameraRef.current?.click()}
+                    className="w-full py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-extrabold text-xs hover:bg-cyan-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                  >
+                    <Camera size={16} />
+                    <span>Open Phone Camera App</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -3324,18 +3369,17 @@ function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
           <div className="flex items-center gap-2 ml-auto">
             <button
               type="button"
-              onClick={handleCapturePhoto}
-              disabled={isCapturing}
-              className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-all disabled:opacity-50"
+              onClick={() => fallbackCameraRef.current?.click()}
+              className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 flex items-center gap-1 cursor-pointer"
             >
-              <Camera size={14} /> Click Picture
+              <Camera size={13} /> Open Camera App
             </button>
             {torchSupported && (
-              <button type="button" onClick={toggleTorch} className="px-3 py-1.5 rounded-lg border text-xs font-semibold text-amber-300 border-amber-400/30 hover:bg-amber-400/10">
+              <button type="button" onClick={toggleTorch} className="px-3 py-1.5 rounded-lg border text-xs font-semibold text-amber-300 border-amber-400/30 hover:bg-amber-400/10 cursor-pointer">
                 {torchOn ? "Flash Off" : "Flash On"}
               </button>
             )}
-            <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/15">Cancel</button>
+            <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/15 cursor-pointer">Cancel</button>
           </div>
         </div>
       </div>
