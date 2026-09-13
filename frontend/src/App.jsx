@@ -3887,6 +3887,11 @@ function NewInspection({ onFinish, currentUser }) {
     }
 
     setCreatedCase(newCaseData);
+    // Auto-save to Supabase immediately
+    saveInspection(newCaseData, currentUser).catch((err) =>
+      console.warn('[NewInspection] Direct scan Supabase auto-save notice:', err)
+    );
+    localStorage.setItem("legallens_current_inspection", JSON.stringify(newCaseData));
     setSubmitting(false);
     setStep(3);
   };
@@ -3950,6 +3955,11 @@ function NewInspection({ onFinish, currentUser }) {
       }
 
       setCreatedCase(newCaseData);
+      // Auto-save to Supabase immediately
+      saveInspection(newCaseData, currentUser).catch((err) =>
+        console.warn('[NewInspection] E-Commerce Supabase auto-save notice:', err)
+      );
+      localStorage.setItem("legallens_current_inspection", JSON.stringify(newCaseData));
       setSubmitting(false);
       setStep(3);
     } catch (err) {
@@ -5329,9 +5339,21 @@ function InspectionDetail({ inspection, users = [] }) {
               The finding above is AI-assisted. Confirm, override, or flag for further review before it becomes the final determination.
             </p>
             <textarea style={{ ...inputStyle, minHeight: 60, marginBottom: 12 }} placeholder="Officer remarks…" />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
+                onClick={() => {
+                  if (onFinish) {
+                    onFinish(createdCase || insp);
+                  }
+                }}
+                className="font-bold flex items-center gap-1.5 shadow-md text-xs"
+              >
+                <ClipboardList size={13} /> Open in Case Register & Details
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleDownloadPdf}
                 disabled={isGeneratingPdf}
               >
@@ -5345,7 +5367,7 @@ function InspectionDetail({ inspection, users = [] }) {
                   </>
                 )}
               </Button>
-              <Button size="sm" variant="ghost">Save Draft</Button>
+              <Button size="sm" variant="ghost" onClick={() => onFinish && onFinish(createdCase || insp)}>Save & Close</Button>
             </div>
           </Card>
         </div>
@@ -5403,16 +5425,16 @@ function ProductHistoryModal({ product, onClose, onOpenInspection }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 pt-8 sm:pt-14 overflow-y-auto bg-black/80 backdrop-blur-sm">
       {/* Backdrop click to dismiss */}
-      <div className="absolute inset-0" onClick={onClose} />
+      <div className="fixed inset-0" onClick={onClose} />
 
       <motion.div
-        initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: 15 }}
+        initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: -15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: 15 }}
+        exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: -15 }}
         transition={{ duration: 0.2 }}
-        className="relative z-10 w-full max-w-3xl max-h-[88vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden"
+        className="relative z-10 w-full max-w-3xl max-h-[82vh] my-auto sm:my-0 flex flex-col rounded-2xl border shadow-2xl overflow-hidden"
         style={{ background: "var(--ll-bg-card)", borderColor: C.line }}
       >
         {/* Modal Header */}

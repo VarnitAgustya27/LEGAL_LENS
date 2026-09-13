@@ -141,3 +141,81 @@ def upload_image_to_supabase_storage(file_path: str, filename: str) -> Optional[
             print(f"[SUPABASE-STORAGE] Image upload note: {e}")
 
     return None
+
+def save_inspection_to_supabase_db(inspection_data: dict, current_user=None) -> bool:
+    """
+    Saves/Upserts a full inspection case into Supabase PostgreSQL 'public.inspections' table.
+    """
+    supabase_url = settings.SUPABASE_URL.rstrip('/')
+    anon_key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY
+    if not supabase_url or not anon_key:
+        return False
+
+    endpoint = f"{supabase_url}/rest/v1/inspections"
+    headers = {
+        "apikey": anon_key,
+        "Authorization": f"Bearer {anon_key}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+    }
+
+    declarations = inspection_data.get("declarations", [])
+    mfr_val = None
+    if isinstance(declarations, list):
+        mfr_decl = next((d for d in declarations if isinstance(d, dict) and d.get("field") == "manufacturer"), None)
+        if mfr_decl:
+            mfr_val = mfr_decl.get("value")
+
+    raw_status = (inspection_data.get("status") or "REVIEW").upper()
+    status_clean = raw_status if raw_status in ["COMPLIANT", "NON_COMPLIANT", "REVIEW"] else "REVIEW"
+
+    is_consumer = False
+    inspector_role = "Officer"
+    inspector_name = "Authorized Officer"
+    inspector_badge = None
+    inspector_email = None
+
+    if current_user:
+        if hasattr(current_user, "role"):
+            inspector_role = current_user.role
+            is_consumer = current_user.role == "Consumer"
+            inspector_name = getattr(current_user, "full_name", None) or getattr(current_user, "name", "Officer")
+            inspector_badge = getattr(current_user, "badge", None)
+            inspector_email = getattr(current_user, "email", None)
+        elif isinstance(current_user, dict):
+            inspector_role = current_user.get("role", "Officer")
+            is_consumer = inspector_role == "Consumer"
+            inspector_name = current_user.get("name") or current_user.get("full_name") or "Officer"
+            inspector_badge = current_user.get("badge")
+            inspector_email = current_user.get("email")
+
+    payload = {
+        "case_number": inspection_data.get("case_number") or inspection_data.get("inspection_no"),
+        "product_name": inspection_data.get("product") or inspection_data.get("product_name") or "Packaged Commodity",
+        "category": inspection_data.get("category") or "Packaged Food",
+        "manufacturer": mfr_val or inspection_data.get("seller_name"),
+        "location": inspection_data.get("location") or "Digital Marketplace",
+        "status": status_clean,
+        "score": float(inspection_data.get("score") or 0.0),
+        "inspector_name": inspector_name,
+        "inspector_badge": inspector_badge,
+        "inspector_email": inspector_email,
+        "declarations": declarations,
+        "violations": inspection_data.get("violations", []),
+        "images": inspection_data.get("images", []),
+        "ocr_detections": inspection_data.get("ocr_detections", []),
+        "notes": inspection_data.get("notes") or f"Scanned on {inspection_data.get('platform', 'Legal-Lens')}",
+        "is_demo": False
+    }
+
+    try:
+        resp = requests.post(endpoint, json=payload, headers=headers, timeout=10)
+        if resp.status_code in [200, 201]:
+            print(f"[SUPABASE-SYNC] Successfully synced inspection case to Supabase: {payload['case_number']}")
+            return True
+        else:
+            print(f"[SUPABASE-SYNC] Note syncing inspection to Supabase (Status {resp.status_code}): {resp.text}")
+            return False
+    except Exception as e:
+        print(f"[SUPABASE-SYNC] Sync exception: {e}")
+        return False

@@ -49,15 +49,15 @@ export function ProductHistoryModal({ product, onClose, onOpenInspection }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs">
-      <div className="absolute inset-0" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 pt-8 sm:pt-14 overflow-y-auto bg-black/80 backdrop-blur-sm">
+      <div className="fixed inset-0" onClick={onClose} />
 
       <motion.div
-        initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: 15 }}
+        initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: -15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: 15 }}
+        exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: -15 }}
         transition={{ duration: 0.2 }}
-        className="relative z-10 w-full max-w-3xl max-h-[88vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden"
+        className="relative z-10 w-full max-w-3xl max-h-[82vh] my-auto sm:my-0 flex flex-col rounded-2xl border shadow-2xl overflow-hidden"
         style={{ background: "var(--ll-bg-card)", borderColor: C.line }}
       >
         <div className="p-6 border-b flex items-start justify-between gap-4" style={{ borderColor: C.line, background: "var(--ll-bg-card)" }}>

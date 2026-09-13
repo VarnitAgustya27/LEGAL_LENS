@@ -21,6 +21,7 @@ from app.services.inspection_service import InspectionService
 from app.services.audit_service import AuditService
 from app.services.ecom_scraper import ECommerceScraperService
 from app.extraction.extractor import DeclarationExtractor
+from app.utils.supabase_uploader import save_inspection_to_supabase_db
 
 # Import OCRService from /ocr-test folder
 import sys
@@ -527,10 +528,11 @@ def direct_scan(
     db.commit()
     db.refresh(inspection)
 
-    return {
+    result_payload = {
         "id": inspection.id,
         "case_number": inspection.case_number,
         "product": product.name,
+        "product_name": product.name,
         "category": product.category,
         "location": inspection.location,
         "status": inspection.status,
@@ -542,6 +544,13 @@ def direct_scan(
         "violations": eval_result.get("violations", []),
         "ocr_detections": all_detections
     }
+
+    try:
+        save_inspection_to_supabase_db(result_payload, current_user=current_user)
+    except Exception as supa_err:
+        print(f"[DIRECT-SCAN-SUPABASE] Sync notice: {supa_err}")
+
+    return result_payload
 
 
 uploads_dir = os.path.abspath("./uploads")
@@ -1080,7 +1089,7 @@ async def ecom_scan_url(
         details={"case_number": case_no, "url": url_clean, "platform": platform, "status": inspection.status}
     )
 
-    return {
+    result_payload = {
         "id": inspection.id,
         "case_number": inspection.case_number,
         "inspection_no": inspection.case_number,
@@ -1113,5 +1122,12 @@ async def ecom_scan_url(
             "compliance_score": inspection.score
         }
     }
+
+    try:
+        save_inspection_to_supabase_db(result_payload, current_user=current_user)
+    except Exception as supa_err:
+        print(f"[ECOM-SCAN-SUPABASE] Sync notice: {supa_err}")
+
+    return result_payload
 
 

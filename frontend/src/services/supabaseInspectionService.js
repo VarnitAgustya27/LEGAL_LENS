@@ -6,7 +6,7 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient';
 function mapResultToRow(result, currentUser) {
   const declarations = Array.isArray(result.declarations) ? result.declarations : [];
   const mfrDecl = declarations.find((d) => d.field === 'manufacturer');
-  const manufacturer = mfrDecl?.value || result.manufacturer || null;
+  const manufacturer = mfrDecl?.value || result.manufacturer || result.seller_name || null;
 
   const rawStatus = (result.status || 'REVIEW').toUpperCase();
   const status = ['COMPLIANT', 'NON_COMPLIANT', 'REVIEW'].includes(rawStatus)
@@ -15,23 +15,39 @@ function mapResultToRow(result, currentUser) {
 
   const isConsumerRole = currentUser?.role === 'Consumer';
 
+  let images = [];
+  if (Array.isArray(result.images) && result.images.length > 0) {
+    images = result.images;
+  } else if (result.uploaded_images && typeof result.uploaded_images === 'object') {
+    images = Object.entries(result.uploaded_images).map(([angle, val], idx) => ({
+      id: `img_${idx + 1}`,
+      image_type: angle,
+      angle: angle,
+      url: typeof val === 'object' ? (val.previewUrl || val.url || val.image_url) : val
+    }));
+  } else if (Array.isArray(result.gallery_images) && result.gallery_images.length > 0) {
+    images = result.gallery_images.map((u, idx) => ({
+      id: `img_gallery_${idx + 1}`,
+      image_type: `GALLERY_PHOTO_${idx + 1}`,
+      angle: `PHOTO_${idx + 1}`,
+      url: u
+    }));
+  }
+
   return {
     case_number: result.case_number || result.id || result.inspection_no,
     product_name: result.product || result.product_name || 'Packaged Commodity',
     category: result.category || 'Packaged Food',
     manufacturer,
-    location: result.location || null,
+    location: result.location || (result.platform ? `${result.platform} (Digital Listing)` : null),
     status,
     score: typeof result.score === 'number' ? result.score : 0,
     inspector_name: currentUser?.name || currentUser?.full_name || (isConsumerRole ? 'Consumer' : 'Authorized Officer'),
     inspector_badge: isConsumerRole ? null : (currentUser?.badge || currentUser?.badge_number || null),
     inspector_email: currentUser?.email || null,
-    inspector_role: currentUser?.role || (isConsumerRole ? 'Consumer' : 'Officer'),
-    is_consumer: isConsumerRole || result.is_consumer || false,
-    is_officer_internal: !isConsumerRole && (result.is_officer_internal || Boolean(currentUser?.badge)),
     declarations: declarations,
     violations: Array.isArray(result.violations) ? result.violations : [],
-    images: Array.isArray(result.images) ? result.images : [],
+    images: images,
     ocr_detections: Array.isArray(result.ocr_detections) ? result.ocr_detections : [],
     notes: result.notes || null,
     is_demo: false,

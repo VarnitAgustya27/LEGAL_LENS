@@ -194,6 +194,28 @@ class InspectionService:
         db.commit()
         db.refresh(inspection)
 
+        # Sync to Supabase PostgreSQL database
+        try:
+            from app.utils.supabase_uploader import save_inspection_to_supabase_db
+            inspection_dict = {
+                "case_number": inspection.case_number,
+                "product": inspection.product.name if inspection.product else "Packaged Commodity",
+                "product_name": inspection.product.name if inspection.product else "Packaged Commodity",
+                "category": inspection.product.category if inspection.product else "Packaged Food",
+                "location": inspection.location,
+                "status": inspection.status,
+                "score": inspection.score,
+                "inspector_name": user_name,
+                "declarations": [{"field": d.field, "label": d.label, "value": d.value, "raw_text": d.raw_text, "confidence": d.confidence, "status": d.status, "bbox": d.bbox, "image_id": d.image_id} for d in inspection.declarations],
+                "violations": [{"rule_code": v.rule_code, "field": v.field, "status": v.status, "severity": v.severity, "message": v.message, "expected": v.expected, "detected": v.detected, "statutory_reference": v.statutory_reference} for v in inspection.violations],
+                "images": [{"id": f"img_{img.id}", "image_type": img.image_type, "url": img.image_url or img.original_path, "original_path": img.original_path} for img in inspection.images],
+                "ocr_detections": all_detections,
+                "notes": inspection.notes
+            }
+            save_inspection_to_supabase_db(inspection_dict)
+        except Exception as supa_err:
+            print(f"[SUPABASE-SYNC-PROCESS] Note: {supa_err}")
+
         # Audit Log
         AuditService.log(
             db=db,
