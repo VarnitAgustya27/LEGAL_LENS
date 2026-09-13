@@ -4280,3 +4280,87 @@ canvas {
   .ll-root.dark .ll-rules-page > .flex:first-child { padding: 10px; border-radius: 15px; }
   .ll-root.dark .ll-new-inspection-page > .flex.items-center.mb-8 { padding: 12px; border-radius: 16px; }
 }
+
+/* ==========================================================================
+   ANDROID & MOBILE BUTTON TOUCH TARGET OPTIMIZATIONS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Compact top header bar & topbar action buttons on Android mobile */
+  .main-navbar {
+    height: 56px !important;
+  }
+
+  .navbar-inner {
+    padding: 0 10px !important;
+  }
+
+  .main-navbar button.topbar-login-btn,
+  .main-navbar button.topbar-access-btn,
+  .nav-access-button.topbar-access-btn,
+  button.topbar-login-btn,
+  button.topbar-access-btn {
+    min-height: 32px !important;
+    height: 34px !important;
+    padding: 4px 8px !important;
+    font-size: 10.5px !important;
+    line-height: 1.1 !important;
+    border-radius: 8px !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+  }
+
+  .main-brand {
+    gap: 6px !important;
+  }
+
+  .brand-mark {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+  }
+
+  .brand-copy strong {
+    font-size: 12px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .brand-copy small {
+    display: none !important;
+  }
+
+  /* General body buttons touch targets on Android */
+  button:not(.topbar-login-btn):not(.topbar-access-btn):not(.brand-button):not(.show-password-btn), 
+  [role="button"], 
+  .btn,
+  .premium-login-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:not(.topbar-login-btn):not(.topbar-access-btn).px-3,
+  button:not(.topbar-login-btn):not(.topbar-access-btn).px-3\.5 {
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+  }
+
+  button:not(.topbar-login-btn):not(.topbar-access-btn).py-1,
+  button:not(.topbar-login-btn):not(.topbar-access-btn).py-1\.5 {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+  }
+
+  button:not(.topbar-login-btn):not(.topbar-access-btn).text-xs {
+    font-size: 0.825rem !important;
+  }
+}
+
+/* Native Android tap feedback animation */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.08s ease-out;
+}
+
+

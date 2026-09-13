@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Legal-Lens</string>
+    <string name="title_activity_main">Legal-Lens</string>
+    <string name="package_name">com.legallens.app</string>
+    <string name="custom_url_scheme">com.legallens.app</string>
+</resources>

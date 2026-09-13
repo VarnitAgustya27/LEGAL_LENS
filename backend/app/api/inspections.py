@@ -452,13 +452,19 @@ def direct_scan(
             except Exception as e:
                 print(f"[OCR] Note on {img['filename']}: {e}")
         declarations_dict = DeclarationExtractor.extract_declarations(all_detections, category)
+        if not all_detections:
+            # A missing OCR provider/result is not visual proof that a statutory
+            # declaration is absent. Preserve the uncertainty for officer review.
+            for declaration in declarations_dict.values():
+                declaration["extraction_unavailable"] = True
 
     # Evaluate Legal Metrology PCR 2011 compliance
     product_info = {
         "name": product.name,
         "category": product.category,
         "is_imported": product.is_imported,
-        "barcode": product.barcode
+        "barcode": product.barcode,
+        "extraction_unavailable": not gemini_successful and not all_detections
     }
     eval_result = service.rule_engine.evaluate_inspection(declarations_dict, product_info)
 
