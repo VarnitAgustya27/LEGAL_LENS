@@ -55,7 +55,7 @@ function evaluateImageQuality(file, callback) {
   reader.readAsDataURL(file);
 }
 
-export function MobileCodeScanner({ open, onClose, onDetected }) {
+export function MobileCodeScanner({ open, onClose, onDetected, onPhotoCaptured }) {
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
   const [error, setError] = useState("");
@@ -157,6 +157,7 @@ export function MobileCodeScanner({ open, onClose, onDetected }) {
     const file = e.target.files?.[0];
     if (file) {
       evaluateImageQuality(file, (data) => {
+        onPhotoCaptured?.(data);
         onDetected?.(data.name);
       });
       onClose?.();
@@ -434,13 +435,27 @@ export function Dropzone({ label, sublabel, required, imageData, onImageChange, 
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  cameraInputRef.current?.click();
+                }}
+                className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer bg-cyan-600/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-600/30"
+                title="Take photo directly with phone camera app"
+              >
+                <Camera size={13} /> Camera
+              </motion.button>
+
+              <motion.button
+                whileHover={shouldReduceMotion ? {} : { scale: 1.05 }}
+                whileTap={shouldReduceMotion ? {} : { scale: 0.95 }}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowScanner(true);
                 }}
                 className="ll-focus px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
                 style={{ background: "var(--ll-bg-card)", borderColor: "var(--ll-color-line)", color: "var(--ll-color-ink)" }}
                 title="Open live QR / barcode scanner"
               >
-                <ScanLine size={13} /> Scan QR / Barcode
+                <ScanLine size={13} /> Scan Code
               </motion.button>
             </div>
           </div>
@@ -450,9 +465,14 @@ export function Dropzone({ label, sublabel, required, imageData, onImageChange, 
       <MobileCodeScanner
         open={showScanner}
         onClose={() => setShowScanner(false)}
+        onPhotoCaptured={(data) => {
+          onImageChange(data);
+        }}
         onDetected={(value) => {
           setShowScanner(false);
-          onBarcodeDetected?.(value);
+          if (typeof value === "string" && !value.endsWith(".jpg") && !value.endsWith(".png")) {
+            onBarcodeDetected?.(value);
+          }
         }}
       />
 
