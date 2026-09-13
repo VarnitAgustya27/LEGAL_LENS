@@ -538,6 +538,9 @@ def direct_scan(
     }
 
 
+uploads_dir = os.path.abspath("./uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+
 @router.post("/ecom-scan-url")
 async def ecom_scan_url(
     url: str = Form(...),
@@ -617,20 +620,21 @@ async def ecom_scan_url(
     db.refresh(inspection)
 
     saved_images_list = []
+
     # 1. Save user-uploaded listing screenshots if provided
     if files:
         for idx, file in enumerate(files):
             if file and file.filename:
                 fname = f"user_screenshot_{uuid.uuid4().hex[:6]}_{file.filename}"
-                local_path = os.path.join(temp_ecom_dir, fname)
-                with open(local_path, "wb") as buffer:
+                target_path = os.path.join(uploads_dir, fname)
+                with open(target_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
                 
                 angle_label = f"LISTING_SCREENSHOT_{idx+1}" if len(files) > 1 else "LISTING_SCREENSHOT"
                 img_obj = InspectionImage(
                     inspection_id=inspection.id,
                     image_type=angle_label,
-                    original_path=local_path,
+                    original_path=target_path,
                     quality_status="GOOD",
                     quality_score=1.0,
                     quality_metrics={}
@@ -639,24 +643,25 @@ async def ecom_scan_url(
                 db.commit()
                 db.refresh(img_obj)
 
-                web_url = local_path
+                web_url = f"/uploads/{fname}"
                 try:
                     from app.utils.supabase_uploader import upload_image_to_supabase_storage
-                    pub_url = upload_image_to_supabase_storage(local_path, fname)
-                    fallback_supabase = f"{settings.SUPABASE_URL.rstrip('/')}/storage/v1/object/public/product-images/{fname}"
-                    web_url = pub_url or fallback_supabase
-                    img_obj.original_path = web_url
-                    img_obj.image_url = web_url
-                    db.commit()
+                    pub_url = upload_image_to_supabase_storage(target_path, fname)
+                    if pub_url:
+                        web_url = pub_url
                 except Exception as e:
                     print(f"[Supabase] Image upload notice: {e}")
+
+                img_obj.original_path = target_path
+                img_obj.image_url = web_url
+                db.commit()
 
                 saved_images_list.append({
                     "id": f"img_{img_obj.id}",
                     "angle": angle_label,
                     "image_type": angle_label,
-                    "original_path": local_path,
-                    "local_path": local_path,
+                    "original_path": target_path,
+                    "local_path": target_path,
                     "image_url": web_url,
                     "url": web_url,
                     "filename": fname
@@ -666,18 +671,21 @@ async def ecom_scan_url(
     gallery_urls = scraped.get("gallery_images", [])
     for idx, local_img_path in enumerate(scraped.get("downloaded_paths", [])):
         fname = os.path.basename(local_img_path)
-        angle_label = f"GALLERY_PHOTO_{idx+1}"
+        target_path = os.path.join(uploads_dir, fname)
         
-        # Copy to root uploads_dir for direct static serving
+        # Copy to root uploads_dir for guaranteed static serving
         try:
-            shutil.copyfile(local_img_path, os.path.join(uploads_dir, fname))
-        except Exception:
-            pass
+            if os.path.abspath(local_img_path) != os.path.abspath(target_path):
+                shutil.copyfile(local_img_path, target_path)
+        except Exception as copy_err:
+            print(f"[ECOM-UPLOAD] Copy notice: {copy_err}")
+            target_path = local_img_path
 
+        angle_label = f"GALLERY_PHOTO_{idx+1}" if len(scraped.get("downloaded_paths", [])) > 1 else "PRODUCT_LISTING"
         img_obj = InspectionImage(
             inspection_id=inspection.id,
             image_type=angle_label,
-            original_path=local_img_path,
+            original_path=target_path,
             quality_status="GOOD",
             quality_score=1.0,
             quality_metrics={}
@@ -690,25 +698,26 @@ async def ecom_scan_url(
         web_url = f"/uploads/{fname}"
         try:
             from app.utils.supabase_uploader import upload_image_to_supabase_storage
-            pub_url = upload_image_to_supabase_storage(local_img_path, fname)
+            pub_url = upload_image_to_supabase_storage(target_path, fname)
             if pub_url:
                 web_url = pub_url
-            elif original_cdn_url and original_cdn_url.startswith("http"):
+            elif original_cdn_url and str(original_cdn_url).startswith("http"):
                 web_url = original_cdn_url
-            img_obj.original_path = web_url
-            img_obj.image_url = web_url
-            db.commit()
         except Exception as e:
             print(f"[Supabase] Image upload notice: {e}")
-            if original_cdn_url and original_cdn_url.startswith("http"):
+            if original_cdn_url and str(original_cdn_url).startswith("http"):
                 web_url = original_cdn_url
+
+        img_obj.original_path = target_path
+        img_obj.image_url = web_url
+        db.commit()
 
         saved_images_list.append({
             "id": f"img_{img_obj.id}",
             "angle": angle_label,
             "image_type": angle_label,
-            "original_path": local_img_path,
-            "local_path": local_img_path,
+            "original_path": target_path,
+            "local_path": target_path,
             "image_url": web_url,
             "url": web_url,
             "filename": fname
@@ -722,7 +731,7 @@ async def ecom_scan_url(
         from app.ocr.gemini_engine import GeminiVisionEngine
         gemini_engine = GeminiVisionEngine(api_key=settings.GEMINI_API_KEY)
         if gemini_engine.is_available():
-            image_paths = [img.get("local_path") or img["original_path"] for img in saved_images_list if os.path.exists(img.get("local_path") or "")]
+            image_paths = [img.get("local_path") or img["original_path"] for img in saved_images_list if os.path.exists(img.get("local_path") or img.get("original_path") or "")]
             print(f"\n[GEMINI-VISION-ECOM] Analyzing {len(image_paths)} product photos/screenshots + web specs for {platform}...")
             gemini_result = gemini_engine.analyze_ecommerce_listing(
                 image_paths=image_paths,
@@ -734,67 +743,204 @@ async def ecom_scan_url(
                 dict_item = next((item for item in gemini_result if isinstance(item, dict) and "declarations" in item), None)
                 gemini_result = dict_item if dict_item else (gemini_result[0] if len(gemini_result) > 0 and isinstance(gemini_result[0], dict) else {})
 
-            if gemini_result and "declarations" in gemini_result and not gemini_result.get("error"):
-                gemini_successful = True
-                if gemini_result.get("product_name"):
-                    product.name = gemini_result["product_name"]
-                    prod_name = gemini_result["product_name"]
-                    db.commit()
+            if gemini_result and isinstance(gemini_result, dict) and "declarations" in gemini_result and not gemini_result.get("error"):
+                raw_decls = gemini_result["declarations"]
+                valid_count = sum(1 for k, v in raw_decls.items() if v and isinstance(v, dict) and v.get("value") and str(v.get("value")).strip() and str(v.get("value")).lower() not in ["null", "none", "not detected", "n/a"])
+                
+                if valid_count >= 2:
+                    gemini_successful = True
+                    if gemini_result.get("product_name"):
+                        product.name = gemini_result["product_name"]
+                        prod_name = gemini_result["product_name"]
+                        db.commit()
 
-                for k, v in gemini_result["declarations"].items():
-                    if k == "product_name":
-                        continue
-                    if k == "mfg_date" and not (v and v.get("value")):
-                        continue
-                    if v and v.get("value"):
-                        raw_box = v.get("box_2d")
-                        box = raw_box if (isinstance(raw_box, list) and len(raw_box) == 4) else None
-                        img_idx = max(0, min(int(v.get("image_index") or 1) - 1, max(0, len(saved_images_list) - 1)))
-                        matching_img_id = saved_images_list[img_idx]["id"] if saved_images_list else None
-                        declarations_dict[k] = {
-                            "field": k,
-                            "label": k.replace("_", " ").title(),
-                            "value": v["value"],
-                            "raw_text": v.get("raw_text", v["value"]),
-                            "confidence": float(v.get("confidence", 0.98)),
-                            "detected": True,
-                            "bbox": box,
-                            "image_index": img_idx + 1,
-                            "image_id": matching_img_id,
-                            "rule_citation": "Rule 6(10) PCR 2011"
-                        }
-                    else:
-                        declarations_dict[k] = {
-                            "field": k,
-                            "label": k.replace("_", " ").title(),
-                            "value": None,
-                            "raw_text": None,
-                            "confidence": 0.0,
-                            "detected": False,
-                            "bbox": None,
-                            "image_index": 1,
-                            "image_id": None,
-                            "rule_citation": "Rule 6(10) PCR 2011"
-                        }
+                    for k, v in raw_decls.items():
+                        if k == "product_name":
+                            continue
+                        if k == "mfg_date" and not (v and v.get("value")):
+                            continue
+                        if v and v.get("value"):
+                            raw_box = v.get("box_2d")
+                            box = raw_box if (isinstance(raw_box, list) and len(raw_box) == 4) else None
+                            img_idx = max(0, min(int(v.get("image_index") or 1) - 1, max(0, len(saved_images_list) - 1)))
+                            matching_img_id = saved_images_list[img_idx]["id"] if saved_images_list else None
+                            declarations_dict[k] = {
+                                "field": k,
+                                "label": k.replace("_", " ").title(),
+                                "value": v["value"],
+                                "raw_text": v.get("raw_text", v["value"]),
+                                "confidence": float(v.get("confidence", 0.98)),
+                                "detected": True,
+                                "bbox": box,
+                                "image_index": img_idx + 1,
+                                "image_id": matching_img_id,
+                                "rule_citation": "Rule 6(10) PCR 2011"
+                            }
+                        else:
+                            declarations_dict[k] = {
+                                "field": k,
+                                "label": k.replace("_", " ").title(),
+                                "value": None,
+                                "raw_text": None,
+                                "confidence": 0.0,
+                                "detected": False,
+                                "bbox": None,
+                                "image_index": 1,
+                                "image_id": None,
+                                "rule_citation": "Rule 6(10) PCR 2011"
+                            }
     except Exception as e:
         print(f"[GEMINI-VISION-ECOM] Note: {e}")
 
-    # Fallback if Gemini Vision is unavailable
+    # Fallback if Gemini Vision is unavailable or yielded insufficient extractions
     if not gemini_successful:
-        print("[FALLBACK-ECOM] Using scraped DOM table values...")
+        print("[FALLBACK-ECOM] Using scraped live product details and statutory rule derivation...")
         specs = scraped.get("specifications", {})
-        country_val = specs.get("Country of Origin") or specs.get("Country of origin") or specs.get("Origin") or "India"
-        mfr_val = specs.get("Manufacturer") or specs.get("Packed By") or specs.get("Manufacturer Contact Information") or seller
-        net_qty_val = specs.get("Unit / Net Quantity") or specs.get("Net Quantity") or specs.get("Item Weight") or specs.get("Volume") or "400 g"
         
+        # 1. Price / MRP from scraped data
+        raw_price = scraped.get("price_text") or specs.get("Price") or specs.get("MRP")
+        clean_price = str(raw_price) if raw_price else None
+        if clean_price and "(inclusive" not in clean_price.lower() and "incl" not in clean_price.lower():
+            clean_price = f"{clean_price} (Inclusive of all taxes)"
+
+        # 2. Net Quantity from scraped specifications or title
+        qty_val = specs.get("Unit / Net Quantity") or specs.get("Net Quantity") or specs.get("Item Weight") or specs.get("Volume")
+        if not qty_val and prod_name:
+            import re
+            qm = re.search(r'(\d+(?:\.\d+)?\s*(?:g|kg|ml|l|litre|litres|gm|gms|count|units|pieces?|pack|tablets|capsules|m|cm|mm|x\s*\d+))\b', prod_name, re.I)
+            qty_val = qm.group(1) if qm else None
+
+        # 3. Unit Sale Price calculation (Rule 6(11))
+        usp_val = specs.get("Unit Sale Price")
+        if not usp_val and clean_price and qty_val:
+            try:
+                import re
+                p_num = float(re.sub(r'[^\d.]', '', clean_price.split('(')[0]))
+                q_num_match = re.search(r'(\d+(?:\.\d+)?)', str(qty_val))
+                q_num = float(q_num_match.group(1)) if q_num_match else 1.0
+                if "x" in str(qty_val).lower():
+                    multi_match = re.search(r'(\d+)\s*(?:ml|g|gm)?\s*x\s*(\d+)', str(qty_val), re.I)
+                    if multi_match:
+                        q_num = float(multi_match.group(1)) * float(multi_match.group(2))
+                
+                lower_q = str(qty_val).lower()
+                if any(x in lower_q for x in ["ml", "millilitre"]):
+                    unit_str = "ml"
+                elif any(x in lower_q for x in ["kg", "kilogram"]):
+                    unit_str = "kg"
+                elif any(x in lower_q for x in ["l", "litre"]):
+                    unit_str = "l"
+                elif any(x in lower_q for x in ["g", "gm", "gram"]):
+                    unit_str = "g"
+                elif any(x in lower_q for x in ["piece", "pieces", "pc", "count", "unit", "pack"]):
+                    unit_str = "piece" if "piece" in lower_q else "unit"
+                else:
+                    unit_str = "unit"
+
+                calc_rate = p_num / (q_num if q_num > 0 else 1.0)
+                usp_val = f"₹{calc_rate:.2f} / {unit_str}"
+            except Exception:
+                usp_val = None
+
+        # 4. Country of Origin from listing specifications
+        country_val = specs.get("Country of Origin") or specs.get("Country of origin") or specs.get("Origin") or "India"
+
+        # 5. Manufacturer / Packer directly from listing specifications
+        mfr_val = specs.get("Manufacturer") or specs.get("Packed By") or specs.get("Marketed By") or specs.get("Manufacturer Details")
+        care_val = specs.get("Consumer Care") or specs.get("Customer Care") or specs.get("Helpline") or specs.get("Customer Support")
+
+        # 6. Best Before / Shelf Life from listing specifications
+        shelf_val = specs.get("Best Before") or specs.get("Expiry Date") or specs.get("Shelf Life") or specs.get("Expiry")
+
+        # Check if the primary image is the generated digital listing card or a real packshot
+        is_digital_card = any("ecom_listing_card" in (img.get("filename") or "") for img in saved_images_list)
+        fallback_img_id = saved_images_list[0]["id"] if saved_images_list else "img_1"
+
         declarations_dict = {
-            "mrp": {"field": "mrp", "label": "MRP", "value": scraped.get("price_text", "₹120 (Inclusive of all taxes)"), "raw_text": scraped.get("price_text", "₹120 (Inclusive of all taxes)"), "detected": True, "confidence": 0.95, "image_index": 1, "image_id": saved_images_list[0]["id"] if saved_images_list else None, "rule_citation": "Rule 6(10) PCR 2011"},
-            "country_of_origin": {"field": "country_of_origin", "label": "Country Of Origin", "value": country_val, "raw_text": country_val, "detected": True, "confidence": 0.95, "image_index": 1, "image_id": saved_images_list[0]["id"] if saved_images_list else None, "rule_citation": "Rule 6(10) PCR 2011"},
-            "manufacturer": {"field": "manufacturer", "label": "Manufacturer", "value": mfr_val, "raw_text": mfr_val, "detected": bool(mfr_val), "confidence": 0.90, "image_index": 1, "image_id": saved_images_list[0]["id"] if saved_images_list else None, "rule_citation": "Rule 6(10) PCR 2011"},
-            "net_quantity": {"field": "net_quantity", "label": "Net Quantity", "value": net_qty_val, "raw_text": net_qty_val, "detected": True, "confidence": 0.95, "image_index": 1, "image_id": saved_images_list[0]["id"] if saved_images_list else None, "rule_citation": "Rule 6(10) PCR 2011"},
-            "unit_sale_price": {"field": "unit_sale_price", "label": "Unit Sale Price", "value": "₹0.50 / g", "raw_text": "₹0.50 / g", "detected": True, "confidence": 0.90, "image_index": 1, "image_id": saved_images_list[0]["id"] if saved_images_list else None, "rule_citation": "Rule 6(11) PCR 2011"},
-            "consumer_care": {"field": "consumer_care", "label": "Consumer Care", "value": "support@brand.com | 1800-111-222", "raw_text": "support@brand.com | 1800-111-222", "detected": True, "confidence": 0.90, "image_index": 1, "image_id": saved_images_list[0]["id"] if saved_images_list else None, "rule_citation": "Rule 6(10) PCR 2011"},
-            "best_before": {"field": "best_before", "label": "Best Before", "value": specs.get("Expiry Date") or "9 Months from Packaging", "raw_text": specs.get("Expiry Date") or "9 Months from Packaging", "detected": True, "confidence": 0.90, "image_index": 1, "image_id": saved_images_list[0]["id"] if saved_images_list else None, "rule_citation": "Rule 6(10) PCR 2011"}
+            "mrp": {
+                "field": "mrp",
+                "label": "MRP",
+                "value": clean_price,
+                "raw_text": clean_price,
+                "detected": bool(clean_price),
+                "confidence": 0.98 if clean_price else 0.0,
+                "image_index": 1 if is_digital_card else None,
+                "image_id": fallback_img_id if is_digital_card else None,
+                "bbox": [220, 45, 330, 485] if is_digital_card else None,
+                "rule_citation": "Rule 6(1)(e) PCR 2011"
+            },
+            "net_quantity": {
+                "field": "net_quantity",
+                "label": "Net Quantity",
+                "value": qty_val,
+                "raw_text": str(qty_val) if qty_val else None,
+                "detected": bool(qty_val),
+                "confidence": 0.98 if qty_val else 0.0,
+                "image_index": 1 if is_digital_card else None,
+                "image_id": fallback_img_id if is_digital_card else None,
+                "bbox": [220, 515, 330, 955] if is_digital_card else None,
+                "rule_citation": "Rule 6(1)(b) PCR 2011"
+            },
+            "unit_sale_price": {
+                "field": "unit_sale_price",
+                "label": "Unit Sale Price",
+                "value": usp_val,
+                "raw_text": str(usp_val) if usp_val else None,
+                "detected": bool(usp_val),
+                "confidence": 0.95 if usp_val else 0.0,
+                "image_index": 1 if is_digital_card else None,
+                "image_id": fallback_img_id if is_digital_card else None,
+                "bbox": [350, 45, 460, 485] if is_digital_card else None,
+                "rule_citation": "Rule 6(11) PCR 2011"
+            },
+            "country_of_origin": {
+                "field": "country_of_origin",
+                "label": "Country Of Origin",
+                "value": country_val,
+                "raw_text": str(country_val) if country_val else None,
+                "detected": bool(country_val),
+                "confidence": 0.99 if country_val else 0.0,
+                "image_index": 1 if is_digital_card else None,
+                "image_id": fallback_img_id if is_digital_card else None,
+                "bbox": [350, 515, 460, 955] if is_digital_card else None,
+                "rule_citation": "Rule 6(10) PCR 2011"
+            },
+            "manufacturer": {
+                "field": "manufacturer",
+                "label": "Manufacturer",
+                "value": mfr_val,
+                "raw_text": str(mfr_val) if mfr_val else None,
+                "detected": bool(mfr_val),
+                "confidence": 0.95 if mfr_val else 0.0,
+                "image_index": 1 if is_digital_card else None,
+                "image_id": fallback_img_id if is_digital_card else None,
+                "bbox": [480, 45, 600, 955] if is_digital_card else None,
+                "rule_citation": "Rule 6(1)(a) PCR 2011"
+            },
+            "consumer_care": {
+                "field": "consumer_care",
+                "label": "Consumer Care",
+                "value": care_val,
+                "raw_text": str(care_val) if care_val else None,
+                "detected": bool(care_val),
+                "confidence": 0.95 if care_val else 0.0,
+                "image_index": 1 if is_digital_card else None,
+                "image_id": fallback_img_id if is_digital_card else None,
+                "bbox": [620, 45, 730, 955] if is_digital_card else None,
+                "rule_citation": "Rule 6(1)(g) PCR 2011"
+            },
+            "best_before": {
+                "field": "best_before",
+                "label": "Best Before",
+                "value": shelf_val,
+                "raw_text": str(shelf_val) if shelf_val else None,
+                "detected": bool(shelf_val),
+                "confidence": 0.95 if shelf_val else 0.0,
+                "image_index": 1 if is_digital_card else None,
+                "image_id": fallback_img_id if is_digital_card else None,
+                "bbox": [750, 45, 860, 955] if is_digital_card else None,
+                "rule_citation": "Rule 6(10) PCR 2011"
+            }
         }
 
     # Evaluate using RuleEngine with E_COMMERCE_LISTING type (Rule 6(10))
@@ -961,4 +1107,5 @@ async def ecom_scan_url(
             "compliance_score": inspection.score
         }
     }
+
 

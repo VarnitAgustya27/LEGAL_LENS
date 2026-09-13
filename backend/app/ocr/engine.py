@@ -78,8 +78,9 @@ class OCREngine:
             except Exception as e:
                 print(f"[OCREngine] EasyOCR execution exception on {image_path}: {e}")
 
-        # 2. Fallback: Contextual Golden Preset Detections (for synthetic demo cases)
-        if len(results) < 3:
+        # 2. Fallback: Contextual Golden Preset Detections ONLY for synthetic demo fixtures
+        filename = os.path.basename(image_path).lower() if image_path else ""
+        if len(results) < 3 and ("demo_" in filename or "sample_" in filename):
             results = self._generate_contextual_detections(image_path, image_id)
 
         return results
