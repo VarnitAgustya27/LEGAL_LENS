@@ -243,9 +243,9 @@ export default function ProductComparison({ currentUser, onScanNew, onOpenDetail
           <button
             type="button"
             onClick={onScanNew}
-            className="px-4 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-all flex items-center gap-2 cursor-pointer shadow-md"
+            className="px-5 py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold text-sm hover:bg-emerald-400 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md min-h-[48px] touch-manipulation w-full sm:w-auto"
           >
-            <ScanLine size={16} />
+            <ScanLine size={18} />
             <span>Scan New Label</span>
           </button>
         </div>
@@ -255,47 +255,47 @@ export default function ProductComparison({ currentUser, onScanNew, onOpenDetail
           <button
             type="button"
             onClick={() => setActiveTab("SAVED")}
-            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3 ${
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3.5 min-h-[56px] touch-manipulation active:scale-[0.98] ${
               activeTab === "SAVED"
                 ? "bg-indigo-600/20 border-indigo-500 text-indigo-200 shadow-md"
                 : "bg-slate-900/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
             }`}
           >
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm ${
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-base flex-shrink-0 ${
               activeTab === "SAVED" ? "bg-indigo-500 text-slate-950" : "bg-slate-800 text-slate-400"
             }`}>
               1
             </div>
             <div>
-              <div className="text-xs font-bold">Saved Scans & Catalogue</div>
-              <div className="text-[10px] opacity-75">Compare 2 products from history</div>
+              <div className="text-sm font-bold">Saved Scans & Catalogue</div>
+              <div className="text-xs opacity-75">Compare 2 products from history</div>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("DUAL_SCAN")}
-            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3 ${
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3.5 min-h-[56px] touch-manipulation active:scale-[0.98] ${
               activeTab === "DUAL_SCAN"
                 ? "bg-emerald-600/20 border-emerald-500 text-emerald-200 shadow-md"
                 : "bg-slate-900/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
             }`}
           >
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm ${
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-base flex-shrink-0 ${
               activeTab === "DUAL_SCAN" ? "bg-emerald-500 text-slate-950" : "bg-slate-800 text-slate-400"
             }`}>
               2
             </div>
             <div>
-              <div className="text-xs font-bold">Dual Label Upload & AI Scan</div>
-              <div className="text-[10px] opacity-75">Upload 2 photos for instant audit</div>
+              <div className="text-sm font-bold">Dual Label Upload & AI Scan</div>
+              <div className="text-xs opacity-75">Upload 2 photos for instant audit</div>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("CALCULATOR")}
-            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3 ${
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3.5 min-h-[56px] touch-manipulation active:scale-[0.98] ${
               activeTab === "CALCULATOR"
                 ? "bg-amber-600/20 border-amber-500 text-amber-200 shadow-md"
                 : "bg-slate-900/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"

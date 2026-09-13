@@ -75,23 +75,23 @@ export default function CustomerDashboard({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={onNewInspection}
-              className="px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-lg hover:scale-105 cursor-pointer"
+              className="flex-1 sm:flex-none px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-[1.02] active:scale-95 cursor-pointer min-h-[48px] touch-manipulation"
               style={{ background: "#10B981", color: "#060A11" }}
             >
-              <ScanLine size={16} />
+              <ScanLine size={18} />
               <span>Scan New Product</span>
             </button>
             <button
               type="button"
               onClick={onCompareProducts}
-              className="px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all border cursor-pointer hover:bg-white/5"
+              className="flex-1 sm:flex-none px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border cursor-pointer hover:bg-white/5 active:scale-95 min-h-[48px] touch-manipulation"
               style={{ borderColor: "rgba(16,185,129,0.4)", color: "#34D399" }}
             >
-              <Scale size={16} />
+              <Scale size={18} />
               <span>Compare Products</span>
             </button>
           </div>

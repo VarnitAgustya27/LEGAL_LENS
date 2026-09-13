@@ -176,8 +176,8 @@ export function SectionLabel({ eyebrow, title, right }) {
 
 export function Button({ children, variant = "primary", onClick, className = "", type = "button", size = "md", disabled = false, ...props }) {
   const shouldReduceMotion = useReducedMotion();
-  const base = "ll-focus inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all whitespace-nowrap flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs select-none";
-  const sizes = size === "sm" ? "px-3 py-1.5 text-[12.5px]" : "px-4 py-2 text-[13.5px]";
+  const base = "ll-focus inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all whitespace-nowrap flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs select-none touch-manipulation active:scale-[0.97]";
+  const sizes = size === "sm" ? "px-3.5 py-2.5 sm:py-1.5 text-xs sm:text-[12.5px] min-h-[44px] sm:min-h-[38px]" : "px-5 py-3 sm:py-2 text-sm sm:text-[13.5px] min-h-[48px] sm:min-h-[42px]";
   const styles = {
     primary: { background: "var(--ll-button-primary-bg)", color: "var(--ll-button-primary-color)", border: "none" },
     ghost: { background: "transparent", color: "var(--ll-color-ink)", border: "1px solid var(--ll-color-line)" },

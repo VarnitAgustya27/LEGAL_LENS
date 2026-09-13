@@ -4280,3 +4280,45 @@ canvas {
   .ll-root.dark .ll-rules-page > .flex:first-child { padding: 10px; border-radius: 15px; }
   .ll-root.dark .ll-new-inspection-page > .flex.items-center.mb-8 { padding: 12px; border-radius: 16px; }
 }
+
+/* ==========================================================================
+   ANDROID & MOBILE BUTTON TOUCH TARGET OPTIMIZATIONS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Enforce minimum touch targets and touch manipulation on Android */
+  button, 
+  [role="button"], 
+  .btn,
+  .brand-button,
+  .premium-login-btn,
+  .show-password-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Expand touch padding for small buttons on Android mobile viewports */
+  button.px-3, button.px-3\.5 {
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+  }
+
+  button.py-1, button.py-1\.5 {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+  }
+
+  /* Maintain legibility for small buttons on mobile screens */
+  button.text-xs, button.text-\[11px\], button.text-\[12px\], button.text-\[12\.5px\] {
+    font-size: 0.825rem !important;
+  }
+}
+
+/* Native Android tap feedback animation */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.08s ease-out;
+}
+

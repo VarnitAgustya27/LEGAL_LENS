@@ -297,7 +297,7 @@ export default function Shell({ page, setPage, currentUser, avatarUrl, onUpdateA
       </main>
 
       {/* ANDROID NATIVE MOBILE BOTTOM NAVIGATION BAR */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/80 backdrop-blur-md px-2 py-2 flex items-center justify-around shadow-2xl">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/80 backdrop-blur-md px-3 py-2.5 flex items-center justify-around shadow-2xl">
         {filteredNav.slice(0, 5).map((n, idx) => {
           const active = page === n.key || (page === "inspection-detail" && n.key === "inspections");
           const isCenterScan = n.key === "new-inspection";
@@ -308,12 +308,12 @@ export default function Shell({ page, setPage, currentUser, avatarUrl, onUpdateA
                 key={n.key}
                 type="button"
                 onClick={() => setPage(n.key)}
-                className="flex flex-col items-center -mt-5 cursor-pointer group"
+                className="flex flex-col items-center -mt-6 cursor-pointer group touch-manipulation"
               >
-                <div className="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-active:scale-95 transition-transform border-2 border-slate-950 font-bold">
-                  <n.Icon size={22} />
+                <div className="w-14 h-14 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/40 group-active:scale-90 transition-transform border-4 border-slate-950 font-bold">
+                  <n.Icon size={24} />
                 </div>
-                <span className="text-[10px] font-bold text-emerald-400 mt-1">{n.label}</span>
+                <span className="text-[11px] font-extrabold text-emerald-400 mt-1">{n.label}</span>
               </button>
             );
           }
@@ -323,12 +323,12 @@ export default function Shell({ page, setPage, currentUser, avatarUrl, onUpdateA
               key={n.key}
               type="button"
               onClick={() => setPage(n.key)}
-              className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
-                active ? "text-amber-400 font-bold" : "text-slate-400 hover:text-slate-200"
+              className={`flex flex-col items-center justify-center py-2 px-3.5 min-h-[48px] rounded-xl transition-all cursor-pointer touch-manipulation active:scale-95 ${
+                active ? "text-amber-400 font-bold bg-amber-400/10" : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <n.Icon size={19} strokeWidth={active ? 2.3 : 1.8} />
-              <span className="text-[10px] mt-0.5">{n.label.replace("Catalogue", "").replace("Repository", "")}</span>
+              <n.Icon size={21} strokeWidth={active ? 2.4 : 1.8} />
+              <span className="text-[11px] mt-0.5 font-medium">{n.label.replace("Catalogue", "").replace("Repository", "")}</span>
             </button>
           );
         })}
