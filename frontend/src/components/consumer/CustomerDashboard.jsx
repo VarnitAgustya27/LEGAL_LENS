@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { C, FONT } from "../../constants.jsx";
 import { fetchInspections } from "../../services/supabaseInspectionService.js";
+import { calculateExpiryDays } from "../../utils/textDecoder.js";
 
 export default function CustomerDashboard({
   currentUser,
@@ -242,6 +243,7 @@ export default function CustomerDashboard({
                   <th className="p-3.5 pl-5">Product / Case No.</th>
                   <th className="p-3.5">Category</th>
                   <th className="p-3.5">MRP Printed</th>
+                  <th className="p-3.5">Expiry / Shelf-Life</th>
                   <th className="p-3.5">Compliance Result</th>
                   <th className="p-3.5 text-right pr-5">Action</th>
                 </tr>
@@ -250,6 +252,8 @@ export default function CustomerDashboard({
                 {scans.slice(0, 5).map((scan, idx) => {
                   const score = scan.compliance_score ?? 84;
                   const isPass = score >= 80 || scan.status === "Compliant";
+                  const expEval = calculateExpiryDays(scan.expiry_date || scan.best_before, scan.mfg_date);
+
                   return (
                     <tr key={scan.id || scan.case_number || idx} className="hover:bg-slate-800/40 transition-colors">
                       <td className="p-3.5 pl-5 font-medium text-slate-200">
@@ -258,6 +262,11 @@ export default function CustomerDashboard({
                       </td>
                       <td className="p-3.5 text-slate-400">{scan.category || "Packaged Commodity"}</td>
                       <td className="p-3.5 font-mono text-emerald-400 font-bold">{scan.mrp || "₹ 150.00"}</td>
+                      <td className="p-3.5">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold font-mono border ${expEval.badgeBg}`}>
+                          {expEval.badgeLabel}
+                        </span>
+                      </td>
                       <td className="p-3.5">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                           isPass

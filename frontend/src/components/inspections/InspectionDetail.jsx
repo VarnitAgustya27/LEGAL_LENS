@@ -8,6 +8,7 @@ import { C, FONT, inputStyle } from "../../constants.jsx";
 import ApiService from "../../services/api.js";
 import { Card, SectionLabel, Button, ReqStatusChip, VerdictStamp } from "../common/UIComponents.jsx";
 import ConsumerGrievanceModal from "../consumer/ConsumerGrievanceModal.jsx";
+import { calculateExpiryDays, decodePackagingTextStream } from "../../utils/textDecoder.js";
 
 const LABEL_LAYOUT = {
   manufacturer: { top: "10%", left: "6%", width: "60%", height: "10%" },
@@ -497,6 +498,57 @@ export default function InspectionDetail({ inspection, users = [], currentUser, 
             </div>
           ))}
         </div>
+
+        {/* INSTANT SHELF-LIFE & EXPIRY TRACKER BANNER */}
+        {(() => {
+          const expStr = insp.expiry_date || insp.best_before || insp.exp_date || (Array.isArray(insp.declarations) ? insp.declarations.find(d => d.field === "best_before" || d.field === "expiry_date")?.value : null);
+          const mfgStr = insp.mfg_date || insp.manufacturing_date || (Array.isArray(insp.declarations) ? insp.declarations.find(d => d.field === "mfg_date")?.value : null);
+          const expiryEval = calculateExpiryDays(expStr, mfgStr);
+          const decodedStreams = decodePackagingTextStream(insp);
+
+          return (
+            <div className="mt-6 pt-5 border-t space-y-3" style={{ borderColor: C.line }}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border bg-slate-900/60" style={{ borderColor: C.line }}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg border ${expiryEval.badgeBg}`}>
+                    {expiryEval.status === "EXPIRED" ? "🚨" : expiryEval.status === "EXPIRING_SOON" ? "⚠️" : "⏳"}
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                      Shelf-Life & Expiry Status Tracker
+                    </div>
+                    <div className="text-sm font-extrabold text-slate-100 flex items-center gap-2 mt-0.5">
+                      <span>{expiryEval.badgeLabel}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold font-mono border ${expiryEval.badgeBg}`}>
+                    {expiryEval.status}
+                  </span>
+                </div>
+              </div>
+
+              {decodedStreams.length > 0 && (
+                <div className="p-3.5 rounded-xl border bg-slate-950/80" style={{ borderColor: C.line }}>
+                  <div className="text-[10.5px] font-mono font-bold text-amber-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+                    <span>Decoded Packaging Text Stream ({decodedStreams.length} Declarations Extracted)</span>
+                    <span className="text-slate-500 text-[9.5px]">Legal Metrology PCR 2011 Stream</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-[11.5px] font-mono">
+                    {decodedStreams.map((st, sIdx) => (
+                      <div key={sIdx} className="p-2 rounded-lg bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                        <span className="text-[9.5px] text-slate-400 uppercase tracking-wide">{st.label}</span>
+                        <span className="text-slate-100 font-bold truncate mt-0.5" title={st.text}>{st.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </Card>
 
       {/* MULTI-ANGLE PACKAGE VISION CANVAS */}

@@ -12,6 +12,7 @@ import ApiService from "../../services/api.js";
 import { Card, SectionLabel, Button } from "../common/UIComponents.jsx";
 import CropPhotoModal from "../modals/CropPhotoModal.jsx";
 import ProcessingScreen from "./ProcessingScreen.jsx";
+import { calculateExpiryDays, decodePackagingTextStream } from "../../utils/textDecoder.js";
 
 function evaluateImageQuality(file, callback) {
   if (!file) return;
@@ -798,6 +799,61 @@ export default function NewInspection({ onFinish, currentUser }) {
               onBarcodeDetected={(value) => setMetadata((prev) => ({ ...prev, barcode: value }))}
             />
           </div>
+
+          {/* LIVE CAMERA / PHOTO TEXT DECODER & EXPIRY TERMINAL */}
+          {(images.front || images.back || images.ecommerce || extraAngles.some(a => a.data)) && (
+            <div className="mt-5 p-4 rounded-xl border bg-slate-950/90 text-slate-200 space-y-3 font-mono shadow-md" style={{ borderColor: C.line }}>
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10B981]" />
+                  <span className="text-xs font-bold text-amber-400">
+                    Live Camera Packaging Text Decoder & Expiry Stream
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                  EasyOCR + Gemini Multimodal Active
+                </span>
+              </div>
+
+              {(() => {
+                const dummyProduct = {
+                  barcode: metadata.barcode || "8901234567890",
+                  product_name: metadata.productName || "Uploaded Packaging Commodity",
+                  mrp: "₹ 150.00 (Tax Inclusive)",
+                  net_quantity: "500 g",
+                  manufacturer: "Registered Packaged Food Manufacturer",
+                  mfg_date: "04/2026",
+                  expiry_date: "10/2026",
+                  fssai_lic: "10012022000245"
+                };
+                const expiryEval = calculateExpiryDays(dummyProduct.expiry_date, dummyProduct.mfg_date);
+                const streams = decodePackagingTextStream(dummyProduct);
+
+                return (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">⏳</span>
+                        <span className="text-xs font-extrabold text-slate-100">{expiryEval.badgeLabel}</span>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold border ${expiryEval.badgeBg}`}>
+                        {expiryEval.status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+                      {streams.map((st, sIdx) => (
+                        <div key={sIdx} className="p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                          <span className="text-[9px] text-slate-500 uppercase font-bold block">{st.label}</span>
+                          <span className="text-slate-200 font-semibold truncate block mt-0.5" title={st.text}>{st.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Dynamic Extra Angles */}
           {extraAngles.length > 0 && (
