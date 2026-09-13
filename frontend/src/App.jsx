@@ -7401,17 +7401,33 @@ export default function App() {
     }
   };
 
-  // Update User Handler (optimistic + Supabase persistence)
+  // Update User Handler (optimistic + Supabase persistence + site-wide sync)
   const handleUpdateUser = async (targetEmail, updatedFields) => {
-    const oldUser = users.find((u) => u.email === targetEmail);
+    let emailKey = targetEmail;
+    let fields = updatedFields;
+
+    // Handle single object parameter overload: handleUpdateUser(updatedUserObject)
+    if (typeof targetEmail === "object" && targetEmail !== null) {
+      emailKey = targetEmail.email || currentUser?.email;
+      fields = targetEmail;
+    }
+
+    const oldUser = users.find((u) => (emailKey && u.email === emailKey) || (fields?.id && u.id === fields.id));
     const oldName = oldUser?.name;
 
-    const { pass, password, ...safeFields } = updatedFields;
+    const { pass, password, ...safeFields } = fields || {};
     setUsers((prev) =>
-      prev.map((u) => (u.email === targetEmail ? { ...u, ...safeFields } : u))
+      (prev || []).map((u) =>
+        (emailKey && u.email === emailKey) || (fields?.id && u.id === fields.id)
+          ? { ...u, ...safeFields }
+          : u
+      )
     );
-    if (currentUser?.email === targetEmail) {
-      setCurrentUser((prev) => ({ ...prev, ...safeFields }));
+
+    if ((emailKey && currentUser?.email === emailKey) || (fields?.id && currentUser?.id === fields.id)) {
+      const mergedUser = publicOfficerProfile({ ...currentUser, ...safeFields });
+      setCurrentUser(mergedUser);
+      localStorage.setItem("legallens_current_user", JSON.stringify(mergedUser));
     }
 
     if (isSupabaseConfigured() && supabase) {
@@ -7732,6 +7748,7 @@ export default function App() {
             currentUser={currentUser}
             avatarUrl={avatarUrl}
             onUpdateAvatar={handleUpdateAvatar}
+            onUpdateUser={handleUpdateUser}
             isDark={isDark}
           />
         )}

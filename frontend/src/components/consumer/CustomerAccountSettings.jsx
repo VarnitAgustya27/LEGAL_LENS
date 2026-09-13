@@ -2,15 +2,44 @@ import React, { useState } from "react";
 import { User, Mail, Shield, Bell, Key, Check, Camera, Sparkles } from "lucide-react";
 import { C, FONT } from "../../constants.jsx";
 
-export default function CustomerAccountSettings({ currentUser, avatarUrl, onUpdateAvatar, isDark }) {
+export default function CustomerAccountSettings({ currentUser, avatarUrl, onUpdateAvatar, isDark, onUpdateUser }) {
   const [name, setName] = useState(currentUser?.name || "Rajesh Kumar (Citizen)");
   const [email, setEmail] = useState(currentUser?.email || "customer@gmail.com");
   const [savedMsg, setSavedMsg] = useState("");
   const [notifications, setNotifications] = useState(true);
 
+  // Sync internal state whenever currentUser updates
+  React.useEffect(() => {
+    if (currentUser?.name) setName(currentUser.name);
+    if (currentUser?.email) setEmail(currentUser.email);
+  }, [currentUser]);
+
   const handleSaveProfile = (e) => {
     e?.preventDefault();
-    setSavedMsg("Account profile updated successfully.");
+    if (!name.trim()) {
+      alert("Please enter a valid full name.");
+      return;
+    }
+    if (!email.trim() || !email.includes("@")) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
+    const parts = name.trim().split(" ");
+    const initials = ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || "RK";
+
+    const updated = {
+      ...currentUser,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      initials: initials
+    };
+
+    if (onUpdateUser) {
+      onUpdateUser(updated);
+    }
+
+    setSavedMsg("Account profile updated successfully across the platform!");
     setTimeout(() => setSavedMsg(""), 4000);
   };
 
