@@ -70,9 +70,14 @@ export default function InspectionsList({ onOpen, onNew, users = [], currentUser
   }, [searchQuery]);
 
   const filterForUser = (items) => {
-    if (!isConsumer || !items) return items;
+    if (!items || !Array.isArray(items)) return [];
+    if (!isConsumer) return items;
     if (!currentUser?.email) return [];
-    return items.filter(item => item.inspector_email && item.inspector_email.toLowerCase() === currentUser.email.toLowerCase());
+    return items.filter(item => {
+      const userEmail = currentUser.email.toLowerCase();
+      const itemEmail = (item.inspector_email || item.user_email || item.created_by || item._raw?.inspector_email || "").toLowerCase();
+      return itemEmail === userEmail;
+    });
   };
 
   // Fetch from Supabase whenever filters or refreshKey change
@@ -103,6 +108,7 @@ export default function InspectionsList({ onOpen, onNew, users = [], currentUser
             manufacturer: i.manufacturer,
             status: i.status,
             inspector_name: i.inspector,
+            inspector_email: i.inspector_email || "",
             created_at: i.date,
             is_demo: true,
             is_officer_only: i.is_officer_only || Boolean(i.inspector_badge),
@@ -115,12 +121,7 @@ export default function InspectionsList({ onOpen, onNew, users = [], currentUser
       })
       .catch(() => {
         if (cancelled) return;
-        const mapped = INSPECTIONS.map((i) => ({
-          case_number: i.id, product_name: i.product, category: i.category,
-          manufacturer: i.manufacturer, status: i.status, inspector_name: i.inspector,
-          created_at: i.date, is_demo: true, is_officer_only: i.is_officer_only || Boolean(i.inspector_badge), _raw: i,
-        }));
-        setRows(filterForUser(mapped));
+        setRows([]);
       });
 
     return () => { cancelled = true; };

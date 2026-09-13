@@ -2919,7 +2919,7 @@ function Dashboard({ onOpenInspection, isDark }) {
 
 /* ============================== INSPECTIONS LIST ============================== */
 
-function InspectionsList({ onOpen, onNew, users = [] }) {
+function InspectionsList({ onOpen, onNew, users = [], currentUser }) {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -2929,6 +2929,19 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
   const [fetchError, setFetchError] = useState(null);
   const [openingId, setOpeningId] = useState(null); // case_number being opened
   const shouldReduceMotion = useReducedMotion();
+  const isConsumer = currentUser?.role === "Consumer";
+
+  // Strict Consumer data isolation: Consumers ONLY see items scanned by themselves
+  const filterForUser = (items) => {
+    if (!items || !Array.isArray(items)) return [];
+    if (!isConsumer) return items;
+    if (!currentUser?.email) return [];
+    return items.filter(item => {
+      const userEmail = currentUser.email.toLowerCase();
+      const itemEmail = (item.inspector_email || item.user_email || item.created_by || item._raw?.inspector_email || "").toLowerCase();
+      return itemEmail === userEmail;
+    });
+  };
 
   // Helper to dynamically resolve inspector name from users list while strictly preserving Deleted User
   const resolveInspectorName = (item) => {
@@ -3001,32 +3014,30 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
               )
             )
             : fallback;
-          setRows(filtered.map((i) => ({
+          const mapped = filtered.map((i) => ({
             case_number: i.id,
             product_name: i.product,
             category: i.category,
             manufacturer: i.manufacturer,
             status: i.status,
             inspector_name: i.inspector,
+            inspector_email: i.inspector_email || "",
             created_at: i.date,
             is_demo: true,
             _raw: i,
-          })));
+          }));
+          setRows(filterForUser(mapped));
         } else {
-          setRows(data);
+          setRows(filterForUser(data));
         }
       })
       .catch(() => {
         if (cancelled) return;
-        setRows(INSPECTIONS.map((i) => ({
-          case_number: i.id, product_name: i.product, category: i.category,
-          manufacturer: i.manufacturer, status: i.status, inspector_name: i.inspector,
-          created_at: i.date, is_demo: true, _raw: i,
-        })));
+        setRows([]);
       });
 
     return () => { cancelled = true; };
-  }, [statusFilter, categoryFilter, debouncedSearch, refreshKey]);
+  }, [statusFilter, categoryFilter, debouncedSearch, refreshKey, currentUser, isConsumer]);
 
   const displayDate = (iso) => {
     if (!iso) return "—";
@@ -3041,12 +3052,12 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
       className="space-y-4 ll-page ll-inspections-page"
     >
       <WorkspacePageHero
-        eyebrow="CASE REGISTER"
-        title="Every inspection, traceable."
-        description="Search active and historical case files, then open the evidence trail for officer review."
+        eyebrow={isConsumer ? "PERSONAL SCANS" : "CASE REGISTER"}
+        title={isConsumer ? "My Scanned Products" : "Every inspection, traceable."}
+        description={isConsumer ? "Your personal history of scanned packaged product label checks and compliance records." : "Search active and historical case files, then open the evidence trail for officer review."}
         Icon={ClipboardList}
-        metric={{ label: "CASES IN VIEW", value: rows === null ? "···" : String(rows.length) }}
-        action={<Button onClick={onNew}><FilePlus2 size={15} /> Start inspection</Button>}
+        metric={{ label: isConsumer ? "SCANS IN HISTORY" : "CASES IN VIEW", value: rows === null ? "···" : String(rows.length) }}
+        action={<Button onClick={onNew}><FilePlus2 size={15} /> {isConsumer ? "Scan Product" : "Start inspection"}</Button>}
       />
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -3126,9 +3137,20 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
             {rows !== null && rows.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-5 py-12 text-center" style={{ color: C.slate }}>
-                  <Database size={32} style={{ margin: "0 auto 8px", opacity: 0.4 }} />
-                  <div style={{ fontSize: 13.5, fontWeight: 600 }}>No inspections found.</div>
-                  <div style={{ fontSize: 12, marginTop: 4 }}>Try clearing filters or create a new inspection.</div>
+                  <Database size={36} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ll-color-ink)", marginBottom: 4 }}>
+                    {isConsumer ? "No Scanned Products Yet" : "No Case Files Found"}
+                  </div>
+                  <p style={{ fontSize: 12, color: C.slate, maxWidth: 380, margin: "0 auto 16px" }}>
+                    {isConsumer
+                      ? "You haven't scanned any products yet. Scan a packaged product label to view your personal compliance history."
+                      : "No case files match your selected status and category filters."}
+                  </p>
+                  {isConsumer && (
+                    <Button onClick={onNew} variant="primary">
+                      <FilePlus2 size={15} /> Scan Your First Product
+                    </Button>
+                  )}
                 </td>
               </tr>
             )}
