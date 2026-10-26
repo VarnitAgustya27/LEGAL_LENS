@@ -5,6 +5,7 @@ import LegalLoginPage from "./components/auth/LegalLoginPage.jsx";
 import CustomerDashboard from "./components/consumer/CustomerDashboard.jsx";
 import ProductComparison from "./components/consumer/ProductComparison.jsx";
 import CustomerAccountSettings from "./components/consumer/CustomerAccountSettings.jsx";
+import WheelCarousel from "./components/landing/WheelCarousel.jsx";
 import { saveInspection, fetchInspections, fetchInspectionByCase, mapSupabaseRowToInspection, mapBackendInspectionToFrontend, fetchDashboardStats, fetchReportsFromSupabase } from "./services/supabaseInspectionService.js";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -1038,153 +1039,13 @@ function LandingPageView({ onAccessConsole }) {
         </section>
 
 
-        {/* CAPABILITIES */}
-
-        <section className="capabilities-section" id="capabilities">
-
-          <div className="section-intro">
-            <div>
-              <span className="section-kicker">
-                PLATFORM CAPABILITIES
-              </span>
-
-              <h2>
-                Built for intelligent
-                <br />
-                compliance enforcement.
-              </h2>
-            </div>
-
-            <p>
-              LEGAL LENS transforms the traditional inspection workflow into a
-              scalable digital system for scanning, extracting, validating and
-              reporting packaged commodity compliance.
-            </p>
-          </div>
-
-          <div className="premium-feature-grid">
-
-            <article className="premium-feature">
-              <div className="feature-number">01</div>
-
-              <div className="premium-icon">
-                <Icon name="scan" size={23} />
-              </div>
-
-              <h3>Product & Label Scanning</h3>
-
-              <p>
-                Analyze packaged commodities using uploaded images, product
-                labels and visual evidence.
-              </p>
-
-              <div className="feature-bottom">
-                <span>VISUAL INSPECTION</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">02</div>
-
-              <div className="premium-icon">
-                <Icon name="search" size={23} />
-              </div>
-
-              <h3>AI Declaration Extraction</h3>
-
-              <p>
-                Automatically detect and extract manufacturer details, MRP,
-                quantity, dates and consumer information.
-              </p>
-
-              <div className="feature-bottom">
-                <span>AI + OCR</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">03</div>
-
-              <div className="premium-icon">
-                <Icon name="shield" size={23} />
-              </div>
-
-              <h3>Rule-Based Validation</h3>
-
-              <p>
-                Validate declarations against applicable Legal Metrology
-                requirements and packaged commodity rules.
-              </p>
-
-              <div className="feature-bottom">
-                <span>RULE ENGINE</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">04</div>
-
-              <div className="premium-icon">
-                <Icon name="text" size={23} />
-              </div>
-
-              <h3>Font & Readability Analysis</h3>
-
-              <p>
-                Evaluate declaration readability, visibility and prescribed
-                font-size requirements.
-              </p>
-
-              <div className="feature-bottom">
-                <span>VISUAL VALIDATION</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">05</div>
-
-              <div className="premium-icon">
-                <Icon name="file" size={23} />
-              </div>
-
-              <h3>Compliance Reports</h3>
-
-              <p>
-                Generate compliance reports, violation summaries and digital
-                evidence for inspection records.
-              </p>
-
-              <div className="feature-bottom">
-                <span>REPORT GENERATION</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">06</div>
-
-              <div className="premium-icon">
-                <Icon name="database" size={23} />
-              </div>
-
-              <h3>Inspection Repository</h3>
-
-              <p>
-                Maintain scanned product records, compliance history,
-                photographs and supporting evidence.
-              </p>
-
-              <div className="feature-bottom">
-                <span>DATA REPOSITORY</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-          </div>
+        {/* INTERACTIVE 3D WHEEL-SHAPED WEB ANIMATION SHOWCASE */}
+        <section id="capabilities">
+          <WheelCarousel
+            onSelectAction={(item) => {
+              if (onAccessConsole) onAccessConsole("Officer");
+            }}
+          />
         </section>
 
 
@@ -2919,7 +2780,7 @@ function Dashboard({ onOpenInspection, isDark }) {
 
 /* ============================== INSPECTIONS LIST ============================== */
 
-function InspectionsList({ onOpen, onNew, users = [] }) {
+function InspectionsList({ onOpen, onNew, users = [], currentUser }) {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -2929,6 +2790,19 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
   const [fetchError, setFetchError] = useState(null);
   const [openingId, setOpeningId] = useState(null); // case_number being opened
   const shouldReduceMotion = useReducedMotion();
+  const isConsumer = currentUser?.role === "Consumer";
+
+  // Strict Consumer data isolation: Consumers ONLY see items scanned by themselves
+  const filterForUser = (items) => {
+    if (!items || !Array.isArray(items)) return [];
+    if (!isConsumer) return items;
+    if (!currentUser?.email) return [];
+    return items.filter(item => {
+      const userEmail = currentUser.email.toLowerCase();
+      const itemEmail = (item.inspector_email || item.user_email || item.created_by || item._raw?.inspector_email || "").toLowerCase();
+      return itemEmail === userEmail;
+    });
+  };
 
   // Helper to dynamically resolve inspector name from users list while strictly preserving Deleted User
   const resolveInspectorName = (item) => {
@@ -3001,32 +2875,30 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
               )
             )
             : fallback;
-          setRows(filtered.map((i) => ({
+          const mapped = filtered.map((i) => ({
             case_number: i.id,
             product_name: i.product,
             category: i.category,
             manufacturer: i.manufacturer,
             status: i.status,
             inspector_name: i.inspector,
+            inspector_email: i.inspector_email || "",
             created_at: i.date,
             is_demo: true,
             _raw: i,
-          })));
+          }));
+          setRows(filterForUser(mapped));
         } else {
-          setRows(data);
+          setRows(filterForUser(data));
         }
       })
       .catch(() => {
         if (cancelled) return;
-        setRows(INSPECTIONS.map((i) => ({
-          case_number: i.id, product_name: i.product, category: i.category,
-          manufacturer: i.manufacturer, status: i.status, inspector_name: i.inspector,
-          created_at: i.date, is_demo: true, _raw: i,
-        })));
+        setRows([]);
       });
 
     return () => { cancelled = true; };
-  }, [statusFilter, categoryFilter, debouncedSearch, refreshKey]);
+  }, [statusFilter, categoryFilter, debouncedSearch, refreshKey, currentUser, isConsumer]);
 
   const displayDate = (iso) => {
     if (!iso) return "—";
@@ -3041,12 +2913,12 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
       className="space-y-4 ll-page ll-inspections-page"
     >
       <WorkspacePageHero
-        eyebrow="CASE REGISTER"
-        title="Every inspection, traceable."
-        description="Search active and historical case files, then open the evidence trail for officer review."
+        eyebrow={isConsumer ? "PERSONAL SCANS" : "CASE REGISTER"}
+        title={isConsumer ? "My Scanned Products" : "Every inspection, traceable."}
+        description={isConsumer ? "Your personal history of scanned packaged product label checks and compliance records." : "Search active and historical case files, then open the evidence trail for officer review."}
         Icon={ClipboardList}
-        metric={{ label: "CASES IN VIEW", value: rows === null ? "···" : String(rows.length) }}
-        action={<Button onClick={onNew}><FilePlus2 size={15} /> Start inspection</Button>}
+        metric={{ label: isConsumer ? "SCANS IN HISTORY" : "CASES IN VIEW", value: rows === null ? "···" : String(rows.length) }}
+        action={<Button onClick={onNew}><FilePlus2 size={15} /> {isConsumer ? "Scan Product" : "Start inspection"}</Button>}
       />
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -3126,9 +2998,20 @@ function InspectionsList({ onOpen, onNew, users = [] }) {
             {rows !== null && rows.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-5 py-12 text-center" style={{ color: C.slate }}>
-                  <Database size={32} style={{ margin: "0 auto 8px", opacity: 0.4 }} />
-                  <div style={{ fontSize: 13.5, fontWeight: 600 }}>No inspections found.</div>
-                  <div style={{ fontSize: 12, marginTop: 4 }}>Try clearing filters or create a new inspection.</div>
+                  <Database size={36} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ll-color-ink)", marginBottom: 4 }}>
+                    {isConsumer ? "No Scanned Products Yet" : "No Case Files Found"}
+                  </div>
+                  <p style={{ fontSize: 12, color: C.slate, maxWidth: 380, margin: "0 auto 16px" }}>
+                    {isConsumer
+                      ? "You haven't scanned any products yet. Scan a packaged product label to view your personal compliance history."
+                      : "No case files match your selected status and category filters."}
+                  </p>
+                  {isConsumer && (
+                    <Button onClick={onNew} variant="primary">
+                      <FilePlus2 size={15} /> Scan Your First Product
+                    </Button>
+                  )}
                 </td>
               </tr>
             )}
@@ -3387,10 +3270,28 @@ function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
     }
   };
 
+  const fallbackCameraRef = useRef(null);
+
+  const handleNativeCameraFile = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onCapturePhoto?.(file);
+      onClose?.();
+    }
+  };
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm">
+      <input
+        ref={fallbackCameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleNativeCameraFile}
+      />
       <div className="w-full max-w-xl rounded-2xl overflow-hidden border shadow-2xl" style={{ background: "#0b1220", borderColor: "rgba(34,211,238,0.35)" }}>
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(148,163,184,0.18)" }}>
           <div>
@@ -3413,7 +3314,7 @@ function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
           </div>
 
           {/* Quick Capture Shutter floating overlay */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center pointer-events-auto">
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-3 pointer-events-auto z-10 px-4">
             <button
               type="button"
               onClick={handleCapturePhoto}
@@ -3423,14 +3324,41 @@ function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
               {isCapturing ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
               <span>Click Picture</span>
             </button>
+            <button
+              type="button"
+              onClick={() => fallbackCameraRef.current?.click()}
+              className="px-4 py-2.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 shadow-xl border border-slate-600 cursor-pointer active:scale-95 transition-all"
+            >
+              <Camera size={15} />
+              <span>Native Camera</span>
+            </button>
           </div>
 
           {error && (
-            <div className="absolute inset-0 flex items-center justify-center p-6 text-center bg-slate-950/90">
-              <div>
-                <AlertTriangle className="mx-auto mb-3 text-amber-400" size={30} />
-                <p className="text-sm text-slate-200">{error}</p>
-                <p className="text-xs text-slate-500 mt-2">On iPhone and Android, open this site over HTTPS and allow camera permission.</p>
+            <div className="absolute inset-0 flex items-center justify-center p-6 text-center bg-slate-950/95 z-20">
+              <div className="max-w-xs mx-auto space-y-3">
+                <AlertTriangle className="mx-auto text-amber-400" size={32} />
+                <p className="text-sm font-bold text-slate-100">{error}</p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Browsing over plain HTTP (<code className="text-cyan-300 font-mono">10.12.17.144</code>) restricts live stream access. Use Native Camera mode to snap photos directly!
+                </p>
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fallbackCameraRef.current?.click()}
+                    className="w-full py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-extrabold text-xs hover:bg-cyan-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                  >
+                    <Camera size={16} />
+                    <span>Open Phone Camera App</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -3441,18 +3369,17 @@ function MobileCodeScanner({ open, onClose, onDetected, onCapturePhoto }) {
           <div className="flex items-center gap-2 ml-auto">
             <button
               type="button"
-              onClick={handleCapturePhoto}
-              disabled={isCapturing}
-              className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-all disabled:opacity-50"
+              onClick={() => fallbackCameraRef.current?.click()}
+              className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 flex items-center gap-1 cursor-pointer"
             >
-              <Camera size={14} /> Click Picture
+              <Camera size={13} /> Open Camera App
             </button>
             {torchSupported && (
-              <button type="button" onClick={toggleTorch} className="px-3 py-1.5 rounded-lg border text-xs font-semibold text-amber-300 border-amber-400/30 hover:bg-amber-400/10">
+              <button type="button" onClick={toggleTorch} className="px-3 py-1.5 rounded-lg border text-xs font-semibold text-amber-300 border-amber-400/30 hover:bg-amber-400/10 cursor-pointer">
                 {torchOn ? "Flash Off" : "Flash On"}
               </button>
             )}
-            <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/15">Cancel</button>
+            <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/15 cursor-pointer">Cancel</button>
           </div>
         </div>
       </div>
@@ -7322,8 +7249,24 @@ export default function App() {
     }
   });
   const [users, setUsers] = useState(() => {
+    try {
+      const saved = localStorage.getItem("legallens_users");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
     return isSupabaseConfigured() ? [] : INITIAL_USERS;
   });
+
+  // Persist updated users list to localStorage
+  useEffect(() => {
+    if (Array.isArray(users) && users.length > 0) {
+      try {
+        localStorage.setItem("legallens_users", JSON.stringify(users));
+      } catch (_) {}
+    }
+  }, [users]);
   const [loadingDb, setLoadingDb] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(isSupabaseConfigured());
 
@@ -7401,17 +7344,33 @@ export default function App() {
     }
   };
 
-  // Update User Handler (optimistic + Supabase persistence)
+  // Update User Handler (optimistic + Supabase persistence + site-wide sync)
   const handleUpdateUser = async (targetEmail, updatedFields) => {
-    const oldUser = users.find((u) => u.email === targetEmail);
+    let emailKey = targetEmail;
+    let fields = updatedFields;
+
+    // Handle single object parameter overload: handleUpdateUser(updatedUserObject)
+    if (typeof targetEmail === "object" && targetEmail !== null) {
+      emailKey = targetEmail.email || currentUser?.email;
+      fields = targetEmail;
+    }
+
+    const oldUser = users.find((u) => (emailKey && u.email === emailKey) || (fields?.id && u.id === fields.id));
     const oldName = oldUser?.name;
 
-    const { pass, password, ...safeFields } = updatedFields;
+    const { pass, password, ...safeFields } = fields || {};
     setUsers((prev) =>
-      prev.map((u) => (u.email === targetEmail ? { ...u, ...safeFields } : u))
+      (prev || []).map((u) =>
+        (emailKey && u.email === emailKey) || (fields?.id && u.id === fields.id)
+          ? { ...u, ...safeFields }
+          : u
+      )
     );
-    if (currentUser?.email === targetEmail) {
-      setCurrentUser((prev) => ({ ...prev, ...safeFields }));
+
+    if ((emailKey && currentUser?.email === emailKey) || (fields?.id && currentUser?.id === fields.id)) {
+      const mergedUser = publicOfficerProfile({ ...currentUser, ...safeFields });
+      setCurrentUser(mergedUser);
+      localStorage.setItem("legallens_current_user", JSON.stringify(mergedUser));
     }
 
     if (isSupabaseConfigured() && supabase) {
@@ -7538,53 +7497,68 @@ export default function App() {
   const getAvatarMap = () => {
     try { return JSON.parse(localStorage.getItem("legallens_avatars") || "{}"); } catch { return {}; }
   };
-  const currentBadge = currentUser?.badge || "";
-  const [avatarUrl, setAvatarUrl] = useState(() => getAvatarMap()[currentBadge] || "");
+  
+  const userAvatarKey = (currentUser?.email || currentUser?.badge || currentUser?.id || "default").trim().toLowerCase();
+  
+  const [avatarUrl, setAvatarUrl] = useState(() => {
+    const map = getAvatarMap();
+    return map[userAvatarKey] || map[currentUser?.email] || map[currentUser?.badge] || currentUser?.avatarUrl || "";
+  });
 
-  // Sync avatar when badge changes (fetches from cache, then checks Supabase)
+  // Sync avatar when active user changes (fetches from cache, then checks Supabase)
   useEffect(() => {
-    const badge = currentBadge?.trim();
-    const cached = getAvatarMap()[badge] || getAvatarMap()[currentBadge] || "";
+    if (!userAvatarKey) return;
+    const map = getAvatarMap();
+    const cached = map[userAvatarKey] || map[currentUser?.email] || map[currentUser?.badge] || currentUser?.avatarUrl || "";
     setAvatarUrl(cached);
 
-    if (badge && isSupabaseConfigured() && supabase) {
+    const badgeKey = (currentUser?.badge || userAvatarKey).trim();
+    if (badgeKey && isSupabaseConfigured() && supabase) {
       supabase
         .from("officer_avatars")
         .select("avatar_url")
-        .ilike("badge", badge)
+        .ilike("badge", badgeKey)
         .maybeSingle()
         .then(({ data, error }) => {
           if (!error && data?.avatar_url) {
-            const map = getAvatarMap();
-            map[badge] = data.avatar_url;
+            map[userAvatarKey] = data.avatar_url;
+            if (currentUser?.badge) map[currentUser.badge] = data.avatar_url;
+            if (currentUser?.email) map[currentUser.email] = data.avatar_url;
             localStorage.setItem("legallens_avatars", JSON.stringify(map));
             setAvatarUrl(data.avatar_url);
-          } else if (!error && !data) {
-            if (!cached) setAvatarUrl("");
           }
         })
         .catch((err) => {
           console.warn("Could not fetch avatar from Supabase:", err);
         });
     }
-  }, [currentBadge]);
+  }, [userAvatarKey, currentUser?.badge, currentUser?.email]);
 
   const handleUpdateAvatar = async (dataUrl) => {
-    if (!currentBadge) return;
-    const badge = currentBadge.trim();
+    if (!dataUrl) return;
     const map = getAvatarMap();
-    map[badge] = dataUrl;
+    map[userAvatarKey] = dataUrl;
+    if (currentUser?.badge) map[currentUser.badge] = dataUrl;
+    if (currentUser?.email) map[currentUser.email.toLowerCase()] = dataUrl;
+    
     localStorage.setItem("legallens_avatars", JSON.stringify(map));
     setAvatarUrl(dataUrl);
 
+    // Update active currentUser object with new avatarUrl
+    if (currentUser) {
+      const updatedUser = { ...currentUser, avatarUrl: dataUrl };
+      setCurrentUser(updatedUser);
+      localStorage.setItem("legallens_current_user", JSON.stringify(updatedUser));
+    }
+
     // Also persist to separate Supabase table (safe best-effort)
-    if (isSupabaseConfigured() && supabase) {
+    const badgeKey = (currentUser?.badge || userAvatarKey).trim();
+    if (badgeKey && isSupabaseConfigured() && supabase) {
       try {
-        const { error } = await supabase.from("officer_avatars").upsert(
-          { badge: badge, avatar_url: dataUrl, updated_at: new Date().toISOString() },
+        await supabase.from("officer_avatars").upsert(
+          { badge: badgeKey, avatar_url: dataUrl, updated_at: new Date().toISOString() },
           { onConflict: "badge" }
         );
-        if (error) console.warn("Supabase avatar upsert error:", error);
       } catch (e) {
         console.warn("Could not sync avatar to Supabase:", e);
       }
@@ -7732,6 +7706,7 @@ export default function App() {
             currentUser={currentUser}
             avatarUrl={avatarUrl}
             onUpdateAvatar={handleUpdateAvatar}
+            onUpdateUser={handleUpdateUser}
             isDark={isDark}
           />
         )}

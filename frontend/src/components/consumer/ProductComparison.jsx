@@ -5,6 +5,7 @@ import {
   Eye, ShieldCheck, ShieldAlert, UploadCloud, Calculator, ArrowRightLeft, Sparkles, Image as ImageIcon
 } from "lucide-react";
 import { fetchInspections } from "../../services/supabaseInspectionService.js";
+import { calculateExpiryDays } from "../../utils/textDecoder.js";
 
 const DEFAULT_DEMO_PRODUCTS = [
   {
@@ -425,6 +426,18 @@ export default function ProductComparison({ currentUser, onScanNew, onOpenDetail
                   <span className="font-mono text-slate-300">{productA?.mfg_date} / {productA?.expiry_date}</span>
                 </div>
 
+                {(() => {
+                  const expA = calculateExpiryDays(productA?.expiry_date, productA?.mfg_date);
+                  return (
+                    <div className="flex justify-between py-1.5 border-b border-slate-800/60">
+                      <span className="text-slate-400 font-medium">Days Left to Expiry</span>
+                      <span className={`px-2 py-0.5 rounded text-[10.5px] font-bold font-mono border ${expA.badgeBg}`}>
+                        {expA.badgeLabel}
+                      </span>
+                    </div>
+                  );
+                })()}
+
                 <div className="flex justify-between py-1.5 border-b border-slate-800/60">
                   <span className="text-slate-400 font-medium">Customer Helpline</span>
                   <span className="text-slate-300 text-[11px] truncate max-w-[200px]">{productA?.helpline}</span>
@@ -503,6 +516,18 @@ export default function ProductComparison({ currentUser, onScanNew, onOpenDetail
                   <span className="text-slate-400 font-medium">Mfg / Expiry Date</span>
                   <span className="font-mono text-slate-300">{productB?.mfg_date} / {productB?.expiry_date}</span>
                 </div>
+
+                {(() => {
+                  const expB = calculateExpiryDays(productB?.expiry_date, productB?.mfg_date);
+                  return (
+                    <div className="flex justify-between py-1.5 border-b border-slate-800/60">
+                      <span className="text-slate-400 font-medium">Days Left to Expiry</span>
+                      <span className={`px-2 py-0.5 rounded text-[10.5px] font-bold font-mono border ${expB.badgeBg}`}>
+                        {expB.badgeLabel}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 <div className="flex justify-between py-1.5 border-b border-slate-800/60">
                   <span className="text-slate-400 font-medium">Customer Helpline</span>

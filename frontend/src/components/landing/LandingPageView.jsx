@@ -1,5 +1,6 @@
 import React from "react";
 import { Icon } from "../common/UIComponents.jsx";
+import WheelCarousel from "./WheelCarousel.jsx";
 
 export default function LandingPageView({ onAccessConsole }) {
   return (
@@ -299,163 +300,19 @@ export default function LandingPageView({ onAccessConsole }) {
         </section>
 
 
-        {/* CAPABILITIES */}
-
-        <section className="capabilities-section" id="capabilities">
-
-          <div className="section-intro">
-            <div>
-              <span className="section-kicker">
-                PLATFORM CAPABILITIES
-              </span>
-
-              <h2>
-                Built for intelligent
-                <br />
-                compliance enforcement.
-              </h2>
-            </div>
-
-            <p>
-              LEGAL LENS transforms the traditional inspection workflow into a
-              scalable digital system for scanning, extracting, validating and
-              reporting packaged commodity compliance.
-            </p>
-          </div>
-
-          <div className="premium-feature-grid">
-
-            <article className="premium-feature">
-              <div className="feature-number">01</div>
-
-              <div className="premium-icon">
-                <Icon name="scan" size={23} />
-              </div>
-
-              <h3>Product & Label Scanning</h3>
-
-              <p>
-                Analyze packaged commodities using uploaded images, product
-                labels and visual evidence.
-              </p>
-
-              <div className="feature-bottom">
-                <span>VISUAL INSPECTION</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">02</div>
-
-              <div className="premium-icon">
-                <Icon name="search" size={23} />
-              </div>
-
-              <h3>AI Declaration Extraction</h3>
-
-              <p>
-                Automatically detect and extract manufacturer details, MRP,
-                quantity, dates and consumer information.
-              </p>
-
-              <div className="feature-bottom">
-                <span>AI + OCR</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">03</div>
-
-              <div className="premium-icon">
-                <Icon name="shield" size={23} />
-              </div>
-
-              <h3>Rule-Based Validation</h3>
-
-              <p>
-                Validate declarations against applicable Legal Metrology
-                requirements and packaged commodity rules.
-              </p>
-
-              <div className="feature-bottom">
-                <span>RULE ENGINE</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">04</div>
-
-              <div className="premium-icon">
-                <Icon name="text" size={23} />
-              </div>
-
-              <h3>Font & Readability Analysis</h3>
-
-              <p>
-                Evaluate declaration readability, visibility and prescribed
-                font-size requirements.
-              </p>
-
-              <div className="feature-bottom">
-                <span>VISUAL VALIDATION</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">05</div>
-
-              <div className="premium-icon">
-                <Icon name="file" size={23} />
-              </div>
-
-              <h3>Compliance Reports</h3>
-
-              <p>
-                Generate compliance reports, violation summaries and digital
-                evidence for inspection records.
-              </p>
-
-              <div className="feature-bottom">
-                <span>REPORT GENERATION</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-            <article className="premium-feature">
-              <div className="feature-number">06</div>
-
-              <div className="premium-icon">
-                <Icon name="database" size={23} />
-              </div>
-
-              <h3>Inspection Repository</h3>
-
-              <p>
-                Maintain scanned product records, compliance history,
-                photographs and supporting evidence.
-              </p>
-
-              <div className="feature-bottom">
-                <span>DATA REPOSITORY</span>
-                <Icon name="arrow" size={17} />
-              </div>
-            </article>
-
-          </div>
+        {/* INTERACTIVE 3D WHEEL-SHAPED WEB ANIMATION SHOWCASE */}
+        <section id="capabilities">
+          <WheelCarousel
+            onSelectAction={(item) => {
+              if (onAccessConsole) onAccessConsole("Officer");
+            }}
+          />
         </section>
 
-
-        {/* WORKFLOW */}
-
+        {/* WORKFLOW SECTION */}
         <section className="workflow-section" id="workflow">
-
           <div className="workflow-header">
             <span>INTELLIGENT INSPECTION WORKFLOW</span>
-
             <h2>
               From product image
               <br />
@@ -464,19 +321,13 @@ export default function LandingPageView({ onAccessConsole }) {
           </div>
 
           <div className="workflow-line">
-
             <div className="workflow-step">
               <div className="step-index">01</div>
               <div className="step-icon">
                 <Icon name="upload" size={23} />
               </div>
-
               <h3>Upload</h3>
-
-              <p>
-                Upload product images, labels or supporting inspection
-                information.
-              </p>
+              <p>Upload product images, labels or supporting inspection information.</p>
             </div>
 
             <div className="workflow-connector"></div>
@@ -486,12 +337,8 @@ export default function LandingPageView({ onAccessConsole }) {
               <div className="step-icon">
                 <Icon name="search" size={23} />
               </div>
-
               <h3>Extract</h3>
-
-              <p>
-                AI and OCR identify mandatory declarations from the packaging.
-              </p>
+              <p>AI and OCR identify mandatory declarations from the packaging.</p>
             </div>
 
             <div className="workflow-connector"></div>
@@ -501,12 +348,8 @@ export default function LandingPageView({ onAccessConsole }) {
               <div className="step-icon">
                 <Icon name="shield" size={23} />
               </div>
-
               <h3>Validate</h3>
-
-              <p>
-                Extracted information is evaluated against compliance rules.
-              </p>
+              <p>Extracted information is evaluated against compliance rules.</p>
             </div>
 
             <div className="workflow-connector"></div>
@@ -516,14 +359,9 @@ export default function LandingPageView({ onAccessConsole }) {
               <div className="step-icon">
                 <Icon name="chart" size={23} />
               </div>
-
               <h3>Report</h3>
-
-              <p>
-                Generate compliance status, violations and inspection reports.
-              </p>
+              <p>Generate compliance status, violations and inspection reports.</p>
             </div>
-
           </div>
         </section>
 
